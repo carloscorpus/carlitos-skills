@@ -49,9 +49,17 @@ The Vite `base` needs no placeholder: `vite.config.ts` derives the theme folder 
      - linux: `~/.config/Local/lightning-services/php-*/bin/linux/bin/php`
      If the path does not match, search `lightning-services/` for a `php` binary. If none exists, report that PHP lint was skipped.
    - `pnpm build` → confirm `dist/manifest.json` has keys `src/css/input.css` and `src/js/main.js`, and no `hot` file exists. Then delete `dist/`.
-   - `pnpm dev` (in background) → `hot` appears. Then stop it and confirm `hot` disappears:
-     - darwin/linux: send SIGINT to the Vite process (`kill -INT <pid>`).
-     - win32: signals cannot be delivered from this shell; ask the user to stop it with Ctrl+C.
+   - `pnpm dev` check. Never leave a dev server running when the skill ends.
+     - Before starting: port 5173 must be free (`strictPort` fails otherwise). If it is busy, do not kill anything; report the owning process (it may be a leftover Vite from an earlier run) and skip this check.
+     - Start `pnpm dev` in background → `hot` appears with `http://localhost:5173`.
+     - darwin/linux: send SIGINT to the Vite process (`kill -INT <pid>`) → confirm `hot` disappears and the port is free.
+     - win32: SIGINT cannot be delivered from this shell, and stopping the background task does not always kill Vite's `node` (it stays orphaned, holding 5173 and leaving `hot`). Stop it explicitly from PowerShell:
+       ```powershell
+       $c = Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+       $p = Get-CimInstance Win32_Process -Filter "ProcessId=$($c.OwningProcess)"
+       if ($p.Name -eq 'node.exe' -and $p.CommandLine -like "*<theme path>*vite*") { Stop-Process -Id $p.ProcessId -Force }
+       ```
+       Only kill a `node.exe` whose command line contains this theme's path and `vite`; anything else, report it and stop. Then confirm 5173 is free and delete `hot` (a forced kill skips Vite's cleanup handler, so `hot` is expected to remain). The `hot` cleanup on Ctrl+C cannot be verified from this shell: tell the user it is verified only when they run `pnpm dev` in their own terminal and press Ctrl+C (optional).
 8. Tell user: `pnpm dev`, activate theme in WP admin, and the Deploy rules from the generated `CLAUDE.md`.
 
 ## Rules baked into templates
