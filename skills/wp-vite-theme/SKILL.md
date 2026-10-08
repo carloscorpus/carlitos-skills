@@ -41,7 +41,7 @@ The Vite `base` needs no placeholder: `vite.config.ts` derives the theme folder 
    - pnpm 12 fails on unknown keys in `pnpm-workspace.yaml` (`ERR_PNPM_UNRECOGNIZED_WORKSPACE_SETTINGS`). Check names against pnpm.io/settings if a key errors.
 6. **Verify integrations are still current.**
    - WebFetch `https://tailwindcss.com/docs/installation/using-vite` before trusting `vite.config.ts.tpl` / `input.css.tpl`. If the major changed the plugin name or CSS import, adapt to the docs and update the templates.
-   - Grep `node_modules/vite/dist/node/index.d.ts` for `@deprecated` on options the config uses (e.g. `rolldownOptions` vs `rollupOptions`). Update the template if something is deprecated.
+   - Grep `node_modules/vite/dist/node/index.d.ts` for `@deprecated` on every option the config uses, including nested ones (e.g. `rolldownOptions` vs `rollupOptions`, `server.ws.host` vs `server.hmr.host`). Read each `@deprecated` line with the property below it (`grep -n -A1 "@deprecated"`): the comment names the replacement, not always the old option. Update the template if something is deprecated.
 7. **Validate.** Detect the OS first (`node -p process.platform`: `win32`, `darwin`, `linux`).
    - `php -l` on every PHP file. Use `php` if it is in PATH; otherwise Local's PHP (newest `php-*` version):
      - win32: `%APPDATA%/Local/lightning-services/php-*/bin/win32/php.exe`
