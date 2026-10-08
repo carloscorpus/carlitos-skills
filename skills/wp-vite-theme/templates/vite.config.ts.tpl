@@ -48,7 +48,7 @@ export default defineConfig(({ command }) => ({
         cors: true,
         strictPort: true,
         port: 5173,
-        hmr: {
+        ws: {
             host: 'localhost',
         },
     },
