@@ -1,14 +1,14 @@
 {
   "name": "carlitos-skills",
-  "description": "Marketplace de skills de Carlitos para proyectos WordPress.",
+  "description": "Marketplace de skills de Carlos Corpus para proyectos WordPress.",
   "owner": {
-    "name": "Nerd y sus colaboradores"
+    "name": "Carlos Corpus"
   },
   "plugins": [
     {
       "name": "carlitos-skills",
       "source": "./",
-      "description": "Skills de Carlitos para temas WordPress con Vite, Tailwind y pnpm."
+      "description": "Skills de Carlos Corpus para temas WordPress con Vite, Tailwind y pnpm."
     }
   ]
 }
