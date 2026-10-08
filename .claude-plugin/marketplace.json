@@ -1,0 +1,14 @@
+{
+  "name": "carlitos-skills",
+  "description": "Marketplace de skills de Carlitos para proyectos WordPress.",
+  "owner": {
+    "name": "Nerd y sus colaboradores"
+  },
+  "plugins": [
+    {
+      "name": "carlitos-skills",
+      "source": "./",
+      "description": "Skills de Carlitos para temas WordPress con Vite, Tailwind y pnpm."
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "carlitos-skills",
+  "description": "Skills de Carlitos para temas WordPress con Vite, Tailwind y pnpm.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Nerd y sus colaboradores"
+  },
+  "repository": "https://github.com/carloscorpus/carlitos-skills"
+}
