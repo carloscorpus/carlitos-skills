@@ -4,12 +4,19 @@
 // Uso:
 //   node install.mjs [--target <dir>] [--slug <slug>] [--entries]
 //                    [--dry-run] [--overwrite a,b] [--skip c,d]
+//   node install.mjs --check [--target <dir>]
 //
 // Copia templates/ reemplazando {{...}}. --entries agrega inc/forms-entries.php
-// (envíos guardados en el admin). No toca functions.php ni main.js: eso lo hace el agente.
+// (envíos guardados en el admin). Después conecta el motor al tema, sin duplicar nada si
+// se vuelve a correr: agrega el require_once en functions.php y el import() en main.js.
+// No instala zod ni ejecuta pnpm: eso lo hace el agente (ver SKILL.md, paso 4).
+//
+// --check no escribe nada: verifica que el motor esté completo y conectado (archivos,
+// functions.php, main.js, zod en package.json y en node_modules).
 //
 // Sale con JSON en stdout. Códigos: 0 ok, 1 error de uso/validación, 2 conflictos sin resolver,
-// 3 placeholders sin reemplazar. Nunca escribe nada si sale con código distinto de 0.
+// 3 placeholders sin reemplazar, 4 --check con conexiones faltantes.
+// Nunca escribe nada si sale con código distinto de 0.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
@@ -42,6 +49,7 @@ try {
             target: { type: 'string', default: process.cwd() },
             slug: { type: 'string' },
             entries: { type: 'boolean', default: false },
+            check: { type: 'boolean', default: false },
             'dry-run': { type: 'boolean', default: false },
             overwrite: { type: 'string' },
             skip: { type: 'string' },
@@ -63,6 +71,44 @@ const missingBase = ['style.css', 'functions.php', 'inc/enqueue.php', 'src/js/ma
     .filter((rel) => !existsSync(join(target, rel)));
 if (missingBase.length) {
     fail(1, 'No parece un tema creado con wp-vite-theme (ejecuta desde la raíz del tema).', { missing: missingBase });
+}
+
+const REQUIRE_LINE = "require_once get_theme_file_path('/inc/forms.php');";
+const IMPORT_BLOCK = [
+    "if (document.querySelector('form[data-form]')) {",
+    "    import('./modules/form.js').then(({ initForms }) => initForms()).catch(console.error);",
+    '}',
+];
+
+const read = (rel) => (existsSync(join(target, rel)) ? readFileSync(join(target, rel), 'utf8') : '');
+
+// Estado de la conexión del motor en el tema.
+function wiringState() {
+    let pkg = {};
+    try {
+        pkg = JSON.parse(read('package.json') || '{}');
+    } catch {
+        // package.json ilegible: se reporta como zod faltante.
+    }
+
+    return {
+        engine: existsSync(join(target, 'inc/forms.php')) && existsSync(join(target, 'src/js/modules/form.js')),
+        functions: read('functions.php').includes('inc/forms.php'),
+        main: read('src/js/main.js').includes('modules/form.js'),
+        zod: Boolean(pkg.dependencies?.zod || pkg.devDependencies?.zod),
+        node_modules_zod: existsSync(join(target, 'node_modules/zod')),
+    };
+}
+
+if (args.check) {
+    const wiring = wiringState();
+    const missing = Object.entries(wiring).filter(([, ok]) => !ok).map(([key]) => key);
+    const hints = [];
+    if (!wiring.engine) hints.push('Corre install.mjs sin --check para copiar el motor.');
+    if (!wiring.functions || !wiring.main) hints.push('Corre install.mjs (sin --check): conecta functions.php y main.js.');
+    if (!wiring.zod || !wiring.node_modules_zod) hints.push('pnpm view zod dist-tags && pnpm add zod@latest');
+    console.log(JSON.stringify({ ok: missing.length === 0, check: true, wiring, missing, hints }, null, 2));
+    process.exit(missing.length ? 4 : 0);
 }
 
 const prefix = slug.replaceAll('-', '_');
@@ -105,6 +151,10 @@ const report = {
     create: files.filter((f) => !existsSync(f.dest)).map((f) => f.rel),
     unchanged,
     conflicts,
+    wire: [
+        ...(wiringState().functions ? [] : ['functions.php']),
+        ...(wiringState().main ? [] : ['src/js/main.js']),
+    ],
 };
 
 if (args['dry-run']) {
@@ -128,10 +178,37 @@ for (const dir of ['inc/forms', 'template-parts/forms']) {
     mkdirSync(join(target, dir), { recursive: true });
 }
 
+// Conexión idempotente: solo agrega lo que falta y respeta el salto de línea del archivo.
+function patch(rel, update) {
+    const path = join(target, rel);
+    const original = readFileSync(path, 'utf8');
+    const eol = original.includes('\r\n') ? '\r\n' : '\n';
+    const next = update(original.replace(/\r\n/g, '\n')).replace(/\n/g, eol);
+    writeFileSync(path, next);
+}
+
+const wired = [];
+if (!wiringState().functions) {
+    patch('functions.php', (text) => {
+        const lines = text.split('\n');
+        const last = lines.findLastIndex((line) => /^\s*require(_once)?\b/.test(line));
+        if (last === -1) return text.replace(/\n*$/, '\n') + REQUIRE_LINE + '\n';
+        lines.splice(last + 1, 0, REQUIRE_LINE);
+        return lines.join('\n');
+    });
+    wired.push('functions.php');
+}
+if (!wiringState().main) {
+    patch('src/js/main.js', (text) => text.replace(/\n*$/, '\n\n') + IMPORT_BLOCK.join('\n') + '\n');
+    wired.push('src/js/main.js');
+}
+
 console.log(JSON.stringify({
     ok: true,
     ...report,
     written,
     overwritten: [...overwrite],
     skipped: [...skip],
+    wired,
+    next: wiringState().node_modules_zod ? [] : ['pnpm view zod dist-tags && pnpm add zod@latest'],
 }, null, 2));

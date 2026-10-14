@@ -38,17 +38,19 @@ If the engine needs a change, change the template in this skill (and bump the pl
    ```
    node <skill>/scripts/install.mjs --dry-run [--entries]
    ```
-   Add `--entries` if any form stores submissions (it can be added later by re-running with `--entries`). The JSON lists `create`, `unchanged` and `conflicts`. If `conflicts` is non-empty, show them and ask file by file: overwrite or keep. Then run without `--dry-run`, with `--overwrite` / `--skip` covering every conflict. Exit codes: `0` ok, `1` invalid input, slug not starting with a letter or not a wp-vite-theme theme, `2` unresolved conflicts, `3` leftover placeholders (fix the template, not the output).
+   Add `--entries` if any form stores submissions (it can be added later by re-running with `--entries`). The JSON lists `create`, `unchanged` and `conflicts`. If `conflicts` is non-empty, show them and ask file by file: overwrite or keep. Then run without `--dry-run`, with `--overwrite` / `--skip` covering every conflict. Exit codes: `0` ok, `1` invalid input, slug not starting with a letter or not a wp-vite-theme theme, `2` unresolved conflicts, `3` leftover placeholders (fix the template, not the output), `4` (`--check` only) something is not wired.
 
-4. **Wire it up** (first form only).
-   - `functions.php`: add `require_once get_theme_file_path('/inc/forms.php');` after the other requires. `forms.php` loads `inc/forms/*.php` and `inc/forms-entries.php` by itself.
-   - `src/js/main.js`: load the module only on pages that have a form, so Zod is not downloaded elsewhere:
+4. **Wire it up** (first form only). The installer from step 3 already does the first two points, once, without duplicating them when re-run; confirm in its `wired` output. Without them the form has no JavaScript: no custom errors, no typing filters, and nothing warns you.
+   - `functions.php`: `require_once get_theme_file_path('/inc/forms.php');` after the other requires. `forms.php` loads `inc/forms/*.php` and `inc/forms-entries.php` by itself.
+   - `src/js/main.js`: loads the module only on pages that have a form, so Zod is not downloaded elsewhere (the `.catch` makes an import failure visible in the console):
      ```js
      if (document.querySelector('form[data-form]')) {
-         import('./modules/form.js').then(({ initForms }) => initForms());
+         import('./modules/form.js').then(({ initForms }) => initForms()).catch(console.error);
      }
      ```
+   - **Zod: you install it, the script does not, and you do not ask the user** (the form does not work without it). If pnpm blocks it (`strictDepBuilds` for a dependency script, or `minimumReleaseAge` for a version that is too new), report it; never lower the protection or approve blindly.
    - **Zod, always the latest stable version.** Check it first with `pnpm view zod dist-tags` (`latest` is the stable one; never `next`, `beta`, `alpha` or `canary`), then `pnpm add zod@latest`. Same pnpm rules as wp-vite-theme: respect `minimumReleaseAge`, never bypass it, never use npm/yarn/npx; if pnpm resolves an older version because the newest is too recent, report which one it installed. The module uses the Zod 4 API (`z.object`, `z.string().trim()`, `z.boolean()`, `.refine(fn, { error, abort })`, `.safeParse`). If `latest` is a new major, read its migration guide, check those calls still exist, run `tests/` (step 11) and update `form.js.tpl` in this skill if anything changed.
+   - **Close the step with `node <skill>/scripts/install.mjs --check`.** It must exit `0` (engine copied, `functions.php` and `main.js` wired, `zod` in `package.json` and in `node_modules`). Exit `4` lists what is missing in `hints`. Do not call the form done before this passes.
 
 5. **Write the definition** `inc/forms/<id>.php` from `examples/inc/forms/contacto.php`, replacing `{{PREFIX}}` with the theme prefix. `<id>` is lowercase (`contacto`, `cotizacion`); it becomes the form's HTML id. Field keys are lowercase snake_case. Reserved keys: `action`, `form`, `nonce`, `token` and `<prefix>_hp` (the honeypot). The engine ignores a field with a reserved key and logs it, so pick another name.
 
@@ -133,6 +135,7 @@ If the engine needs a change, change the template in this skill (and bump the pl
 Copy these into the form's spec; the verifier checks each one.
 
 - [ ] Matches the Figma frame on desktop and mobile.
+- [ ] `install.mjs --check` exits `0`. In the browser's Network tab the form module (`form.js`) loads when the page has the form; typing a digit in a name field is not allowed and an empty submit shows the custom messages.
 - [ ] Parity test (step 11) passes: every case equal in JS, PHP and expected.
 - [ ] Empty submit: every required field shows its message, focus moves to the first one, status says "Revisa los campos marcados."
 - [ ] Name rejects digits and symbols; phone made only of dashes or spaces is rejected; `<script>` in the message is rejected.
@@ -165,3 +168,4 @@ T=$(curl -s -X POST https://<site>/wp-admin/admin-ajax.php -d action=<prefix>_fo
 - Do not hand-write `name`, `id`, `required`, `maxlength` or `aria-*` on fields: the helpers print them from the definition.
 - Do not trust the front: every rule must exist in the definition so PHP enforces it.
 - Do not install a Zod version other than the latest stable.
+- Do not consider the form finished while `install.mjs --check` does not exit `0`.
