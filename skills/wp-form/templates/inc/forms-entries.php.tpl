@@ -5,17 +5,16 @@ defined('ABSPATH') || exit;
  * Envíos guardados (skill wp-form, módulo opcional).
  *
  * Se instala solo si el proyecto quiere ver los envíos en el admin. Cada form decide
- * qué guarda con 'store' (none | all | failed) y cuántos días con 'retention'.
+ * qué guarda con 'store' (none | all | failed).
  *
  * - Solo administradores (manage_options): los envíos tienen datos personales.
  * - Solo lectura: no se crean ni se editan desde el admin. Sí se pueden borrar.
- * - Datos personales (Ley 29733): borrado automático por antigüedad y conexión con
- *   Herramientas → Exportar / Borrar datos personales de WordPress (busca por email).
+ * - Datos personales (Ley 29733): conexión con Herramientas → Exportar / Borrar datos
+ *   personales de WordPress (busca por email). Sin borrado automático por antigüedad.
  */
 
 const {{PREFIX_UPPER}}_ENTRY_TYPE = '{{ENTRY_TYPE}}';
 const {{PREFIX_UPPER}}_ENTRY_CAP = 'manage_options';
-const {{PREFIX_UPPER}}_ENTRY_PURGE_HOOK = '{{PREFIX}}_purge_entries';
 
 function {{PREFIX}}_register_entries()
 {
@@ -206,51 +205,6 @@ function {{PREFIX}}_entries_render($post)
     }
     echo '</tbody></table>';
 }
-
-/* -------------------------------------------------------------------------
- * Retención: borrado diario de envíos más antiguos que 'retention' días
- * ---------------------------------------------------------------------- */
-
-function {{PREFIX}}_entries_schedule_purge()
-{
-    if (!wp_next_scheduled({{PREFIX_UPPER}}_ENTRY_PURGE_HOOK)) {
-        wp_schedule_event(time() + HOUR_IN_SECONDS, 'daily', {{PREFIX_UPPER}}_ENTRY_PURGE_HOOK);
-    }
-}
-add_action('init', '{{PREFIX}}_entries_schedule_purge');
-
-function {{PREFIX}}_entries_unschedule_purge()
-{
-    wp_clear_scheduled_hook({{PREFIX_UPPER}}_ENTRY_PURGE_HOOK);
-}
-add_action('switch_theme', '{{PREFIX}}_entries_unschedule_purge');
-
-function {{PREFIX}}_entries_purge()
-{
-    $forms = array_keys((array) apply_filters('{{PREFIX}}_forms', []));
-
-    foreach ($forms as $form_id) {
-        $form = {{PREFIX}}_get_form($form_id);
-        $days = (int) ($form['retention'] ?? 0);
-        if ($days <= 0) {
-            continue;
-        }
-
-        $ids = get_posts([
-            'post_type'      => {{PREFIX_UPPER}}_ENTRY_TYPE,
-            'post_status'    => 'any',
-            'fields'         => 'ids',
-            'posts_per_page' => 200,
-            'meta_key'       => '_{{PREFIX}}_form',
-            'meta_value'     => $form_id,
-            'date_query'     => [['before' => $days . ' days ago', 'column' => 'post_date_gmt']],
-        ]);
-        foreach ($ids as $id) {
-            wp_delete_post($id, true);
-        }
-    }
-}
-add_action({{PREFIX_UPPER}}_ENTRY_PURGE_HOOK, '{{PREFIX}}_entries_purge');
 
 /* -------------------------------------------------------------------------
  * Privacidad: Herramientas → Exportar / Borrar datos personales

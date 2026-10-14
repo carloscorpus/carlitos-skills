@@ -14,7 +14,7 @@ The engine files are generic and are **not edited per project**. A new form only
 | `inc/forms.php` | `scripts/install.mjs` | No, engine: rules, validation, nonce, spam, mail, HTML helpers |
 | `src/js/modules/form.js` | `scripts/install.mjs` | No, engine: Zod schema from rules, errors, states, AJAX submit |
 | `inc/forms-entries.php` | `scripts/install.mjs --entries` | No, optional: "Envíos" menu in the admin |
-| `inc/forms/<id>.php` | you, from `examples/` | Yes: fields, recipients, store, retention, redirect |
+| `inc/forms/<id>.php` | you, from `examples/` | Yes: fields, recipients, store, redirect |
 | `template-parts/forms/<id>.php` | you, from `examples/` + Figma | Yes: the markup and classes |
 | `tests/` (stays in the skill) | — | Run against the theme to check front/back parity |
 
@@ -27,7 +27,7 @@ If the engine needs a change, change the template in this skill (and bump the pl
 2. **Ask what is missing.** Ask only what the spec and `CLAUDE.md` do not answer, in one message (AskUserQuestion when available):
    - **Recipients:** which emails receive it (`to`). Empty means the site's admin email; confirm that is intended.
    - **Thank-you page:** yes (its URL, goes in `redirect`) | no (success text under the button).
-   - **Saved submissions in the admin:** no | all, with status sent or failed | only failed. Maps to `store`: `none` | `all` | `failed`. If they are saved, also ask **how many days to keep them** (`retention`; suggest 180, `0` keeps them forever).
+   - **Saved submissions in the admin:** no | all, with status sent or failed | only failed. Maps to `store`: `none` | `all` | `failed`.
    - **CRM or other integration:** none | which one and its endpoint/docs.
    - **Cloudflare or a proxy in front of the site:** yes | no. If yes, step 8 applies; without it, every visitor shares one IP and the rate limit becomes site-wide.
    - **Privacy policy page:** check `get_privacy_policy_url()` in WP. If empty, ask for the page; the consent checkbox needs that link.
@@ -64,7 +64,7 @@ If the engine needs a change, change the template in this skill (and bump the pl
    | `checkbox` | Yes/no | boolean | — |
    | `consent` | Privacy consent | always required | — |
 
-   Every field accepts `label` (used in the email and admin), `required`, `min`, `max`, `autocomplete` and `messages` (`required`, `invalid`, `min`, `max`) to override the default Spanish messages. Form keys: `title`, `subject`, `to`, `reply_to` (field whose value goes in Reply-To, usually `email`), `store`, `retention` (days, `0` = keep), `redirect`, `success`, `rate_limit` (submissions per IP per hour, default 5).
+   Every field accepts `label` (used in the email and admin), `required`, `min`, `max`, `autocomplete` and `messages` (`required`, `invalid`, `min`, `max`) to override the default Spanish messages. Form keys: `title`, `subject`, `to`, `reply_to` (field whose value goes in Reply-To, usually `email`), `store`, `redirect`, `success`, `rate_limit` (submissions per IP per hour, default 5).
 
 6. **Write the view** `template-parts/forms/<id>.php` from `examples/template-parts/forms/contacto.php`. Classes and layout come from Figma and the `@theme` tokens; the contract does not change:
    - `<form ... <?php <prefix>_form_attrs($id); ?>>`: sets id, `data-form`, `data-ajax-url`, `data-rules` and `novalidate`. Errors are shown by the module, not by browser bubbles.
@@ -117,7 +117,7 @@ If the engine needs a change, change the template in this skill (and bump the pl
 - **Double submit:** button disabled while sending (front); identical content from the same IP within 2 minutes is accepted once (back); a duplicate never creates a second entry (DB).
 - **States:** errors per field with `aria-invalid` and focus on the first one; status text for success and errors. On error the data stays; on success the form resets, or redirects to the thank-you page. No page reload. Typing filters keep the cursor in place and wait for IME composition to finish.
 - **Server errors never leak details** to the user. Details go to the log only with `WP_DEBUG`.
-- **Saved submissions** (`inc/forms-entries.php`): only administrators (`manage_options`) see them; read-only (no editing, quick edit or status change; deleting is allowed); backslashes and special characters are kept as typed; daily purge of entries older than `retention` days (up to 200 per form per run, forms removed from `inc/forms/` are not purged); connected to WordPress Tools → Export / Erase Personal Data, which finds entries by the form's `email` field, so a form without one is only cleaned by the purge.
+- **Saved submissions** (`inc/forms-entries.php`): only administrators (`manage_options`) see them; read-only (no editing, quick edit or status change; deleting is allowed); backslashes and special characters are kept as typed; no automatic deletion by age (delete from the list when no longer needed); connected to WordPress Tools → Export / Erase Personal Data, which finds entries by the form's `email` field, so a form without one has to be deleted by hand.
 - **Transport:** `admin-ajax.php` with `FormData` and native `fetch`. No REST route, no axios.
 
 ## Response contract (admin-ajax)

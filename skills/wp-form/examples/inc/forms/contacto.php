@@ -14,7 +14,6 @@ add_filter('{{PREFIX}}_forms', function ($forms) {
         'reply_to' => 'email',                    // Campo cuyo valor va en Reply-To.
         'store'    => 'none',                     // none | all | failed (requiere inc/forms-entries.php)
         'redirect' => '',                         // URL de la página de gracias, o vacío.
-        'retention'=> 180,                        // Días que se guardan los envíos (0 = sin borrado).
         'success'  => 'Gracias, recibimos tu mensaje. Te responderemos pronto.',
 
         'fields' => [
