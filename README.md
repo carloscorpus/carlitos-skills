@@ -11,9 +11,10 @@
 
 ## Skills
 
-| Skill | Qué hace |
-|---|---|
-| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm. |
+| Skill                                            | Qué hace                                                                                                                                             |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
+| [`wp-form`](skills/wp-form/SKILL.md)             | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
 
 ## Instalación
 
@@ -60,6 +61,24 @@ vite.config.ts, pnpm-workspace.yaml, package.json
 - WordPress usa Vite en desarrollo y el manifest en producción.
 
 **Despliegue:** ejecuta `pnpm build` con el servidor detenido. Publica `dist/` junto con los PHP modificados. No publiques `hot`, `node_modules/`, `src/` ni los archivos de configuración.
+
+## wp-form
+
+En un tema creado con `wp-vite-theme`, pide `arma el form de contacto` (o usa un spec con `skill: wp-form`). Te pregunta lo que falta (destinatarios, página de gracias, si guarda los envíos, CRM) e instala el motor la primera vez.
+
+Cada form se define una sola vez en `inc/forms/<id>.php`. De esa definición salen los atributos del HTML, el esquema Zod del navegador y la validación en PHP: los dos lados usan las mismas reglas, en el mismo orden y con los mismos mensajes. `skills/wp-form/tests/` lo comprueba corriendo los mismos casos en PHP y en JS, y si algo llegara a diferir, el error del servidor vuelve al campo.
+
+```text
+inc/forms.php                   motor (no se edita por proyecto)
+src/js/modules/form.js          motor JS con Zod (no se edita por proyecto)
+inc/forms-entries.php           opcional: menú "Envíos" en el admin
+inc/forms/<id>.php              definición de cada form
+template-parts/forms/<id>.php   vista de cada form (diseño de Figma)
+```
+
+- Correo solo con `wp_mail()`: Mailpit en local, Fluent SMTP en producción.
+- Necesita `zod` en su última versión estable (`pnpm add zod@latest`); se carga solo en páginas con un form.
+- Envíos guardados (opcional): solo los ven administradores, con borrado automático por antigüedad y conectados a las herramientas de datos personales de WordPress.
 
 ## Agregar una skill
 
