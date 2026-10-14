@@ -52,8 +52,9 @@ try {
 const target = resolve(args.target);
 const slug = args.slug ?? basename(target);
 
-if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) {
-    fail(1, `Slug inválido "${slug}": usa minúsculas, números y guiones.`);
+// Debe empezar con letra: el prefijo PHP sale del slug y una función no puede empezar con número.
+if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(slug)) {
+    fail(1, `Slug inválido "${slug}": usa minúsculas, números y guiones, y empieza con una letra.`);
 }
 
 const missing = ['name', 'author', 'uri'].filter((key) => !args[key]?.trim());
