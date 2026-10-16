@@ -76,9 +76,11 @@ inc/forms/<id>.php              definición de cada form
 template-parts/forms/<id>.php   vista de cada form (diseño de Figma)
 ```
 
+El detalle de la skill (tipos de campo, contrato de la vista, integraciones, comportamiento del motor y criterios de aceptación) está en `skills/wp-form/references/`; el agente lo lee solo cuando el paso lo pide.
+
 - Correo solo con `wp_mail()`: Mailpit en local, Fluent SMTP en producción.
 - Necesita `zod` en su última versión estable (`pnpm add zod@latest`); se carga solo en páginas con un form.
-- Envíos guardados (opcional): solo los ven administradores, con borrado automático por antigüedad y conectados a las herramientas de datos personales de WordPress.
+- Envíos guardados (opcional): solo los ven administradores, sin borrado automático (se eliminan desde la lista) y conectados a las herramientas de datos personales de WordPress.
 
 ## Agregar una skill
 
