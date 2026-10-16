@@ -65,7 +65,7 @@ function {{PREFIX}}_get_form($form_id)
         'store'      => 'none',   // none | all | failed
         'redirect'   => '',       // URL de la página de gracias; vacío = mensaje en el form
         'success'    => 'Gracias, recibimos tu mensaje. Te responderemos pronto.',
-        'rate_limit' => 5,        // Envíos por IP por hora.
+        'rate_limit' => 10,       // Envíos por IP por hora.
         'fields'     => [],
     ]);
 

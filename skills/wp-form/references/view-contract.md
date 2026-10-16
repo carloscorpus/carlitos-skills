@@ -1,0 +1,16 @@
+# View contract
+
+Used in step 6 of SKILL.md, when writing `template-parts/forms/<id>.php` from `examples/template-parts/forms/contacto.php`. Classes and layout come from Figma and the `@theme` tokens; the contract does not change:
+
+- `<form ... <?php <prefix>_form_attrs($id); ?>>`: sets id, `data-form`, `data-ajax-url`, `data-rules` and `novalidate`. Errors are shown by the module, not by browser bubbles.
+- Every field: `<label for="<?php echo esc_attr(<prefix>_field_id($id, 'key')); ?>">` + the input with `<?php <prefix>_field_attrs($id, 'key'); ?>` (name, id, type, required, maxlength, inputmode, autocomplete, aria-describedby) + `<p <?php <prefix>_error_attrs($id, 'key'); ?>></p>`. Never hand-write those attributes.
+- **Radios** always inside `<fieldset>` with a `<legend>` (the question), one `<label>` per option wrapping its input `<prefix>_field_attrs($id, 'key', $value)`, and one shared error box inside the fieldset.
+- Select and radio options come from `<prefix>_field_options($id, 'key')`. A select starts with an empty `<option value="">`.
+- **Required fields:** a visible legend at the top ("Los campos con * son obligatorios.") plus `*` next to each required label. The `*` can be `aria-hidden`: screen readers already announce `required`.
+- **Consent:** the label links to the privacy policy page only when `get_privacy_policy_url()` is not empty; otherwise the text goes without a link (never `href=""`), and tell the user the page is missing.
+- `<?php <prefix>_form_honeypot(); ?>` inside the form.
+- Submit: `<button type="submit" data-loading-label="Enviando...">` with the text in `<span data-submit-label>`. It gets `disabled` and `data-loading` while sending (style with `data-loading:`).
+- Status: `<p data-form-status role="status" aria-live="polite"></p>` near the button. It gets `data-state="success|error"` (style with `data-[state=error]:`). Plain text only: **no modal** (that is a separate skill).
+- Inputs at least 16px font (`text-base`) so iOS does not zoom; controls at least 44px tall (`min-h-11`).
+
+Escape everything printed: `esc_html`, `esc_attr`, `esc_url`.
