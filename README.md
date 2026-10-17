@@ -11,10 +11,12 @@
 
 ## Skills
 
-| Skill                                            | Qué hace                                                                                                                                             |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
-| [`wp-form`](skills/wp-form/SKILL.md)             | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
+| Skill                                            | Versión | Requiere                                                | Qué hace                                                                                                                                             |
+| ------------------------------------------------ | ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.0.1   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
+| [`wp-form`](skills/wp-form/SKILL.md)             | 1.1.0   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
+
+Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Instalación
 
@@ -64,7 +66,7 @@ vite.config.ts, pnpm-workspace.yaml, package.json
 
 ## wp-form
 
-En un tema creado con `wp-vite-theme`, pide `arma el form de contacto` (o usa un spec con `skill: wp-form`). Te pregunta lo que falta (destinatarios, página de gracias, si guarda los envíos, CRM) e instala el motor la primera vez.
+En un tema WordPress con Vite y pnpm (creado con `wp-vite-theme` o a mano), pide `arma el form de contacto` (o usa un spec con `skill: wp-form`). Te pregunta lo que falta (destinatarios, página de gracias, si guarda los envíos, CRM) e instala el motor la primera vez. Detecta el JS principal leyendo `vite.config.*`; si no puede, te pide la ruta (`--entry`).
 
 Cada form se define una sola vez en `inc/forms/<id>.php`. De esa definición salen los atributos del HTML, el esquema Zod del navegador y la validación en PHP: los dos lados usan las mismas reglas, en el mismo orden y con los mismos mensajes. `skills/wp-form/tests/` lo comprueba corriendo los mismos casos en PHP y en JS, y si algo llegara a diferir, el error del servidor vuelve al campo.
 
@@ -84,10 +86,13 @@ El detalle de la skill (tipos de campo, contrato de la vista, integraciones, com
 
 ## Agregar una skill
 
-1. Crea `skills/<nombre>/SKILL.md` (con `name` y `description` en el frontmatter).
-2. Agrégala a la tabla de este README.
-3. Sube `version` en `.claude-plugin/plugin.json`.
-4. Haz commit y push; en cada PC, `/plugin marketplace update carlitos-skills`.
+1. Crea `skills/<nombre>/SKILL.md` con `name`, `description` y `metadata.version` (empieza en `"1.0.0"`) en el frontmatter, y un `CHANGELOG.md` en su carpeta.
+2. Si tiene scripts, ponlos en `skills/<nombre>/scripts/` y usa el código común (`import ... from './lib/common.mjs'`). **No edites `scripts/lib/`**: es una copia generada. Si necesitas cambiar algo común, edita `shared/common.mjs` y corre `node scripts/sync-shared.mjs`.
+3. No asumas otra skill: si necesita algo del tema, detéctalo o pregúntalo, y decláralo en la columna "Requiere" de la tabla de este README.
+4. Agrégala a la tabla de este README.
+5. Sube `metadata.version` de la skill que cambió, anótalo en su `CHANGELOG.md` y en el `CHANGELOG.md` de la raíz, y sube `version` en `.claude-plugin/plugin.json`.
+6. Antes del commit: `node scripts/sync-shared.mjs --check` (debe salir con `0`).
+7. Haz commit y push; en cada PC, `/plugin marketplace update carlitos-skills`.
 
 ## Licencia
 

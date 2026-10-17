@@ -8,28 +8,14 @@
 // Sale con JSON en stdout. Códigos: 0 ok, 1 error de uso/validación, 2 conflictos sin resolver,
 // 3 placeholders sin reemplazar. Nunca escribe nada si sale con código distinto de 0.
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import {
+    assertNoLeftovers, assertResolved, fail, planFiles, prefixFromSlug, renderTemplates, slugFromTarget, writeFiles,
+} from './lib/common.mjs';
 
 const templatesDir = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'templates');
-
-function fail(code, error, extra = {}) {
-    console.log(JSON.stringify({ ok: false, error, ...extra }, null, 2));
-    process.exit(code);
-}
-
-function listFiles(dir) {
-    return readdirSync(dir).flatMap((entry) => {
-        const full = join(dir, entry);
-        return statSync(full).isDirectory() ? listFiles(full) : [full];
-    });
-}
-
-function toList(value) {
-    return (value ?? '').split(',').map((s) => s.trim().replaceAll('\\', '/')).filter(Boolean);
-}
 
 let args;
 try {
@@ -50,12 +36,7 @@ try {
 }
 
 const target = resolve(args.target);
-const slug = args.slug ?? basename(target);
-
-// Debe empezar con letra: el prefijo PHP sale del slug y una función no puede empezar con número.
-if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(slug)) {
-    fail(1, `Slug inválido "${slug}": usa minúsculas, números y guiones, y empieza con una letra.`);
-}
+const slug = slugFromTarget(target, args.slug);
 
 const missing = ['name', 'author', 'uri'].filter((key) => !args[key]?.trim());
 if (missing.length) fail(1, `Faltan datos: ${missing.join(', ')}.`, { missing });
@@ -66,7 +47,7 @@ for (const key of ['name', 'author', 'uri']) {
 }
 if (!/^https?:\/\/\S+$/.test(args.uri)) fail(1, `URI inválida "${args.uri}": debe empezar con http:// o https://.`);
 
-const prefix = slug.replaceAll('-', '_');
+const prefix = prefixFromSlug(slug);
 const values = {
     THEME_NAME: args.name.trim(),
     THEME_SLUG: slug,
@@ -76,54 +57,25 @@ const values = {
     THEME_URI: args.uri.trim(),
 };
 
-// Render en memoria: nada se escribe hasta validar todo.
-const files = listFiles(templatesDir).map((source) => {
-    const rel = relative(templatesDir, source).split(sep).join('/').replace(/\.tpl$/, '');
-    let content = readFileSync(source, 'utf8');
-    if (source.endsWith('.tpl')) {
-        content = content.replace(/\{\{([A-Z_]+)\}\}/g, (match, key) => values[key] ?? match);
-    }
-    return { rel, dest: join(target, rel), content };
-});
+const files = renderTemplates(templatesDir, values, target);
+assertNoLeftovers(files);
 
-const leftovers = files.filter((f) => f.content.includes('{{')).map((f) => f.rel);
-if (leftovers.length) fail(3, 'Quedaron placeholders sin reemplazar.', { leftovers });
-
-const overwrite = new Set(toList(args.overwrite));
-const skip = new Set(toList(args.skip));
-const conflicts = files.filter((f) => existsSync(f.dest)).map((f) => f.rel);
-const unknown = [...overwrite, ...skip].filter((rel) => !conflicts.includes(rel));
-const unresolved = conflicts.filter((rel) => !overwrite.has(rel) && !skip.has(rel));
-
-const report = {
-    target,
-    values,
-    create: files.filter((f) => !conflicts.includes(f.rel)).map((f) => f.rel),
-    conflicts,
-};
+const plan = planFiles(files, args);
+const report = { target, values, create: plan.create, conflicts: plan.conflicts };
 
 if (args['dry-run']) {
     console.log(JSON.stringify({ ok: true, dryRun: true, ...report }, null, 2));
     process.exit(0);
 }
 
-if (unknown.length) fail(1, 'Archivos en --overwrite/--skip que no son conflictos.', { unknown });
-if (unresolved.length) {
-    fail(2, 'Hay archivos existentes: indica cada uno en --overwrite o --skip.', { ...report, unresolved });
-}
+assertResolved(plan, report, 'Hay archivos existentes: indica cada uno en --overwrite o --skip.');
 
-const written = [];
-for (const file of files) {
-    if (skip.has(file.rel)) continue;
-    mkdirSync(dirname(file.dest), { recursive: true });
-    writeFileSync(file.dest, file.content);
-    written.push(file.rel);
-}
+const written = writeFiles(files, plan);
 
 console.log(JSON.stringify({
     ok: true,
     ...report,
     written,
-    overwritten: [...overwrite],
-    skipped: [...skip],
+    overwritten: [...plan.overwrite],
+    skipped: [...plan.skip],
 }, null, 2));

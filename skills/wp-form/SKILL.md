@@ -1,6 +1,8 @@
 ---
 name: wp-form
-description: Build a secure, accessible form in a WordPress theme created with wp-vite-theme (contact, quote, newsletter, lead forms). Validation with Zod in the front and the same rules in PHP, nonce, sanitizing, anti-spam, double-submit protection, wp_mail (Mailpit local, Fluent SMTP prod) and optional saved submissions in the admin. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.
+description: Build a secure, accessible form in a WordPress theme that uses Vite and pnpm (contact, quote, newsletter, lead forms). Validation with Zod in the front and the same rules in PHP, nonce, sanitizing, anti-spam, double-submit protection, wp_mail (Mailpit local, Fluent SMTP prod) and optional saved submissions in the admin. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.
+metadata:
+  version: "1.1.0"
 ---
 
 # wp-form
@@ -24,7 +26,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 
 ## Steps
 
-1. **Read context.** From the theme root: read `CLAUDE.md` (prefix, slug) and the form's spec if there is one. If a Figma link is given, read the frame through the Figma MCP for the view (follow the Figma server's design-to-code instructions). The spec says what the form does; Figma says how it looks. If they contradict (fields, required ones), stop and ask: do not decide.
+1. **Read context.** From the theme root: read `CLAUDE.md` if the theme has one (prefix, slug) and the form's spec if there is one. Without `CLAUDE.md`, the prefix is the theme folder name with `-` turned into `_` (`install.mjs` prints it as `values.PREFIX`); if the theme's existing PHP functions use another prefix, ask the user and pass it with `--slug`. The theme only needs `style.css`, `functions.php` and `vite.config.*`: it does not have to come from `wp-vite-theme`. If a Figma link is given, read the frame through the Figma MCP for the view (follow the Figma server's design-to-code instructions). The spec says what the form does; Figma says how it looks. If they contradict (fields, required ones), stop and ask: do not decide.
 
 2. **Ask what is missing.** Ask only what the spec and `CLAUDE.md` do not answer, in one message (AskUserQuestion when available):
    - **Recipients:** which emails receive it (`to`). Empty means the site's admin email; confirm that is intended.
@@ -40,19 +42,19 @@ Detail lives in `references/` and is read only by the step that points to it.
    ```
    node <skill>/scripts/install.mjs --dry-run [--entries]
    ```
-   Add `--entries` if any form stores submissions (it can be added later by re-running with `--entries`). The JSON lists `create`, `unchanged` and `conflicts`. If `conflicts` is non-empty, show them and ask file by file: overwrite or keep. Then run without `--dry-run`, with `--overwrite` / `--skip` covering every conflict. Exit codes: `0` ok, `1` invalid input, slug not starting with a letter or not a wp-vite-theme theme, `2` unresolved conflicts, `3` leftover placeholders (fix the template, not the output), `4` (`--check` only) something is not wired.
+   Add `--entries` if any form stores submissions (it can be added later by re-running with `--entries`). The installer finds Vite's main JS file by reading `vite.config.*` and prints it as `entry`. If it exits `1` with `candidates` (or none), ask the user which file is the theme's main JS and re-run with `--entry <path relative to the theme root>`. The JSON lists `create`, `unchanged` and `conflicts`. If `conflicts` is non-empty, show them and ask file by file: overwrite or keep. Then run without `--dry-run`, with `--overwrite` / `--skip` covering every conflict. Exit codes: `0` ok, `1` invalid input, slug not starting with a letter, theme without `functions.php` / `vite.config.*`, or main JS not found (see `--entry`), `2` unresolved conflicts, `3` leftover placeholders (fix the template, not the output), `4` (`--check` only) something is not wired.
 
 4. **Wire it up** (first form only). The installer from step 3 already does the first two points, once, without duplicating them when re-run; confirm in its `wired` output. Without them the form has no JavaScript: no custom errors, no typing filters, and nothing warns you.
    - `functions.php`: `require_once get_theme_file_path('/inc/forms.php');` after the other requires. `forms.php` loads `inc/forms/*.php` and `inc/forms-entries.php` by itself.
-   - `src/js/main.js`: loads the module only on pages that have a form, so Zod is not downloaded elsewhere (the `.catch` makes an import failure visible in the console):
+   - The theme's main JS (`entry` in the installer output; `src/js/main.js` in a wp-vite-theme theme): loads the module only on pages that have a form, so Zod is not downloaded elsewhere (the `.catch` makes an import failure visible in the console). The path is computed from `entry` to `src/js/modules/form.js`:
      ```js
      if (document.querySelector('form[data-form]')) {
          import('./modules/form.js').then(({ initForms }) => initForms()).catch(console.error);
      }
      ```
    - **Zod: you install it, the script does not, and you do not ask the user** (the form does not work without it). If pnpm blocks it (`strictDepBuilds` for a dependency script, or `minimumReleaseAge` for a version that is too new), report it; never lower the protection or approve blindly.
-   - **Zod, always the latest stable version.** Check it first with `pnpm view zod dist-tags` (`latest` is the stable one; never `next`, `beta`, `alpha` or `canary`), then `pnpm add zod@latest`. Same pnpm rules as wp-vite-theme: respect `minimumReleaseAge`, never bypass it, never use npm/yarn/npx; if pnpm resolves an older version because the newest is too recent, report which one it installed. The module uses the Zod 4 API (`z.object`, `z.string().trim()`, `z.boolean()`, `.refine(fn, { error, abort })`, `.safeParse`). If `latest` is a new major, read its migration guide, check those calls still exist, run `tests/` (step 11) and update `form.js.tpl` in this skill if anything changed.
-   - **Close the step with `node <skill>/scripts/install.mjs --check`.** It must exit `0` (engine copied, `functions.php` and `main.js` wired, `zod` in `package.json` and in `node_modules`). Exit `4` lists what is missing in `hints`. Do not call the form done before this passes.
+   - **Zod, always the latest stable version.** Check it first with `pnpm view zod dist-tags` (`latest` is the stable one; never `next`, `beta`, `alpha` or `canary`), then `pnpm add zod@latest`. pnpm rules: respect `minimumReleaseAge`, never bypass it, never use npm/yarn/npx; if pnpm resolves an older version because the newest is too recent, report which one it installed. The module uses the Zod 4 API (`z.object`, `z.string().trim()`, `z.boolean()`, `.refine(fn, { error, abort })`, `.safeParse`). If `latest` is a new major, read its migration guide, check those calls still exist, run `tests/` (step 11) and update `form.js.tpl` in this skill if anything changed.
+   - **Close the step with `node <skill>/scripts/install.mjs --check`.** It must exit `0` (engine copied, `functions.php` and the main JS wired, `zod` in `package.json` and in `node_modules`). Exit `4` lists what is missing in `hints`. It also prints `engineVersion` (installed vs this skill's): when they differ, the theme has an older engine; run `--dry-run`, show the conflicts and ask before overwriting (never overwrite silently). Do not call the form done before this passes.
 
 5. **Write the definition** `inc/forms/<id>.php` from `examples/inc/forms/contacto.php`, replacing `{{PREFIX}}` with the theme prefix. Read [references/field-types.md](references/field-types.md) for the field types, their default rules, the reserved keys and the form-level keys.
 

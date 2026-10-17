@@ -1,5 +1,6 @@
 /*
  * Módulo de formularios (skill wp-form).
+ * Versión del motor: {{ENGINE_VERSION}}
  *
  * Es genérico: sirve para todos los forms del tema. Cada <form data-form> trae sus
  * reglas en data-rules (generadas en PHP desde inc/forms/<id>.php) y aquí se arma

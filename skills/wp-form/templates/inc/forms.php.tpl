@@ -3,6 +3,7 @@ defined('ABSPATH') || exit;
 
 /*
  * Motor de formularios (skill wp-form).
+ * Versión del motor: {{ENGINE_VERSION}}
  *
  * Cada formulario se define una sola vez en `inc/forms/<id>.php` con el filtro
  * `{{PREFIX}}_forms`. De esa definición salen las tres capas:
