@@ -3,9 +3,16 @@ defined('ABSPATH') || exit;
 
 /*
  * Ejemplo de vista: modal de contenido / promoción.
- * Las clases son de ejemplo: en cada proyecto salen de Figma y de los tokens del @theme.
- * Lo que no cambia es la estructura: {{PREFIX}}_modal_start() / {{PREFIX}}_modal_end() imprimen el
- * <dialog>, el título, el botón de cerrar y la zona con scroll. El contenido de en medio es libre.
+ * Los valores y las clases son de ejemplo: en cada proyecto salen de Figma y de los tokens del
+ * @theme (references/figma-mapping.md). Lo que no cambia es la estructura:
+ * {{PREFIX}}_modal_start() / {{PREFIX}}_modal_end() imprimen el <dialog>, el título, el botón de
+ * cerrar y la zona con scroll. El contenido de en medio es libre.
+ *
+ *   width    el ancho exacto del frame de Figma. `size` (sm/md/lg/xl) es solo un respaldo para
+ *            cuando no hay diseño: con diseño, no lo uses.
+ *   mobile   cómo se ve en el frame móvil: 'center' | 'sheet' | 'fullscreen'.
+ *   *_class  clases del diseño para cada parte. Lo común a varios modales (radio, relleno, fondo
+ *            oscuro, estilo del título) va una vez al CSS del proyecto como variables --modal-*.
  *
  * Uso: get_template_part('template-parts/modals/contenido');
  * Disparador (en cualquier parte de la página):
@@ -13,7 +20,10 @@ defined('ABSPATH') || exit;
  */
 {{PREFIX}}_modal_start('promo', [
     'title' => 'Título de la promoción',
-    'size' => 'lg',
+    'width' => '45rem',
+    'mobile' => 'sheet',
+    'title_class' => 'text-2xl font-bold',
+    'body_class' => 'pt-4',
 ]);
 ?>
 <div class="grid gap-6 md:grid-cols-2 md:items-center">

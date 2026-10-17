@@ -13,7 +13,7 @@ defined('ABSPATH') || exit;
 {{PREFIX}}_modal_start('confirmar-eliminar', [
     'title' => '¿Eliminar este elemento?',
     'description' => 'Esta acción no se puede deshacer.',
-    'size' => 'sm',
+    'width' => '24rem', // el ancho del frame de Figma; `size => 'sm'` es solo un respaldo sin diseño
     'role' => 'alertdialog',
 ]);
 ?>

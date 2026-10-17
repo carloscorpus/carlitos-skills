@@ -17,7 +17,7 @@ defined('ABSPATH') || exit;
 {{PREFIX}}_modal_start('contacto-modal', [
     'title' => 'Escríbenos',
     'description' => 'Te respondemos en menos de un día hábil.',
-    'size' => 'md',
+    'width' => '32rem', // el ancho del frame de Figma
 ]);
 
 get_template_part('template-parts/forms/contacto');

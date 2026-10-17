@@ -15,7 +15,7 @@
 | ------------------------------------------------ | ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.1.0   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
 | [`wp-form`](skills/wp-form/SKILL.md)             | 1.2.0   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
-| [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Modales, drawers, lightbox y confirmaciones con el `<dialog>` nativo: accesibles, responsive y con el contenido libre en cada proyecto. |
+| [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.1.0   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Modales, drawers, lightbox y confirmaciones con el `<dialog>` nativo: accesibles, responsive y con el contenido y el diseño de cada proyecto (Figma). |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` y `wp-modal` necesitan. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -100,6 +100,7 @@ src/css/modal.css               estilos funcionales con variables --modal-* (se 
 template-parts/modals/<id>.php  vista de cada modal (contenido libre)
 ```
 
+- **El diseño sale de Figma, no de la skill.** El motor solo fija el comportamiento y la accesibilidad. El ancho exacto va en `width`, el comportamiento en móvil en `mobile` (`center`, `sheet` o `fullscreen`), el aspecto en clases por parte (`title_class`, `close_class`, `body_class`...) y lo común a varios modales en variables `--modal-*` del proyecto. Los tamaños `sm/md/lg/xl/full` son solo un respaldo cuando no hay diseño. Ver `skills/wp-modal/references/figma-mapping.md`.
 - Detecta el JS y el CSS principales leyendo `vite.config.*`; si no puede, te pide las rutas (`--entry`, `--css`).
 - Un modal no mejora el SEO: la skill solo evita perjudicarlo (contenido en el HTML, enlace rastreable si hay una página real, sin pop-ups al cargar salvo que el proyecto lo pida).
 - `skills/wp-modal/tests/check.mjs` audita el HTML renderizado de una página (nombre accesible, `h1`, botón de cerrar, disparadores, imágenes). La lista de pruebas en navegador está en `skills/wp-modal/references/acceptance.md`.
