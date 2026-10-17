@@ -2,7 +2,7 @@
 name: wp-form
 description: Build a secure, accessible form in a WordPress theme that uses Vite and pnpm (contact, quote, newsletter, lead forms). Validation with Zod in the front and the same rules in PHP, nonce, sanitizing, anti-spam, double-submit protection, wp_mail (Mailpit local, Fluent SMTP prod) and optional saved submissions in the admin. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # wp-form
@@ -16,6 +16,7 @@ The engine files are generic and are **not edited per project**. A new form only
 | `inc/forms.php` | `scripts/install.mjs` | No, engine: rules, validation, nonce, spam, mail, HTML helpers |
 | `src/js/modules/form.js` | `scripts/install.mjs` | No, engine: Zod schema from rules, errors, states, AJAX submit |
 | `inc/forms-entries.php` | `scripts/install.mjs --entries` | No, optional: "Envíos" menu in the admin |
+| wp-form block in `CLAUDE.md` | `scripts/install.mjs` (from `claude-block.md.tpl`) | No: do not edit it by hand, the next install replaces it |
 | `inc/forms/<id>.php` | you, from `examples/` | Yes: fields, recipients, store, redirect |
 | `template-parts/forms/<id>.php` | you, from `examples/` + Figma | Yes: the markup and classes |
 | `tests/` (stays in the skill) | — | Run against the theme to check front/back parity |
@@ -42,7 +43,7 @@ Detail lives in `references/` and is read only by the step that points to it.
    ```
    node <skill>/scripts/install.mjs --dry-run [--entries]
    ```
-   Add `--entries` if any form stores submissions (it can be added later by re-running with `--entries`). The installer finds Vite's main JS file by reading `vite.config.*` and prints it as `entry`. If it exits `1` with `candidates` (or none), ask the user which file is the theme's main JS and re-run with `--entry <path relative to the theme root>`. The JSON lists `create`, `unchanged` and `conflicts`. If `conflicts` is non-empty, show them and ask file by file: overwrite or keep. Then run without `--dry-run`, with `--overwrite` / `--skip` covering every conflict. Exit codes: `0` ok, `1` invalid input, slug not starting with a letter, theme without `functions.php` / `vite.config.*`, or main JS not found (see `--entry`), `2` unresolved conflicts, `3` leftover placeholders (fix the template, not the output), `4` (`--check` only) something is not wired.
+   Add `--entries` if any form stores submissions (it can be added later by re-running with `--entries`). The installer finds Vite's main JS file by reading `vite.config.*` and prints it as `entry`. If it exits `1` with `candidates` (or none), ask the user which file is the theme's main JS and re-run with `--entry <path relative to the theme root>`. The JSON lists `create`, `unchanged` and `conflicts`, and `claudeMd`: the installer keeps a short wp-form block (between `<!-- wp-form:start -->` and `<!-- wp-form:end -->`) in the theme's `CLAUDE.md` so future sessions know how the forms are organized. `added` / `updated` / `unchanged` are fine; `missing` means the theme has no `CLAUDE.md` (it is not created: tell the user). If `conflicts` is non-empty, show them and ask file by file: overwrite or keep. Then run without `--dry-run`, with `--overwrite` / `--skip` covering every conflict. Exit codes: `0` ok, `1` invalid input, slug not starting with a letter, theme without `functions.php` / `vite.config.*`, or main JS not found (see `--entry`), `2` unresolved conflicts, `3` leftover placeholders (fix the template, not the output), `4` (`--check` only) something is not wired.
 
 4. **Wire it up** (first form only). The installer from step 3 already does the first two points, once, without duplicating them when re-run; confirm in its `wired` output. Without them the form has no JavaScript: no custom errors, no typing filters, and nothing warns you.
    - `functions.php`: `require_once get_theme_file_path('/inc/forms.php');` after the other requires. `forms.php` loads `inc/forms/*.php` and `inc/forms-entries.php` by itself.

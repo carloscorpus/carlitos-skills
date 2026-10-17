@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.2.0] - 2026-10-17
+
+### Agregado
+- `install.mjs` agrega al `CLAUDE.md` del tema un bloque corto de wp-form (entre `<!-- wp-form:start -->` y `<!-- wp-form:end -->`): dónde está cada definición y vista, qué archivos no se editan y la regla de Zod. Se actualiza al reinstalar sin duplicarse y sin tocar el resto del archivo. Si el tema no tiene `CLAUDE.md`, no lo crea (`claudeMd: "missing"`).
+
 ## [1.1.0] - 2026-10-17
 
 ### Agregado

@@ -2,6 +2,12 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.4.0] - 2026-10-17
+
+### Cambiado
+- `wp-vite-theme` 1.1.0: el tema nuevo incluye `page-templates/template-inicio.php` ("Página de inicio") y un `CLAUDE.md` más corto.
+- `wp-form` 1.2.0: agrega su bloque al `CLAUDE.md` del tema. Convención para las skills nuevas: cada una mantiene su propio bloque corto (`claudeBlock` en `shared/common.mjs`).
+
 ## [1.3.0] - 2026-10-17
 
 ### Agregado
