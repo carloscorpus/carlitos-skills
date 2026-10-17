@@ -63,18 +63,21 @@ export function listFiles(dir) {
 
 const PLACEHOLDER = /\{\{([A-Z_]+)\}\}/g;
 
+export const renderString = (text, values) => text.replace(PLACEHOLDER, (match, key) => values[key] ?? match);
+
 // Render en memoria: nada se escribe hasta validar todo. `filter` (opcional) recibe cada archivo.
 export function renderTemplates(templatesDir, values, target, filter = () => true) {
     return listFiles(templatesDir)
         .map((source) => {
             const rel = relative(templatesDir, source).split(sep).join('/').replace(/\.tpl$/, '');
             let content = readFileSync(source, 'utf8');
-            if (source.endsWith('.tpl')) content = content.replace(PLACEHOLDER, (match, key) => values[key] ?? match);
+            if (source.endsWith('.tpl')) content = renderString(content, values);
             return { rel, dest: join(target, rel), content };
         })
         .filter(filter);
 }
 
+// `files` puede traer cualquier objeto con { rel, content } (archivos o bloques).
 export function assertNoLeftovers(files) {
     const leftovers = files.filter((f) => new RegExp(PLACEHOLDER.source).test(f.content)).map((f) => f.rel);
     if (leftovers.length) fail(3, 'Quedaron placeholders sin reemplazar.', { leftovers });
@@ -126,6 +129,28 @@ export function patchFile(path, update) {
     const original = readFileSync(path, 'utf8');
     const eol = original.includes('\r\n') ? '\r\n' : '\n';
     writeFileSync(path, update(original.replace(/\r\n/g, '\n')).replace(/\n/g, eol));
+}
+
+// ---------- Bloque de una skill en CLAUDE.md ----------
+
+// Cada skill mantiene su bloque corto entre marcas `<!-- <id>:start -->` / `<!-- <id>:end -->`.
+// Idempotente: si ya existe se reemplaza solo ese bloque; si no, se agrega al final. No toca el resto.
+// Devuelve { status: 'added' | 'updated' | 'unchanged' | 'missing', write() }. Si el archivo no existe
+// no lo crea ('missing'): CLAUDE.md es del proyecto, no de la skill.
+export function claudeBlock(path, id, body) {
+    if (!existsSync(path)) return { status: 'missing', write() {} };
+
+    const original = readFileSync(path, 'utf8');
+    const eol = original.includes('\r\n') ? '\r\n' : '\n';
+    const text = original.replace(/\r\n/g, '\n');
+    const start = `<!-- ${id}:start -->`;
+    const end = `<!-- ${id}:end -->`;
+    const block = `${start}\n${body.trim()}\n${end}`;
+    const existing = new RegExp(`${start}[\\s\\S]*?${end}`);
+
+    const next = existing.test(text) ? text.replace(existing, () => block) : text.replace(/\n*$/, '\n\n') + block + '\n';
+    const status = next === text ? 'unchanged' : existing.test(text) ? 'updated' : 'added';
+    return { status, write: () => writeFileSync(path, next.replace(/\n/g, eol)) };
 }
 
 // ---------- Vite: configuración y JS de entrada ----------

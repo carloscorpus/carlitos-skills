@@ -2,7 +2,7 @@
 name: wp-vite-theme
 description: Scaffold a new WordPress theme (Local WP) with Vite + JS + Tailwind (latest) + pnpm. Use when the user starts a new WP theme project, says "inicia tema", "nuevo tema wp", "scaffold theme", "arranca proyecto wp con vite", or asks for the usual enqueue.php / vite.config.ts / style.css / header / footer base.
 metadata:
-  version: "1.0.1"
+  version: "1.1.0"
 ---
 
 # wp-vite-theme
@@ -62,7 +62,7 @@ The Vite `base` needs no placeholder: `vite.config.ts` derives the theme folder 
        if ($p.Name -eq 'node.exe' -and $p.CommandLine -like "*<theme path>*vite*") { Stop-Process -Id $p.ProcessId -Force }
        ```
        Only kill a `node.exe` whose command line contains this theme's path and `vite`; anything else, report it and stop. Then confirm 5173 is free and delete `hot` (a forced kill skips Vite's cleanup handler, so `hot` is expected to remain). The `hot` cleanup on Ctrl+C cannot be verified from this shell: tell the user it is verified only when they run `pnpm dev` in their own terminal and press Ctrl+C (optional).
-8. Tell user: `pnpm dev`, activate theme in WP admin, and the Deploy rules from the generated `CLAUDE.md`.
+8. Tell user: `pnpm dev`, activate theme in WP admin, create the page "Inicio" with the template "Página de inicio" and set it as the front page (Ajustes → Lectura → Una página estática), and the Deploy rules from the generated `CLAUDE.md`. The theme does not create the page by itself.
 
 ## Rules baked into templates
 
@@ -75,5 +75,6 @@ The Vite `base` needs no placeholder: `vite.config.ts` derives the theme folder 
 - CSS in dev is enqueued with `<link>` to the Vite server. A PHP edit triggers a full reload either way (the Tailwind Vite plugin sends `full-reload`).
 - Escape output: `esc_html`, `esc_url`, `esc_attr`.
 - `header.php` calls `wp_body_open()`; `footer.php` calls `wp_footer()`.
+- Page templates live in `page-templates/template-<name>.php` (starts with `template-inicio.php`, `Template Name: Página de inicio`). Each one calls `get_header()` / `get_footer()` once. Never create `front-page.php` (WordPress picks it before the template chosen in the admin).
 - New features → new file in `inc/`, required from `functions.php`. Keep `functions.php` only as loader.
 - Deploy: `dist/` is gitignored; build with dev server stopped, upload `dist/` plus modified PHP. Never upload `hot`, `node_modules/`, `src/`, or config files.

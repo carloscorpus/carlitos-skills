@@ -1,42 +1,34 @@
 # {{THEME_NAME}} — tema WordPress
 
-Stack: WordPress (Local WP) + Vite + JS + Tailwind + ACF (campos creados desde el admin).
+Stack: WordPress (Local WP) + Vite + Tailwind + pnpm. Los campos ACF se crean desde el admin.
 
-## Reglas
-- Gestor de paquetes: **pnpm** únicamente. Nunca npm/yarn/npx (usar `pnpm dlx`).
-- Prefijo PHP: `{{PREFIX}}_`. Text domain: `{{THEME_SLUG}}`.
-- `functions.php` solo carga archivos de `inc/`. Lógica nueva → nuevo archivo en `inc/`.
-- Archivos de `inc/` empiezan con `defined('ABSPATH') || exit;`.
-- Escapar toda salida: `esc_html`, `esc_url`, `esc_attr`.
-- Partes reutilizables en `template-parts/`.
-- Dev = entorno local (`wp_get_environment_type`) + archivo `hot` (lo crea `pnpm dev`, HMR en `localhost:5173`). Si no, producción vía `dist/manifest.json`.
-- Scripts siempre con `type="module"` (dev y prod).
-- No crear `acf.php` ni field groups en código salvo que se pida.
+## Paquetes (pnpm)
+- Usa solo `pnpm`. Nunca `npm`, `yarn` ni `npx`; para ejecutar un paquete usa `pnpm dlx`.
+- No bajes `minimumReleaseAge` en `pnpm-workspace.yaml`.
+- No apruebes `allowBuilds` sin revisar antes el paquete y avisarme.
+
+## PHP
+- Empieza el nombre de toda función, hook y constante con el prefijo `{{PREFIX}}_`. El text domain es `{{THEME_SLUG}}`.
+- En `functions.php` solo escribe `require_once` de archivos de `inc/`.
+- Pon el código nuevo en un archivo nuevo de `inc/`, y agrégalo a `functions.php`.
+- Empieza todo archivo de `inc/` con `defined('ABSPATH') || exit;`.
+- Escapa toda salida con `esc_html`, `esc_url` o `esc_attr`.
+- Los campos ACF se crean desde el admin: no crees `acf.php` ni field groups en código por iniciativa propia. Si te lo pido, hazlo.
+
+## Páginas
+- Crea cada página con diseño propio como `page-templates/template-<nombre>.php`, con `Template Name:` en la cabecera.
+- Llama una sola vez a `get_header()` y a `get_footer()` en cada plantilla, y pon el contenido dentro de `<main id="main-content">`.
+- La página de inicio es `page-templates/template-inicio.php`. No crees `front-page.php`: WordPress lo usa antes que la plantilla elegida en el admin.
+- Pon las secciones reutilizables en `template-parts/sections/`.
 
 ## Tailwind
-- Detección automática de clases; no agregar `@source` salvo que una ruta no se detecte.
-
-## Seguridad pnpm
-- La configuración vive en `pnpm-workspace.yaml` (`minimumReleaseAge`, `trustPolicy`, `blockExoticSubdeps`, `strictDepBuilds`).
-- `minimumReleaseAge: 1440` es el valor decidido; no modificarlo sin preguntar.
-- Nunca aprobar builds (`allowBuilds`) sin revisar el paquete.
-- Nunca usar npm/yarn/npx.
+- No agregues `@source`: Tailwind detecta las clases solo. Agrégalo únicamente si una ruta no se detecta.
 
 ## Comandos
-- `pnpm dev` — servidor Vite con HMR (crea `hot`; se borra al detenerlo)
-- `pnpm build` — genera `dist/` + `manifest.json`
-
-## Estructura
-- `inc/` — `setup.php`, `enqueue.php`, `cleanup.php`
-- `template-parts/` — partes reutilizables
-- `src/css/input.css` — Tailwind
-- `src/js/main.js`
-
-## Entradas Vite
-- `src/css/input.css` (Tailwind)
-- `src/js/main.js`
+- `pnpm dev`: inicia Vite con HMR (crea `hot` y lo borra al detenerse).
+- `pnpm build`: genera `dist/` y `manifest.json`.
 
 ## Deploy
-- El repo guarda solo código fuente; `dist/` está en `.gitignore` y no se commitea.
-- Para publicar: `pnpm build` con el dev server detenido, y subir `dist/` más los PHP modificados.
-- Nunca subir al servidor: `hot`, `node_modules/`, `src/`, ni archivos de config (`package.json`, `pnpm-*`, `vite.config.ts`, `CLAUDE.md`).
+- No commitees `dist/` (está en `.gitignore`).
+- Para publicar, detén el dev server, corre `pnpm build` y sube `dist/` más los PHP modificados.
+- No subas al servidor `hot`, `node_modules/`, `src/` ni archivos de config (`package.json`, `pnpm-*`, `vite.config.ts`, `CLAUDE.md`).

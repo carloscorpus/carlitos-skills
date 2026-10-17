@@ -2,6 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.1.0] - 2026-10-17
+
+### Agregado
+- `page-templates/template-inicio.php` con `Template Name: Página de inicio`: la página de inicio ya viene creada, con `get_header()`, `<main id="main-content">` y `get_footer()` una sola vez.
+- Regla en `CLAUDE.md` y en la skill: las plantillas de página van en `page-templates/template-<nombre>.php` y no se crea `front-page.php` (WordPress lo usa antes que la plantilla elegida en el admin).
+
+### Cambiado
+- `CLAUDE.md` del tema más corto (de unas 45 a 20 líneas): sin las secciones Estructura y Entradas Vite (se ven con un `ls`), sin la repetición de pnpm y con la seguridad pnpm resumida. Quedan solo las reglas que evitan errores. Cada skill que se use después agrega su propio bloque corto.
+- El paso final indica crear la página "Inicio" con esa plantilla y fijarla como página de inicio en Ajustes → Lectura.
+
 ## [1.0.1] - 2026-10-17
 
 ### Cambiado

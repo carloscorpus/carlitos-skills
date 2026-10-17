@@ -13,6 +13,8 @@
 // Copia templates/ reemplazando {{...}}. --entries agrega inc/forms-entries.php
 // (envíos guardados en el admin). Después conecta el motor al tema, sin duplicar nada si
 // se vuelve a correr: agrega el require_once en functions.php y el import() en el JS principal.
+// Si el tema tiene CLAUDE.md, agrega (o actualiza) un bloque corto de la skill entre marcas
+// <!-- wp-form:start --> / <!-- wp-form:end -->; no crea el archivo ni toca el resto.
 // No instala zod ni ejecuta pnpm: eso lo hace el agente (ver SKILL.md, paso 4).
 //
 // --check no escribe nada: verifica que el motor esté completo y conectado (archivos,
@@ -28,8 +30,8 @@ import { dirname, isAbsolute, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import {
-    assertNoLeftovers, assertResolved, detectJsEntry, fail, findViteConfig, patchFile, planFiles,
-    prefixFromSlug, relativeImport, renderTemplates, skillVersion, slugFromTarget, writeFiles,
+    assertNoLeftovers, assertResolved, claudeBlock, detectJsEntry, fail, findViteConfig, patchFile, planFiles,
+    prefixFromSlug, relativeImport, renderString, renderTemplates, skillVersion, slugFromTarget, writeFiles,
 } from './lib/common.mjs';
 
 const skillDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -149,7 +151,11 @@ const values = {
 };
 
 const files = renderTemplates(templatesDir, values, target, (file) => args.entries || file.rel !== ENTRIES_FILE);
-assertNoLeftovers(files);
+const claudeText = renderString(readFileSync(join(skillDir, 'claude-block.md.tpl'), 'utf8'), values);
+assertNoLeftovers([...files, { rel: 'claude-block.md.tpl', content: claudeText }]);
+
+// Bloque corto de la skill en CLAUDE.md del tema (si el tema tiene uno).
+const claude = claudeBlock(join(target, 'CLAUDE.md'), 'wp-form', claudeText);
 
 // Un archivo idéntico al que se instalaría no es conflicto.
 const plan = planFiles(files, args, { skipIdentical: true });
@@ -166,6 +172,7 @@ const report = {
         ...(state.functions ? [] : ['functions.php']),
         ...(state.main ? [] : [entry]),
     ],
+    claudeMd: claude.status,
 };
 
 if (args['dry-run']) {
@@ -196,6 +203,7 @@ if (!state.main) {
     patchFile(join(target, entry), (text) => text.replace(/\n*$/, '\n\n') + IMPORT_BLOCK.join('\n') + '\n');
     wired.push(entry);
 }
+claude.write();
 
 console.log(JSON.stringify({
     ok: true,
