@@ -2,6 +2,12 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.5.0] - 2026-10-17
+
+### Agregado
+- Skill `wp-modal` 1.0.0: modales, drawers, lightbox y confirmaciones con el `<dialog>` nativo.
+- `shared/common.mjs`: `detectCssEntry` (detecta el CSS principal de Vite como ya se hacía con el JS). Las copias de las tres skills se actualizaron; `wp-form` y `wp-vite-theme` no cambian de comportamiento.
+
 ## [1.4.0] - 2026-10-17
 
 ### Cambiado
