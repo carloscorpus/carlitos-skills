@@ -1,6 +1,8 @@
 ---
 name: wp-vite-theme
 description: Scaffold a new WordPress theme (Local WP) with Vite + JS + Tailwind (latest) + pnpm. Use when the user starts a new WP theme project, says "inicia tema", "nuevo tema wp", "scaffold theme", "arranca proyecto wp con vite", or asks for the usual enqueue.php / vite.config.ts / style.css / header / footer base.
+metadata:
+  version: "1.0.1"
 ---
 
 # wp-vite-theme
