@@ -14,14 +14,21 @@
         --modal-color: CanvasText;
         --modal-radius: 1rem;
         --modal-padding: 1.5rem;
-        --modal-duration: 200ms;
+        --modal-duration: 200ms; /* modal centrado: aparece con un fundido corto */
+        --modal-slide-duration: 300ms; /* paneles laterales y hoja inferior: se deslizan */
+        --modal-slide-easing: cubic-bezier(0.32, 0.72, 0, 1);
         --modal-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.35);
         --modal-width-sm: 24rem;
         --modal-width-md: 32rem;
         --modal-width-lg: 48rem;
         --modal-width-xl: 64rem;
         --modal-drawer-width: 28rem;
+        --modal-drawer-radius: 0;
         --modal-close-size: 2.75rem; /* 44 px: tamaño táctil mínimo */
+        --modal-title-size: 1.25rem;
+        --modal-title-weight: 600;
+        --modal-title-leading: 1.3;
+        --modal-header-gap: 1rem;
     }
 
     /* El <dialog> ocupa toda la ventana y es transparente: un clic sobre él (fuera del panel)
@@ -41,14 +48,17 @@
         overflow: hidden;
     }
 
-    dialog[data-modal][open] {
-        display: grid;
-        place-items: center;
-    }
+    dialog[data-modal][open] { display: grid; }
 
-    dialog[data-modal][data-placement='right'][open] { place-items: stretch end; }
-    dialog[data-modal][data-placement='left'][open] { place-items: stretch start; }
-    dialog[data-modal][data-placement='bottom'][open] { place-items: end stretch; }
+    /* La posición no depende de [open]: durante la animación de salida el atributo ya no está,
+       pero el <dialog> sigue visible, y sin esto el panel saltaría a la esquina. */
+    dialog[data-modal] { place-items: center; }
+    dialog[data-modal][data-placement='right'] { place-items: stretch end; }
+    dialog[data-modal][data-placement='left'] { place-items: stretch start; }
+    dialog[data-modal][data-placement='bottom'] { place-items: end stretch; }
+
+    /* Mientras se anima la salida el <dialog> aún se ve, pero ya no debe tapar la página. */
+    dialog[data-modal]:not([open]) { pointer-events: none; }
 
     /* Modo no modal: la página sigue usable, el <dialog> no debe interceptar clics. */
     dialog[data-modal][data-mode='non-modal'] { pointer-events: none; }
@@ -64,7 +74,11 @@
         scrollbar-gutter: var(--modal-gutter, auto);
     }
 
-    /* ---------- Tamaños ---------- */
+    /* ---------- Ancho ----------
+       Con diseño, el ancho exacto llega en línea (`style="--modal-width-exact: …"`, opción `width`)
+       y gana a estos tamaños, que son solo un respaldo para cuando no hay diseño. Es otra variable
+       a propósito: todo modal trae un tamaño (md por defecto) y no debe afectar a los paneles
+       laterales, que tienen su propio ancho. */
     dialog[data-modal][data-size='sm'] { --modal-width: var(--modal-width-sm); }
     dialog[data-modal][data-size='md'] { --modal-width: var(--modal-width-md); }
     dialog[data-modal][data-size='lg'] { --modal-width: var(--modal-width-lg); }
@@ -73,7 +87,7 @@
     .modal__panel {
         display: flex;
         flex-direction: column;
-        width: min(100% - 2rem, var(--modal-width, var(--modal-width-md)));
+        width: min(100% - 2rem, var(--modal-width-exact, var(--modal-width, var(--modal-width-md))));
         max-height: calc(100dvh - 2rem);
         background: var(--modal-bg);
         color: var(--modal-color);
@@ -92,10 +106,10 @@
     /* ---------- Paneles laterales y hoja inferior ---------- */
     dialog[data-modal][data-placement='right'] .modal__panel,
     dialog[data-modal][data-placement='left'] .modal__panel {
-        width: min(100%, var(--modal-drawer-width));
+        width: min(100%, var(--modal-width-exact, var(--modal-drawer-width)));
         height: 100%;
         max-height: none;
-        border-radius: 0;
+        border-radius: var(--modal-drawer-radius);
         padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
     }
 
@@ -106,15 +120,42 @@
         padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* ---------- Móvil: los modales grandes ocupan toda la pantalla ---------- */
+    /* ---------- Móvil (opción `mobile`, atributo data-mobile) ----------
+       Sin `data-mobile` (por defecto): los modales grandes ocupan toda la pantalla y el resto deja
+       un margen. Con `data-mobile` el diseño móvil de Figma manda: center, sheet o fullscreen. */
     @media (max-width: 40rem) {
-        dialog[data-modal][data-placement='center']:not([data-size='full']) .modal__panel {
+        dialog[data-modal][data-placement='center']:not([data-mobile]):not([data-size='full']) .modal__panel {
             width: calc(100% - 1rem);
             max-height: calc(100dvh - 1rem);
         }
 
-        dialog[data-modal][data-placement='center'][data-size='lg'] .modal__panel,
-        dialog[data-modal][data-placement='center'][data-size='xl'] .modal__panel {
+        dialog[data-modal][data-placement='center']:not([data-mobile])[data-size='lg'] .modal__panel,
+        dialog[data-modal][data-placement='center']:not([data-mobile])[data-size='xl'] .modal__panel {
+            width: 100%;
+            height: 100%;
+            max-height: none;
+            border-radius: 0;
+        }
+
+        dialog[data-modal][data-mobile='center'] { place-items: center; }
+        dialog[data-modal][data-mobile='center'] .modal__panel {
+            width: min(100% - 1rem, var(--modal-width-exact, var(--modal-width, 100%)));
+            height: auto;
+            max-height: calc(100dvh - 1rem);
+            border-radius: var(--modal-radius);
+            padding: 0;
+        }
+
+        dialog[data-modal][data-mobile='sheet'] { place-items: end stretch; }
+        dialog[data-modal][data-mobile='sheet'] .modal__panel {
+            width: 100%;
+            height: auto;
+            max-height: 90dvh;
+            border-radius: var(--modal-radius) var(--modal-radius) 0 0;
+            padding: 0 0 env(safe-area-inset-bottom);
+        }
+
+        dialog[data-modal][data-mobile='fullscreen'] .modal__panel {
             width: 100%;
             height: 100%;
             max-height: none;
@@ -128,7 +169,7 @@
         flex: none;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 1rem;
+        gap: var(--modal-header-gap);
         padding: var(--modal-padding) var(--modal-padding) 0;
     }
 
@@ -136,9 +177,9 @@
 
     .modal__title {
         margin: 0;
-        font-size: 1.25rem;
-        font-weight: 600;
-        line-height: 1.3;
+        font-size: var(--modal-title-size);
+        font-weight: var(--modal-title-weight);
+        line-height: var(--modal-title-leading);
         text-wrap: balance;
     }
 
@@ -195,46 +236,86 @@
         margin-top: 1.5rem;
     }
 
-    /* ---------- Animación (se omite con prefers-reduced-motion) ---------- */
+    /* ---------- Animación (se omite con prefers-reduced-motion) ----------
+       Cada parte se anima por separado: el <dialog> NO cambia de opacidad, porque se la heredaría
+       el panel y se vería translúcido. Solo el fondo se desvanece; el modal centrado se desvanece
+       y sube un poco; los paneles laterales y la hoja inferior se deslizan opacos desde su borde. */
     @media (prefers-reduced-motion: no-preference) {
-        dialog[data-modal] {
-            opacity: 0;
-            transition:
-                opacity var(--modal-duration) ease,
-                display var(--modal-duration) allow-discrete,
-                overlay var(--modal-duration) allow-discrete;
-        }
+        dialog[data-modal] { --modal-anim: var(--modal-duration); }
 
-        dialog[data-modal][open] { opacity: 1; }
+        dialog[data-modal][data-placement='right'],
+        dialog[data-modal][data-placement='left'],
+        dialog[data-modal][data-placement='bottom'] { --modal-anim: var(--modal-slide-duration); }
+
+        /* Mantiene el <dialog> visible mientras dura la animación de salida. */
+        dialog[data-modal] {
+            transition:
+                display var(--modal-anim) allow-discrete,
+                overlay var(--modal-anim) allow-discrete;
+        }
 
         dialog[data-modal]::backdrop {
             opacity: 0;
             transition:
-                opacity var(--modal-duration) ease,
-                display var(--modal-duration) allow-discrete,
-                overlay var(--modal-duration) allow-discrete;
+                opacity var(--modal-anim) ease,
+                display var(--modal-anim) allow-discrete,
+                overlay var(--modal-anim) allow-discrete;
         }
 
         dialog[data-modal][open]::backdrop { opacity: 1; }
 
-        dialog[data-modal] .modal__panel {
+        dialog[data-modal][data-placement='center'] .modal__panel {
+            opacity: 0;
             transform: translateY(1rem) scale(0.98);
-            transition: transform var(--modal-duration) ease;
+            transition:
+                opacity var(--modal-anim) ease,
+                transform var(--modal-anim) ease;
+        }
+
+        dialog[data-modal][data-placement='right'] .modal__panel,
+        dialog[data-modal][data-placement='left'] .modal__panel,
+        dialog[data-modal][data-placement='bottom'] .modal__panel {
+            transition: transform var(--modal-anim) var(--modal-slide-easing);
         }
 
         dialog[data-modal][data-placement='right'] .modal__panel { transform: translateX(100%); }
         dialog[data-modal][data-placement='left'] .modal__panel { transform: translateX(-100%); }
         dialog[data-modal][data-placement='bottom'] .modal__panel { transform: translateY(100%); }
 
-        dialog[data-modal][open] .modal__panel { transform: none; }
+        /* mobile="sheet": en pantallas pequeñas se desliza desde abajo, opaca, como la hoja inferior. */
+        @media (max-width: 40rem) {
+            dialog[data-modal][data-mobile='sheet'] { --modal-anim: var(--modal-slide-duration); }
+            dialog[data-modal][data-mobile='sheet'] .modal__panel {
+                opacity: 1;
+                transform: translateY(100%);
+                transition: transform var(--modal-anim) var(--modal-slide-easing);
+            }
+        }
+
+        /* Estado abierto: va después de los cerrados para ganarles en igualdad de especificidad. */
+        dialog[data-modal][open] .modal__panel {
+            opacity: 1;
+            transform: none;
+        }
 
         @starting-style {
-            dialog[data-modal][open] { opacity: 0; }
             dialog[data-modal][open]::backdrop { opacity: 0; }
-            dialog[data-modal][open] .modal__panel { transform: translateY(1rem) scale(0.98); }
+            dialog[data-modal][data-placement='center'][open] .modal__panel {
+                opacity: 0;
+                transform: translateY(1rem) scale(0.98);
+            }
             dialog[data-modal][data-placement='right'][open] .modal__panel { transform: translateX(100%); }
             dialog[data-modal][data-placement='left'][open] .modal__panel { transform: translateX(-100%); }
             dialog[data-modal][data-placement='bottom'][open] .modal__panel { transform: translateY(100%); }
+        }
+
+        @media (max-width: 40rem) {
+            @starting-style {
+                dialog[data-modal][data-mobile='sheet'][open] .modal__panel {
+                    opacity: 1;
+                    transform: translateY(100%);
+                }
+            }
         }
     }
 

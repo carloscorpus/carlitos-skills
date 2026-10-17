@@ -24,6 +24,7 @@ function {{PREFIX}}_modal_choices(): array
         'placement' => ['center', 'right', 'left', 'bottom'],
         'mode' => ['modal', 'non-modal'],
         'role' => ['dialog', 'alertdialog'],
+        'mobile' => ['default', 'center', 'sheet', 'fullscreen'],
         'auto_on' => ['delay', 'load', 'scroll'],
     ];
 }
@@ -47,6 +48,12 @@ function {{PREFIX}}_modal_print_attrs(array $attrs): void
     }
 }
 
+// Une la clase base del motor con las clases extra de la vista, ya escapadas para un atributo.
+function {{PREFIX}}_modal_class(string $base, string $extra = ''): string
+{
+    return esc_attr(trim($base . ' ' . $extra));
+}
+
 // Normaliza las opciones: valores válidos, título obligatorio y apertura automática opcional.
 function {{PREFIX}}_modal_args(string $id, array $args): array
 {
@@ -68,6 +75,19 @@ function {{PREFIX}}_modal_args(string $id, array $args): array
     $backdrop_close = $args['backdrop_close'] ?? true;
     $backdrop_close = $mode === 'modal' && $role === 'dialog' && $backdrop_close !== false;
 
+    // Ancho exacto (el de Figma): una longitud CSS simple; un número sin unidad son píxeles
+    // (`'width' => 720` = 720px). Si no es válida se ignora y se avisa.
+    $width = trim((string) ($args['width'] ?? ''));
+    if (preg_match('/^[0-9]*\.?[0-9]+$/', $width)) {
+        $width .= 'px';
+    }
+    if ($width !== '' && !preg_match('/^[0-9]*\.?[0-9]+(px|rem|em|%|vw|ch)$/', $width)) {
+        _doing_it_wrong(__FUNCTION__, 'El "width" del modal debe ser una longitud como 45rem, 720px o 80%.', '{{ENGINE_VERSION}}');
+        $width = '';
+    }
+
+    $extra = static fn (string $key): string => trim((string) ($args[$key] ?? ''));
+
     $auto = null;
     if (!empty($args['auto']) && is_array($args['auto'])) {
         $repeat = (string) ($args['auto']['repeat'] ?? 'session');
@@ -86,12 +106,19 @@ function {{PREFIX}}_modal_args(string $id, array $args): array
         'title_visible' => ($args['title_visible'] ?? true) !== false,
         'description' => trim((string) ($args['description'] ?? '')),
         'size' => $pick($args['size'] ?? null, $choices['size']),
+        'width' => $width,
         'placement' => $pick($args['placement'] ?? null, $choices['placement']),
+        'mobile' => $pick($args['mobile'] ?? null, $choices['mobile']),
         'mode' => $mode,
         'role' => $role,
         'backdrop_close' => $backdrop_close,
         'close_label' => trim((string) ($args['close_label'] ?? '')) ?: 'Cerrar',
-        'class' => trim((string) ($args['class'] ?? '')),
+        'class' => $extra('class'),
+        'header_class' => $extra('header_class'),
+        'title_class' => $extra('title_class'),
+        'description_class' => $extra('description_class'),
+        'close_class' => $extra('close_class'),
+        'body_class' => $extra('body_class'),
         'auto' => $auto,
     ];
 }
@@ -101,13 +128,21 @@ function {{PREFIX}}_modal_args(string $id, array $args): array
  *   title            (obligatorio) nombre accesible del modal.
  *   title_visible    false = el título solo lo leen los lectores de pantalla.
  *   description      texto breve opcional (aria-describedby).
- *   size             md (por defecto) | sm | lg | xl | full
+ *   width            ancho exacto del diseño (Figma): una longitud como '45rem', '720px' o '80%';
+ *                    un número sin unidad son píxeles (720 = '720px'). En móvil nunca pasa del
+ *                    ancho de la pantalla. Gana a `size`.
+ *   size             respaldo para cuando NO hay diseño: md (por defecto) | sm | lg | xl | full
  *   placement        center (por defecto) | right | left | bottom
+ *   mobile           cómo se ve por debajo de 40 rem: default (por defecto: los modales grandes ocupan
+ *                    toda la pantalla) | center (centrado con margen) | sheet (hoja inferior) |
+ *                    fullscreen (pantalla completa)
  *   mode             modal (por defecto) | non-modal (la página sigue usable; sin fondo bloqueado)
  *   role             dialog (por defecto) | alertdialog (confirmaciones: no se cierra con clic fuera)
  *   backdrop_close   false = no se cierra con clic fuera
  *   close_label      texto accesible del botón de cerrar
  *   class            clases extra para el panel (p. ej. de Tailwind)
+ *   header_class, title_class, description_class, close_class, body_class
+ *                    clases extra para cada parte. El botón de cerrar debe medir al menos 44 px.
  *   auto             null (por defecto) | ['on' => 'delay|load|scroll', 'delay' => ms,
  *                    'scroll' => %, 'min_width' => px (solo se abre en pantallas de ese ancho o más;
  *                    0 = siempre), 'repeat' => 'always|session|days:N']
@@ -125,7 +160,9 @@ function {{PREFIX}}_modal_start(string $id, array $args = []): void
         'data-modal' => true,
         'data-size' => $m['size'],
         'data-placement' => $m['placement'],
+        'data-mobile' => $m['mobile'] === 'default' ? null : $m['mobile'],
         'data-mode' => $m['mode'],
+        'style' => $m['width'] !== '' ? '--modal-width-exact:' . $m['width'] : null,
         'data-backdrop-close' => $m['backdrop_close'] ? 'true' : 'false',
         'role' => $m['role'] === 'alertdialog' ? 'alertdialog' : null,
         'aria-labelledby' => $title_id,
@@ -138,20 +175,21 @@ function {{PREFIX}}_modal_start(string $id, array $args = []): void
     ]);
     echo ">\n";
 
-    echo '<div class="modal__panel', $m['class'] !== '' ? ' ' . esc_attr($m['class']) : '', "\">\n";
-    echo '<header class="modal__header">', "\n";
-    echo '<h2 id="', esc_attr($title_id), '" class="modal__title', $m['title_visible'] ? '' : ' modal__title--hidden', '">', esc_html($m['title']), "</h2>\n";
+    echo '<div class="', {{PREFIX}}_modal_class('modal__panel', $m['class']), "\">\n";
+    echo '<header class="', {{PREFIX}}_modal_class('modal__header', $m['header_class']), "\">\n";
+    $title_base = $m['title_visible'] ? 'modal__title' : 'modal__title modal__title--hidden';
+    echo '<h2 id="', esc_attr($title_id), '" class="', {{PREFIX}}_modal_class($title_base, $m['title_class']), '">', esc_html($m['title']), "</h2>\n";
     // method="dialog" cierra el <dialog> sin JavaScript.
-    echo '<form method="dialog"><button type="submit" class="modal__close" aria-label="', esc_attr($m['close_label']), '">';
+    echo '<form method="dialog"><button type="submit" class="', {{PREFIX}}_modal_class('modal__close', $m['close_class']), '" aria-label="', esc_attr($m['close_label']), '">';
     echo '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     echo "</button></form>\n";
     echo "</header>\n";
 
     if ($m['description'] !== '') {
-        echo '<p id="', esc_attr($desc_id), '" class="modal__description">', esc_html($m['description']), "</p>\n";
+        echo '<p id="', esc_attr($desc_id), '" class="', {{PREFIX}}_modal_class('modal__description', $m['description_class']), '">', esc_html($m['description']), "</p>\n";
     }
 
-    echo "<div class=\"modal__body\">\n";
+    echo '<div class="', {{PREFIX}}_modal_class('modal__body', $m['body_class']), "\">\n";
 }
 
 // Cierra el cuerpo, el panel y el <dialog> abiertos por {{PREFIX}}_modal_start().

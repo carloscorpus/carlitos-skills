@@ -21,5 +21,6 @@ Used in step 2 of SKILL.md. The type changes the HTML and the behaviour, so it i
 
 ## Placement and size
 
-- `placement`: `center` (dialogs, confirmations), `right` / `left` (drawers, panels), `bottom` (bottom sheet on mobile).
-- `size`: `sm` confirmations, `md` default, `lg` / `xl` content with media or tables, `full` lightbox. On a phone `lg` and `xl` fill the screen and `sm`/`md` keep a small margin.
+- `placement`: `center` (dialogs, confirmations), `right` / `left` (drawers, panels), `bottom` (bottom sheet).
+- **With a design, the dimensions come from it**: `width` is the exact width of the frame and `mobile` (`center` | `sheet` | `fullscreen`) is what the mobile frame shows. See [figma-mapping.md](figma-mapping.md).
+- `size` (`sm` / `md` / `lg` / `xl` / `full`) is only a fallback for modals **without** a design. On a phone, without `mobile`, `lg` and `xl` fill the screen and `sm` / `md` keep a small margin.

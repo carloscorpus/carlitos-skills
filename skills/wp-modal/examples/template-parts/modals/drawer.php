@@ -16,6 +16,8 @@ defined('ABSPATH') || exit;
 {{PREFIX}}_modal_start('menu-movil', [
     'title' => 'Menú',
     'placement' => 'right',
+    'width' => '22rem', // el ancho del panel en Figma (sin width: 28rem)
+    // 'mobile' => 'sheet', // si el frame móvil lo muestra como hoja inferior
     // 'mode' => 'non-modal',
 ]);
 ?>

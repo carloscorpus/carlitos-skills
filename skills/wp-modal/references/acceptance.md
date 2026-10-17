@@ -32,6 +32,13 @@ Do each item with the keyboard first, then with the mouse. Mark the ones that co
 - [ ] The page behind does not scroll while a modal is open, and does not jump when it opens or closes.
 - [ ] Zoom at 200 % and a landscape phone: the content is still reachable by scrolling inside the modal.
 - [ ] With "reduce motion" enabled in the system, the modal appears without animation.
+- [ ] Animation, opening and closing: a drawer or bottom sheet slides in **opaque** (never see-through) while only the dimmed background fades; the centered modal fades and rises slightly; on closing, nothing jumps to a corner and the page is clickable again right away.
+
+**Design fidelity (against the Figma frames)**
+- [ ] Desktop: width, radius, padding, colors, shadow, dimmed background, title style and close button match the frame (measure with the browser's inspector, not by eye).
+- [ ] Mobile: it matches the mobile frame (`mobile` set as the design shows); the width never exceeds the screen.
+- [ ] Values shared by several modals live once in the project CSS as `--modal-*` tokens, not repeated in each view; no `size` preset was used where a design exists.
+- [ ] The close button is still at least 44 × 44 px after applying `close_class`.
 
 **Auto-open (only if the project asked for it)**
 - [ ] It opens when and where agreed, not over another open modal.

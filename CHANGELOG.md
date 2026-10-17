@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.6.0] - 2026-10-17
+
+### Cambiado
+- `wp-modal` 1.1.0: el diseño sale de Figma. Ancho exacto (`width`), comportamiento en móvil (`mobile`), clases por parte y variables nuevas; los tamaños `sm/md/lg/xl/full` quedan solo como respaldo. Corrige la animación (panel translúcido, salto al cerrar) y el salto de página al bloquear el scroll. Compatible con 1.0.0.
+
 ## [1.5.0] - 2026-10-17
 
 ### Agregado
