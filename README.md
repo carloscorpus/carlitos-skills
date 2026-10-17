@@ -15,8 +15,9 @@
 | ------------------------------------------------ | ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.1.0   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
 | [`wp-form`](skills/wp-form/SKILL.md)             | 1.2.0   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
+| [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Modales, drawers, lightbox y confirmaciones con el `<dialog>` nativo: accesibles, responsive y con el contenido libre en cada proyecto. |
 
-Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
+Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` y `wp-modal` necesitan. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Instalación
 
@@ -85,6 +86,24 @@ El detalle de la skill (tipos de campo, contrato de la vista, integraciones, com
 - Correo solo con `wp_mail()`: Mailpit en local, Fluent SMTP en producción.
 - Necesita `zod` en su última versión estable (`pnpm add zod@latest`); se carga solo en páginas con un form.
 - Envíos guardados (opcional): solo los ven administradores, sin borrado automático (se eliminan desde la lista) y conectados a las herramientas de datos personales de WordPress.
+
+## wp-modal
+
+En un tema WordPress con Vite y pnpm, pide `arma un modal de promoción`, `un drawer`, `un lightbox` o `una confirmación` (o usa un spec con `skill: wp-modal`). Primero decide con el diseño si el panel es un **modal**, un **diálogo no modal** (la página sigue usable) o un simple `<aside>`; si el diseño no lo deja claro, te pregunta. También pregunta si el modal se abre solo, porque eso depende de cada proyecto.
+
+La estructura es fija (título, botón de cerrar, zona con scroll) y el contenido es libre. Casi todo lo da el navegador: el `<dialog>` con `showModal()` ya trae el foco atrapado, el fondo inerte, la tecla Esc y la devolución del foco, y los atributos `command`/`commandfor` abren el modal sin JavaScript. El motor solo agrega lo que falta: abrir en navegadores antiguos, cerrar con clic fuera, apertura automática opcional y los eventos `modal:open` / `modal:close`.
+
+```text
+inc/modals.php                  motor PHP (no se edita por proyecto)
+src/js/modules/modal.js         motor JS, se carga solo en páginas con un modal
+src/css/modal.css               estilos funcionales con variables --modal-* (se importa desde el CSS principal)
+template-parts/modals/<id>.php  vista de cada modal (contenido libre)
+```
+
+- Detecta el JS y el CSS principales leyendo `vite.config.*`; si no puede, te pide las rutas (`--entry`, `--css`).
+- Un modal no mejora el SEO: la skill solo evita perjudicarlo (contenido en el HTML, enlace rastreable si hay una página real, sin pop-ups al cargar salvo que el proyecto lo pida).
+- `skills/wp-modal/tests/check.mjs` audita el HTML renderizado de una página (nombre accesible, `h1`, botón de cerrar, disparadores, imágenes). La lista de pruebas en navegador está en `skills/wp-modal/references/acceptance.md`.
+- Ejemplos incluidos: contenido/promoción, confirmación (`alertdialog`), lightbox, panel lateral y un formulario de `wp-form` dentro de un modal.
 
 ## Agregar una skill
 
