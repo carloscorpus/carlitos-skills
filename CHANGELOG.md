@@ -2,6 +2,12 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.5.2] - 2026-10-17
+
+### Cambiado
+- `wp-form` 1.3.1 y `wp-modal` 1.0.2: la regla de versión dice lo mismo en ambas (`metadata.version` + `CHANGELOG.md`) y las `description` quedan más cortas con los mismos disparadores. Sin cambios en los motores.
+- `wp-modal` 1.0.2: `wp-form` es opcional de forma explícita; si su skill no está disponible, no se ofrece y se usa el form independiente.
+
 ## [1.5.1] - 2026-10-17
 
 ### Corregido

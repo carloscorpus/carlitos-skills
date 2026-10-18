@@ -1,5 +1,7 @@
 # A form inside a modal
 
+wp-form is optional. If its skill is not available in this session, do not offer it: use the independent branch.
+
 Ask first (step 2): **no form | wp-form | independent**. Do not assume.
 
 ## With wp-form (recommended for contact, quote, newsletter, lead forms)

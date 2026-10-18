@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.1] - 2026-10-17
+
+### Cambiado
+- La regla para cambiar el motor dice "sube `metadata.version` y anótalo en el `CHANGELOG.md`" (antes hablaba de "plugin version").
+- `description` más corta, con los mismos disparadores. Sin cambios en el motor: la versión sube solo porque se sella en él, así que `install.mjs --check` avisa a los temas con 1.3.0.
+
 ## [1.3.0] - 2026-10-17
 
 ### Agregado
