@@ -1,8 +1,8 @@
 ---
 name: wp-helper
-description: Install the reusable PHP helpers of a WordPress theme, prefixed per project: safe images from ACF Pro fields (ID, array or URL; empty or deleted never breaks the view) and text with parts in another color (`|text|`, `*text*` with configurable markers and classes, no marker clashes). Asks which helper to include, or creates a new local one. Use when a spec says `skill: wp-helper`, or the user asks for "helper", "helpers", "imágenes ACF", "texto de dos colores", "resaltar texto", or after wp-vite-theme.
+description: Install the reusable PHP helpers of a WordPress theme, prefixed per project: safe images from ACF Pro fields (empty or deleted never breaks the view), safe accessible links (target, rel, protocols, new-tab notice) and text with parts in another color (configurable markers, no clashes). Asks which helper to include, or creates a local one. Use when a spec says `skill: wp-helper`, or the user asks for "helper", "imágenes ACF", "enlaces", "target blank", "botón", "texto de dos colores", "resaltar texto", or after wp-vite-theme.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # wp-helper
@@ -13,6 +13,7 @@ Small PHP helpers every project ends up copying. The skill installs them once, w
 |---|---|---|
 | `inc/helpers/images.php` | `scripts/install.mjs --helpers images` | No, engine: `<prefix>_image_data()`, `<prefix>_image()` |
 | `inc/helpers/text.php` | `scripts/install.mjs --helpers text` | No, engine: `<prefix>_highlight()` |
+| `inc/helpers/links.php` | `scripts/install.mjs --helpers links` | No, engine: `<prefix>_link()`, `_link_attrs()`, `_link_data()` |
 | `inc/helpers/text-styles.php` | same, only if missing | Yes: markers and classes, written by `--add-style` |
 | wp-helper block in `CLAUDE.md` | `scripts/install.mjs` (from `claude-block*.md.tpl`) | No: do not edit it by hand, the next install replaces it |
 | `inc/helpers/<name>.php` (local) | you | Yes: a helper only this project needs |
@@ -28,7 +29,8 @@ Detail lives in `references/` and is read only by the step that points to it.
 2. **Ask which helper**, in one message (AskUserQuestion when available), skipping what `--list` shows as installed and what the spec already answers:
    - **Images** (recommended in every project): ACF image fields always go through it.
    - **Text with parts in another color**: only if the design has paragraphs or titles with two colors. For each style ask its **name**, its **marker** (offer the free ones from `--list`; if the project already uses one, the new style takes a different marker) and its **color class**. The class comes from the design or from the project's Tailwind tokens (`@theme` in the main CSS); never invent a color.
-   - **Both**.
+   - **Links** (recommended in every project that has ACF Link or URL fields): every link goes through it. Ask nothing else: how a link opens comes from the ACF field, and the options are per call. Read [references/links.md](references/links.md) before using it.
+   - **All of them**.
    - **A new local helper**: for something only this project needs. Ask what it must do; it is not installed from the skill (step 6).
    If the user answers with a number, map it in the order above. Read [references/text-styles.md](references/text-styles.md) before offering markers.
 
@@ -48,18 +50,20 @@ Detail lives in `references/` and is read only by the step that points to it.
 
 6. **A new local helper.** Write `inc/helpers/<name>.php` following the theme's `CLAUDE.md` (prefix, `defined('ABSPATH') || exit;`, escaped output), add its `require_once` to `functions.php`, and say that it is local to the project. Do not copy it into the skill unless the user asks.
 
-7. **Use them in the views.** Only in the code you are writing: replace direct reads of ACF image fields with `<prefix>_image()` and print marked texts with `<prefix>_highlight()`. Do not rewrite existing views unless the user asks. Read [references/images.md](references/images.md) for the options and [references/acceptance.md](references/acceptance.md) for the acceptance criteria.
+7. **Use them in the views.** Only in the code you are writing: replace direct reads of ACF image fields with `<prefix>_image()`, print ACF links with `<prefix>_link()` (or `<a<?= <prefix>_link_attrs($field) ?>>` when the design puts icons inside) and print marked texts with `<prefix>_highlight()`. Do not rewrite existing views unless the user asks. Read [references/images.md](references/images.md) for the options and [references/acceptance.md](references/acceptance.md) for the acceptance criteria.
 
 ## Reference
 
 - [references/images.md](references/images.md): cases the image helper covers, options and examples.
+- [references/links.md](references/links.md): what the link helper decides, args, and the security, accessibility and SEO rules it applies.
 - [references/text-styles.md](references/text-styles.md): markers, rules, and how a style is added.
 - [references/acceptance.md](references/acceptance.md): acceptance criteria and the automated test.
 
 ## Do not
 
-- Do not edit `inc/helpers/images.php` or `inc/helpers/text.php` in a theme. Change the skill's templates.
+- Do not edit `inc/helpers/images.php`, `inc/helpers/text.php` or `inc/helpers/links.php` in a theme. Change the skill's templates.
 - Do not edit `inc/helpers/text-styles.php` by hand: use `--add-style`. Do not reuse a marker another style already has.
 - Do not call `get_field()` or any ACF function inside the helpers: they must work without ACF.
-- Do not wrap the output of `<prefix>_image()` or `<prefix>_highlight()` in `esc_html()`: it is already escaped HTML.
+- Do not wrap the output of `<prefix>_image()`, `<prefix>_link()`, `<prefix>_link_attrs()` or `<prefix>_highlight()` in `esc_html()`: it is already escaped HTML.
+- Do not write `target="_blank"`, `rel` or `$field['url']` by hand for an ACF link, and do not add `nofollow` unless the user asks for it.
 - Do not consider the install finished while `install.mjs --check` does not exit `0`.

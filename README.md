@@ -16,7 +16,7 @@
 | [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.1.1   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
 | [`wp-form`](skills/wp-form/SKILL.md)             | 1.3.1   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
 | [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.2   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
-| [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.0.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío) y texto con partes de otro color con marcadores configurables. |
+| [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.1.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -107,18 +107,20 @@ template-parts/modals/<id>.php vista de cada modal (diseño de Figma)
 
 ## wp-helper
 
-En un tema WordPress, pide `instala los helpers` (o corre la skill al final de `wp-vite-theme`, que la ofrece). Te pregunta cuál incluir: **imágenes**, **texto de dos colores**, los dos, o uno **local nuevo** solo para ese proyecto. El de imágenes se recomienda en todos los proyectos.
+En un tema WordPress, pide `instala los helpers` (o corre la skill al final de `wp-vite-theme`, que la ofrece). Te pregunta cuál incluir: **imágenes**, **enlaces**, **texto de dos colores**, todos, o uno **local nuevo** solo para ese proyecto. El de imágenes y el de enlaces se recomiendan en todos los proyectos.
 
 ```text
 inc/helpers/images.php         motor: <prefijo>_image_data(), <prefijo>_image() (no se edita por proyecto)
 inc/helpers/text.php           motor: <prefijo>_highlight() (no se edita por proyecto)
+inc/helpers/links.php          motor: <prefijo>_link(), _link_attrs(), _link_data() (no se edita por proyecto)
 inc/helpers/text-styles.php    estilos del proyecto: marcador + clase (lo escribe --add-style)
 inc/helpers/<nombre>.php       helper local del proyecto
 ```
 
 - **Imágenes:** acepta lo que entregue un campo de imagen de ACF (array, ID o URL), un adjunto o un valor vacío. Una imagen borrada o un PDF dan `null` / `''` en vez de romper la vista. Cambiar el formato de retorno del campo no rompe nada.
+- **Enlaces:** acepta el campo Link o URL de ACF. Descarta enlaces vacíos, `#` o con protocolo inseguro; `target="_blank"` siempre lleva `rel="noopener"` (y `noreferrer` si es externo); `mailto`, `tel` y anclas no abren pestaña nueva; avisa a los lectores de pantalla de la pestaña nueva y nunca agrega `nofollow` solo. `<prefijo>_link_attrs()` da solo los atributos para un `<a>` o botón con íconos.
 - **Texto de dos colores:** `Negro |naranja| y *rojo*`. Cada estilo tiene su marcador (`* | ~ ^ =`) y su clase; `--add-style` falla si el marcador o el nombre ya están en uso y lista los libres. `-` y `_` no se aceptan como marcadores, para no chocar con texto normal.
-- Comandos: `node skills/wp-helper/scripts/install.mjs --list | --helpers images,text | --add-style … | --check`.
+- Comandos: `node skills/wp-helper/scripts/install.mjs --list | --helpers images,text,links | --add-style … | --check`.
 - Prueba: `node skills/wp-helper/tests/check.mjs` (necesita `php`; busca el de Local solo).
 - Guardas de subida en el admin (peso, formatos) no están incluidas.
 

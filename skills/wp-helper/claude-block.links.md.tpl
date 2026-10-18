@@ -1,0 +1,1 @@
+- Todo enlace de un campo ACF (Link o URL) pasa por `{{PREFIX}}_link($campo, [...])` (el `<a>` completo) o por `<a<?= {{PREFIX}}_link_attrs($campo, [...]) ?>>` cuando el diseño lleva íconos u otros hijos. No escribas `target="_blank"`, `rel` ni `$campo['url']` a mano: el helper pone `rel`, descarta enlaces vacíos o inseguros y avisa de la pestaña nueva (clase `sr-only`).

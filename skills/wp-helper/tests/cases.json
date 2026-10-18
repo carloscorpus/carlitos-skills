@@ -549,5 +549,513 @@
         }
       ]
     }
-  ]
+  ],
+  "links": {
+    "data": [
+      {
+        "name": "ACF _blank externo",
+        "input": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": "_blank"
+        },
+        "expect": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": "_blank",
+          "rel": "noopener noreferrer",
+          "external": true,
+          "blank": true
+        }
+      },
+      {
+        "name": "ACF _blank interno",
+        "input": {
+          "url": "https://site.test/contacto",
+          "title": "C",
+          "target": "_blank"
+        },
+        "expect": {
+          "target": "_blank",
+          "rel": "noopener",
+          "external": false,
+          "blank": true
+        }
+      },
+      {
+        "name": "www no cuenta como externo",
+        "input": "https://www.site.test/x",
+        "expect": {
+          "external": false
+        }
+      },
+      {
+        "name": "sin target",
+        "input": {
+          "url": "https://google.com",
+          "title": "G",
+          "target": ""
+        },
+        "expect": {
+          "target": "",
+          "rel": "",
+          "external": true,
+          "blank": false
+        }
+      },
+      {
+        "name": "target raro se ignora",
+        "input": {
+          "url": "https://google.com",
+          "title": "G",
+          "target": "_parent"
+        },
+        "expect": {
+          "target": "",
+          "rel": "",
+          "blank": false
+        }
+      },
+      {
+        "name": "relativo con _blank",
+        "input": {
+          "url": "/contacto",
+          "title": "C",
+          "target": "_blank"
+        },
+        "expect": {
+          "external": false,
+          "blank": true,
+          "rel": "noopener"
+        }
+      },
+      {
+        "name": "ancla válida sin pestaña nueva",
+        "input": {
+          "url": "#contacto",
+          "title": "C",
+          "target": "_blank"
+        },
+        "expect": {
+          "url": "#contacto",
+          "blank": false,
+          "target": ""
+        }
+      },
+      {
+        "name": "mailto válido sin pestaña nueva",
+        "input": {
+          "url": "mailto:ventas@site.test",
+          "title": "M",
+          "target": "_blank"
+        },
+        "expect": {
+          "url": "mailto:ventas@site.test",
+          "blank": false,
+          "external": false
+        }
+      },
+      {
+        "name": "mailto inválido",
+        "input": "mailto:nope",
+        "expect": null
+      },
+      {
+        "name": "tel se normaliza",
+        "input": "tel:+51 999-888 777",
+        "expect": {
+          "url": "tel:+51999888777",
+          "blank": false
+        }
+      },
+      {
+        "name": "tel conserva la extensión",
+        "input": "tel:(01) 234 5678;ext=12",
+        "expect": {
+          "url": "tel:012345678;ext=12"
+        }
+      },
+      {
+        "name": "tel sin dígitos",
+        "input": "tel:abc",
+        "expect": null
+      },
+      {
+        "name": "javascript:",
+        "input": "javascript:alert(1)",
+        "expect": null
+      },
+      {
+        "name": "JAVASCRIPT: en mayúsculas",
+        "input": {
+          "url": "JAVASCRIPT:alert(1)",
+          "title": "x"
+        },
+        "expect": null
+      },
+      {
+        "name": "ftp: no está en la lista del helper",
+        "input": "ftp://files.site.test/a.zip",
+        "expect": null
+      },
+      {
+        "name": "sms: no está en la lista del helper",
+        "input": "sms:+51999888777",
+        "expect": null
+      },
+      {
+        "name": "data:",
+        "input": "data:text/html;base64,AAAA",
+        "expect": null
+      },
+      {
+        "name": "null",
+        "input": null,
+        "expect": null
+      },
+      {
+        "name": "false",
+        "input": false,
+        "expect": null
+      },
+      {
+        "name": "string vacío",
+        "input": "",
+        "expect": null
+      },
+      {
+        "name": "solo #",
+        "input": "#",
+        "expect": null
+      },
+      {
+        "name": "array vacío",
+        "input": [],
+        "expect": null
+      },
+      {
+        "name": "array con url vacía",
+        "input": {
+          "url": "",
+          "title": "x",
+          "target": "_blank"
+        },
+        "expect": null
+      },
+      {
+        "name": "string URL",
+        "input": "https://google.com",
+        "expect": {
+          "url": "https://google.com",
+          "title": "",
+          "external": true,
+          "blank": false
+        }
+      },
+      {
+        "name": "protocolo relativo es externo",
+        "input": "//cdn.otro.com/x",
+        "expect": {
+          "external": true
+        }
+      },
+      {
+        "name": "título con espacios",
+        "input": {
+          "url": "/x",
+          "title": "  Hola  ",
+          "target": ""
+        },
+        "expect": {
+          "title": "Hola"
+        }
+      }
+    ],
+    "html": [
+      {
+        "name": "link: _blank externo con aviso",
+        "kind": "link",
+        "input": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": "_blank"
+        },
+        "equals": "<a href=\"https://google.com/x\" target=\"_blank\" rel=\"noopener noreferrer\">Google <span class=\"sr-only\">(se abre en una pestaña nueva)</span></a>"
+      },
+      {
+        "name": "link: sin _blank",
+        "kind": "link",
+        "input": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": ""
+        },
+        "equals": "<a href=\"https://google.com/x\">Google</a>"
+      },
+      {
+        "name": "link: sin texto ni label no imprime",
+        "kind": "link",
+        "input": {
+          "url": "/x",
+          "title": "",
+          "target": ""
+        },
+        "equals": ""
+      },
+      {
+        "name": "link: text sobre el título",
+        "kind": "link",
+        "input": "https://google.com",
+        "args": {
+          "text": "Ir"
+        },
+        "equals": "<a href=\"https://google.com\">Ir</a>"
+      },
+      {
+        "name": "link: texto escapado",
+        "kind": "link",
+        "input": {
+          "url": "/x",
+          "title": "<b>x</b> & y",
+          "target": ""
+        },
+        "equals": "<a href=\"/x\">&lt;b&gt;x&lt;/b&gt; &amp; y</a>"
+      },
+      {
+        "name": "link: aviso y clase personalizados",
+        "kind": "link",
+        "input": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": "_blank"
+        },
+        "args": {
+          "new_tab_label": "opens new tab",
+          "sr_class": "visually-hidden"
+        },
+        "contains": [
+          "<span class=\"visually-hidden\">(opens new tab)</span>"
+        ]
+      },
+      {
+        "name": "link: aviso desactivado",
+        "kind": "link",
+        "input": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": "_blank"
+        },
+        "args": {
+          "new_tab_label": ""
+        },
+        "notContains": [
+          "<span"
+        ]
+      },
+      {
+        "name": "link: blank false apaga el _blank del campo",
+        "kind": "link",
+        "input": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": "_blank"
+        },
+        "args": {
+          "blank": false
+        },
+        "equals": "<a href=\"https://google.com/x\">Google</a>"
+      },
+      {
+        "name": "link: blank true fuerza pestaña nueva",
+        "kind": "link",
+        "input": "/x",
+        "args": {
+          "text": "X",
+          "blank": true
+        },
+        "contains": [
+          "target=\"_blank\"",
+          "rel=\"noopener\"",
+          "sr-only"
+        ]
+      },
+      {
+        "name": "link: blank true no aplica a mailto",
+        "kind": "link",
+        "input": "mailto:a@site.test",
+        "args": {
+          "text": "Escribir",
+          "blank": true
+        },
+        "equals": "<a href=\"mailto:a@site.test\">Escribir</a>"
+      },
+      {
+        "name": "link: solo label (ícono)",
+        "kind": "link",
+        "input": {
+          "url": "/x",
+          "title": "",
+          "target": ""
+        },
+        "args": {
+          "label": "Ir a X"
+        },
+        "equals": "<a href=\"/x\" aria-label=\"Ir a X\"></a>"
+      },
+      {
+        "name": "link: javascript: no imprime",
+        "kind": "link",
+        "input": "javascript:alert(1)",
+        "args": {
+          "text": "x"
+        },
+        "equals": ""
+      },
+      {
+        "name": "attrs: _blank externo",
+        "kind": "link_attrs",
+        "input": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": "_blank"
+        },
+        "equals": " href=\"https://google.com/x\" target=\"_blank\" rel=\"noopener noreferrer\""
+      },
+      {
+        "name": "attrs: inválido devuelve vacío",
+        "kind": "link_attrs",
+        "input": "#",
+        "equals": ""
+      },
+      {
+        "name": "attrs: & de la URL se escapa",
+        "kind": "link_attrs",
+        "input": "https://x.com/?a=1&b=2",
+        "contains": [
+          "href=\"https://x.com/?a=1&amp;b=2\""
+        ]
+      },
+      {
+        "name": "attrs: rel extra con _blank externo",
+        "kind": "link_attrs",
+        "input": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": "_blank"
+        },
+        "args": {
+          "rel": "nofollow sponsored"
+        },
+        "contains": [
+          "rel=\"noopener noreferrer nofollow sponsored\""
+        ]
+      },
+      {
+        "name": "attrs: rel extra sin _blank",
+        "kind": "link_attrs",
+        "input": "https://google.com",
+        "args": {
+          "rel": "nofollow"
+        },
+        "contains": [
+          "rel=\"nofollow\""
+        ],
+        "notContains": [
+          "target"
+        ]
+      },
+      {
+        "name": "attrs: rel sin duplicar",
+        "kind": "link_attrs",
+        "input": {
+          "url": "https://google.com/x",
+          "title": "Google",
+          "target": "_blank"
+        },
+        "args": {
+          "rel": "noopener nofollow"
+        },
+        "contains": [
+          "rel=\"noopener noreferrer nofollow\""
+        ]
+      },
+      {
+        "name": "attrs: rel no puede romper el atributo",
+        "kind": "link_attrs",
+        "input": "https://google.com",
+        "args": {
+          "rel": "nofollow\" onclick=\"x"
+        },
+        "notContains": [
+          "onclick=\"",
+          "\" onclick"
+        ]
+      },
+      {
+        "name": "attrs: class y label escapados",
+        "kind": "link_attrs",
+        "input": "/x",
+        "args": {
+          "class": "a\"b",
+          "label": "<i>\""
+        },
+        "contains": [
+          "class=\"a&quot;b\"",
+          "aria-label=\"&lt;i&gt;&quot;\""
+        ]
+      },
+      {
+        "name": "attrs: download",
+        "kind": "link_attrs",
+        "input": "/doc.pdf",
+        "args": {
+          "download": true
+        },
+        "contains": [
+          " download"
+        ]
+      },
+      {
+        "name": "attrs: aria-current en esta página",
+        "kind": "link_attrs",
+        "input": "/contacto/",
+        "args": {
+          "current": true
+        },
+        "contains": [
+          "aria-current=\"page\""
+        ]
+      },
+      {
+        "name": "attrs: sin aria-current en otra página",
+        "kind": "link_attrs",
+        "input": "/otra/",
+        "args": {
+          "current": true
+        },
+        "notContains": [
+          "aria-current"
+        ]
+      },
+      {
+        "name": "attrs: sin aria-current en un enlace externo",
+        "kind": "link_attrs",
+        "input": "https://google.com/contacto/",
+        "args": {
+          "current": true
+        },
+        "notContains": [
+          "aria-current"
+        ]
+      },
+      {
+        "name": "attrs: sin aria-current si no se pide",
+        "kind": "link_attrs",
+        "input": "/contacto/",
+        "notContains": [
+          "aria-current"
+        ]
+      }
+    ]
+  }
 }

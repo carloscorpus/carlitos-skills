@@ -158,6 +158,38 @@ try {
         });
     }
 
+    // ---------- Enlaces ----------
+    const linkTheme = makeTheme('enlaces');
+    expect(run(linkTheme, '--helpers', 'links').status === 0, 'instalar links sale con 0');
+    expect(run(linkTheme, '--check').status === 0, 'links: --check sale con 0');
+    const linkFunctions = readFileSync(join(linkTheme, 'functions.php'), 'utf8');
+    expect(linkFunctions.split("require_once get_theme_file_path('/inc/helpers/links.php');").length === 2, 'functions.php conecta links.php una vez');
+    expect(run(linkTheme, '--helpers', 'links').status === 0 && readFileSync(join(linkTheme, 'functions.php'), 'utf8') === linkFunctions, 'reinstalar links no duplica el require_once');
+    expect(json(run(linkTheme, '--list'))?.helpers?.links?.wired === true, '--list muestra links conectado');
+    expect(readFileSync(join(linkTheme, 'CLAUDE.md'), 'utf8').includes('enlace de un campo ACF'), 'CLAUDE.md lleva el bloque de enlaces');
+    const lint = spawnSync(php, ['-l', join(linkTheme, 'inc/helpers/links.php')], { encoding: 'utf8' });
+    expect(lint.status === 0, 'php -l links.php', lint.stdout + lint.stderr);
+
+    const linkItems = [
+        ...cases.links.data.map((c) => ({ kind: 'link_data', input: c.input })),
+        ...cases.links.html.map((c) => ({ kind: c.kind, input: c.input, args: c.args })),
+    ];
+    const linkOut = evaluate(linkTheme, linkItems);
+    if (linkOut) {
+        cases.links.data.forEach((c, i) => {
+            const got = linkOut[i];
+            const ok = c.expect === null ? got === null : got !== null && Object.entries(c.expect).every(([k, v]) => got[k] === v);
+            expect(ok, `enlace/datos: ${c.name}`, JSON.stringify(got));
+        });
+        cases.links.html.forEach((c, j) => {
+            const html = linkOut[cases.links.data.length + j];
+            const label = `enlace/html: ${c.name}`;
+            if (c.equals !== undefined) expect(html === c.equals, label, JSON.stringify(html));
+            for (const piece of c.contains ?? []) expect(html.includes(piece), label, `falta ${piece} en ${html}`);
+            for (const piece of c.notContains ?? []) expect(!html.includes(piece), label, `sobra ${piece} en ${html}`);
+        });
+    }
+
     // ---------- Texto (un tema por grupo de estilos) ----------
     for (const group of cases.groups) {
         const t = makeTheme(`texto-${cases.groups.indexOf(group)}`);

@@ -13,7 +13,9 @@ foreach ($job['attachments'] as $id => $a) {
     $GLOBALS['wph_attachments'][(string) $id] = $a;
 }
 
-foreach (['images', 'text'] as $helper) {
+$_SERVER['REQUEST_URI'] = '/contacto/';
+
+foreach (['images', 'text', 'links'] as $helper) {
     if (is_file($theme . '/inc/helpers/' . $helper . '.php')) {
         require $theme . '/inc/helpers/' . $helper . '.php';
     }
@@ -36,6 +38,15 @@ foreach ($job['items'] as $item) {
             break;
         case 'image':
             $out[] = ($prefix . '_image')($input, $item['args'] ?? []);
+            break;
+        case 'link_data':
+            $out[] = ($prefix . '_link_data')($input);
+            break;
+        case 'link_attrs':
+            $out[] = ($prefix . '_link_attrs')($input, $item['args'] ?? []);
+            break;
+        case 'link':
+            $out[] = ($prefix . '_link')($input, $item['args'] ?? []);
             break;
         case 'text':
             $out[] = ($prefix . '_highlight')($input, $item['only'] ?? null);

@@ -16,12 +16,21 @@ Copy the items that apply into the spec of the page or section that uses the hel
 - [ ] The main image of the page uses `'loading' => 'eager'`; the rest stay lazy.
 - [ ] Decorative images have `alt` empty on purpose; informative ones have real alt text.
 
+## Links
+
+- [ ] Every ACF link in the new views goes through `<prefix>_link()` or `<prefix>_link_attrs()`; no `target="_blank"` or `rel` written by hand.
+- [ ] With the field empty, nothing is printed (no empty `<a>`, no `href="#"`).
+- [ ] A link that opens a new tab has the hidden notice, and `sr-only` exists in the compiled CSS (or `sr_class` points to a class that does).
+- [ ] Icon-only links have `label`.
+- [ ] No link has `nofollow` unless the user asked for it.
+
 ## Text styles
 
 - [ ] Each style has a different marker (`--list` shows no repeats).
 - [ ] Every class used exists in the compiled CSS after `pnpm build`.
 - [ ] A text with two styles and a text with `&` render correctly in the browser (no `&amp;amp;`).
 - [ ] The output is printed as is, without `esc_html()`.
+- [ ] The color of every style has enough contrast against its background (WCAG AA, 4.5:1 for normal text): the helper cannot check it, the design decides it.
 
 ## Automated test (in this skill)
 
