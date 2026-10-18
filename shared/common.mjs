@@ -150,7 +150,7 @@ export function claudeBlock(path, id, body) {
     return { status, write: () => writeFileSync(path, next.replace(/\n/g, eol)) };
 }
 
-// ---------- Vite: configuración y archivos de entrada ----------
+// ---------- Vite: configuración y JS de entrada ----------
 
 const VITE_CONFIGS = ['ts', 'mts', 'js', 'mjs', 'cts', 'cjs'].map((ext) => `vite.config.${ext}`);
 
@@ -158,31 +158,25 @@ export function findViteConfig(target) {
     return VITE_CONFIGS.find((rel) => existsSync(join(target, rel))) ?? null;
 }
 
-// Busca un archivo de entrada que Vite empaqueta: las rutas con esa extensión que nombra
-// vite.config.* y existen en el tema. Con varias, prefiere los nombres de `preferred`.
-// Devuelve { entry, candidates }; `entry` es null si no hay una sola respuesta clara (entonces se
-// pide la ruta al usuario).
-function detectEntry(target, extensions, preferred, fallback) {
+// Busca el JS principal que Vite empaqueta: las rutas .js/.ts que nombra vite.config.* y existen
+// en el tema. Con varias, prefiere main/app/index/theme. Devuelve { entry, candidates }; `entry`
+// es null si no hay una sola respuesta clara (entonces se pide la ruta al usuario).
+export function detectJsEntry(target) {
     const config = findViteConfig(target);
     const text = config ? readFileSync(join(target, config), 'utf8') : '';
-    const pattern = new RegExp(String.raw`['"\`]((?:[\w.-]+/)*[\w.-]+\.(?:${extensions}))['"\`]`, 'g');
-    const found = [...text.matchAll(pattern)]
+    const found = [...text.matchAll(/['"`]((?:[\w.-]+\/)*[\w.-]+\.(?:[mc]?[jt]sx?))['"`]/g)]
         .map((m) => posix.normalize(m[1]))
         .filter((rel) => rel !== config && !rel.endsWith('.d.ts') && statExists(join(target, rel)));
     const candidates = [...new Set(found)];
 
     if (candidates.length === 1) return { entry: candidates[0], candidates };
-    const named = candidates.filter((rel) => preferred.test(posix.basename(rel)));
+    const named = candidates.filter((rel) => /^(main|app|index|theme)\./.test(posix.basename(rel)));
     if (named.length === 1) return { entry: named[0], candidates };
-    if (!candidates.length && statExists(join(target, fallback))) return { entry: fallback, candidates };
+    if (!candidates.length && statExists(join(target, 'src/js/main.js'))) {
+        return { entry: 'src/js/main.js', candidates };
+    }
     return { entry: null, candidates };
 }
-
-export const detectJsEntry = (target) =>
-    detectEntry(target, '[mc]?[jt]sx?', /^(main|app|index|theme)\./, 'src/js/main.js');
-
-export const detectCssEntry = (target) =>
-    detectEntry(target, 'p?css', /^(input|main|style|app|index|theme)\./, 'src/css/input.css');
 
 function statExists(path) {
     return existsSync(path) && statSync(path).isFile();
