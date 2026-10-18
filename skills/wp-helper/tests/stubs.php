@@ -35,7 +35,32 @@ function esc_attr($text)
 function esc_url_raw($url)
 {
     $url = trim((string) $url);
-    return preg_match('#^(https?:)?//|^/#i', $url) ? $url : '';
+    if (preg_match('#^([a-z][a-z0-9+.\-]*):#i', $url, $m)) {
+        // Como wp_allowed_protocols(): más amplio que lo que aceptan los helpers.
+        $allowed = ['http', 'https', 'ftp', 'ftps', 'mailto', 'news', 'irc', 'sms', 'tel', 'fax', 'xmpp', 'webcal', 'urn'];
+        return in_array(strtolower($m[1]), $allowed, true) ? $url : '';
+    }
+    return $url;
+}
+
+function home_url($path = '')
+{
+    return 'https://site.test' . $path;
+}
+
+function wp_parse_url($url, $component = -1)
+{
+    return parse_url($url, $component);
+}
+
+function is_email($email)
+{
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+function __($text, $domain = 'default')
+{
+    return $text;
 }
 
 function esc_url($url)

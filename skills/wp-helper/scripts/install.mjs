@@ -3,10 +3,10 @@
 //
 // Uso:
 //   node install.mjs --list [--target <dir>]
-//   node install.mjs --helpers images,text [--target <dir>] [--slug <slug>]
+//   node install.mjs --helpers images,text,links [--target <dir>] [--slug <slug>]
 //                    [--dry-run] [--overwrite a,b] [--skip c,d]
 //   node install.mjs --add-style --name <nombre> --marker <carácter> --class <clases> [--dry-run]
-//   node install.mjs --check [--helpers images,text] [--target <dir>]
+//   node install.mjs --check [--helpers images,text,links] [--target <dir>]
 //
 // Requisitos del tema: style.css y functions.php. No exige Vite (solo el helper "text" usa clases
 // de Tailwind, que el tema ya resuelve) ni que el tema venga de wp-vite-theme.
@@ -46,6 +46,7 @@ const STYLE_LINE = /^\s*'([a-z][a-z0-9-]*)' => \['marker' => '(.)', 'class' => '
 const HELPERS = {
     images: { files: ['inc/helpers/images.php'], wire: 'inc/helpers/images.php' },
     text: { files: ['inc/helpers/text.php', STYLES_FILE], wire: 'inc/helpers/text.php' },
+    links: { files: ['inc/helpers/links.php'], wire: 'inc/helpers/links.php' },
 };
 const requireLine = (rel) => `require_once get_theme_file_path('/${rel}');`;
 
@@ -184,7 +185,7 @@ if (args.check) {
     const names = asked.length ? asked : Object.keys(HELPERS).filter(isInstalled);
     const hints = [];
     const status = {};
-    if (!names.length) hints.push('No hay helpers instalados: corre install.mjs --helpers images,text.');
+    if (!names.length) hints.push('No hay helpers instalados: corre install.mjs --helpers images,text,links.');
 
     for (const name of names) {
         const installed = isInstalled(name);
@@ -212,7 +213,7 @@ if (args.check) {
 
 const selected = parseHelpers(args.helpers);
 if (!selected.length) {
-    fail(1, 'Indica qué instalar: --helpers images,text (o --list, --add-style, --check).', { available: Object.keys(HELPERS) });
+    fail(1, 'Indica qué instalar: --helpers images,text,links (o --list, --add-style, --check).', { available: Object.keys(HELPERS) });
 }
 
 const prefix = prefixFromSlug(slug);

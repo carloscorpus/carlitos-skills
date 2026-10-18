@@ -32,4 +32,7 @@ It exits `1` and lists the free markers if the name or marker is already taken. 
 
 ## Colors
 
+The helper marks the text with a class; it cannot check contrast. Confirm with the design that each style color has enough contrast (WCAG AA, 4.5:1 for normal text) on its background, and that the highlight is not the only way the text conveys meaning.
+
+
 If the design needs a color that is not a Tailwind token, define it once in `@theme` (`--color-…`) and use the generated class (`text-…`). Do not put hex values in the helper.

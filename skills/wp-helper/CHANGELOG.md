@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.1.0] - 2026-10-18
+
+### Agregado
+- Helper de enlaces (`inc/helpers/links.php`): `<prefix>_link()`, `<prefix>_link_attrs()` y `<prefix>_link_data()` para campos Link o URL de ACF. Solo permite `http`, `https`, `mailto` y `tel` (más relativos y anclas) y descarta enlaces vacíos, `#` o inseguros. `target="_blank"` va siempre con `rel="noopener"` (y `noreferrer` si es externo); `mailto`, `tel` y anclas nunca abren pestaña nueva; normaliza el teléfono; avisa a los lectores de pantalla de la pestaña nueva con un texto oculto (`sr-only`); sin nombre accesible no imprime el `<a>`. Nunca agrega `nofollow` por su cuenta; `rel`, `blank`, `label`, `download` y `aria-current` se piden por llamada.
+- `references/links.md` y criterios de aceptación de enlaces; nota de contraste en `references/text-styles.md`.
+
+### Cambiado
+- `install.mjs` acepta `--helpers links`. El sello de versión de los tres motores pasa a 1.1.0 (`images` y `text` no cambian): `--check` avisa a los temas con 1.0.0.
+
 ## [1.0.0] - 2026-10-17
 
 ### Agregado

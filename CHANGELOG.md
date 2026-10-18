@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.7.0] - 2026-10-18
+
+### Agregado
+- `wp-helper` 1.1.0: helper de enlaces para campos Link o URL de ACF, con `rel`, protocolos permitidos, aviso de pestaña nueva y nombre accesible por defecto.
+
 ## [1.6.0] - 2026-10-17
 
 ### Agregado
