@@ -14,7 +14,8 @@
 | Skill                                            | Versión | Requiere                                                | Qué hace                                                                                                                                             |
 | ------------------------------------------------ | ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.1.0   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
-| [`wp-form`](skills/wp-form/SKILL.md)             | 1.2.0   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
+| [`wp-form`](skills/wp-form/SKILL.md)             | 1.3.0   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
+| [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -85,6 +86,23 @@ El detalle de la skill (tipos de campo, contrato de la vista, integraciones, com
 - Correo solo con `wp_mail()`: Mailpit en local, Fluent SMTP en producción.
 - Necesita `zod` en su última versión estable (`pnpm add zod@latest`); se carga solo en páginas con un form.
 - Envíos guardados (opcional): solo los ven administradores, sin borrado automático (se eliminan desde la lista) y conectados a las herramientas de datos personales de WordPress.
+
+## wp-modal
+
+En un tema WordPress con Vite y pnpm, pide `arma el modal de promoción` o pásale un frame de Figma (o un spec con `skill: wp-modal`). Deduce el tipo de panel (modal, confirmación, drawer, hoja inferior, lightbox) del diseño y te pregunta lo que falta: disparador, apertura automática, movimiento y, si lleva un formulario, si va con `wp-form` o independiente. Instala el motor la primera vez.
+
+El diseño es de Figma: ancho exacto, comportamiento móvil y clases por parte. La skill pone lo demás: el `<dialog>` nativo (foco atrapado, Esc, fondo inerte), un botón de cerrar accesible, el bloqueo de scroll sin saltos, `prefers-reduced-motion` y opciones de movimiento.
+
+```text
+inc/modals.php                 motor (no se edita por proyecto)
+src/js/modules/modal.js        motor JS (no se edita por proyecto)
+src/css/modal.css              motor CSS en @layer components, variables --modal-*
+template-parts/modals/<id>.php vista de cada modal (diseño de Figma)
+```
+
+- Sin vistas de ejemplo: la skill las arma desde el frame. El detalle está en `skills/wp-modal/references/`.
+- Auditoría: `node skills/wp-modal/tests/check.mjs <url | archivo.html>` revisa nombre accesible, botón de cerrar, `h1`, ids, disparadores, imágenes e iframes.
+- Un form dentro del modal con `wp-form` necesita `wp-form` 1.3.0 o posterior.
 
 ## Agregar una skill
 

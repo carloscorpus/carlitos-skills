@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Modales</title></head>
+<body>
+<main><h1>Página de prueba</h1>
+<button type="button" command="show-modal" commandfor="promo" data-modal-open="promo" aria-haspopup="dialog">Ver promoción</button>
+<a href="/promocion/" data-modal-open="promo" aria-haspopup="dialog">Ver promoción en su página</a>
+<button type="button" command="show-modal" commandfor="confirmar" data-modal-open="confirmar" aria-haspopup="dialog">Eliminar</button>
+<button type="button" command="show-modal" commandfor="contacto" data-modal-open="contacto" aria-haspopup="dialog">Contacto</button>
+</main>
+<dialog id="promo" data-modal data-placement="center" data-motion="scale" data-stagger data-backdrop-close="true" aria-labelledby="promo-title" style="--modal-width-exact:45rem">
+<div class="modal__panel">
+<header class="modal__header">
+<h2 id="promo-title" class="modal__title">Título de la promoción</h2>
+<form method="dialog"><button class="modal__close" aria-label="Cerrar"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+</header>
+<div class="modal__body">
+<img src="promo.jpg" alt="Descripción" width="640" height="480" loading="lazy">
+<p>Texto.</p>
+</div>
+</div>
+</dialog>
+<dialog id="confirmar" data-modal data-placement="center" role="alertdialog" aria-labelledby="confirmar-title" aria-describedby="confirmar-description">
+<div class="modal__panel">
+<header class="modal__header">
+<h2 id="confirmar-title" class="modal__title">¿Eliminar?</h2>
+<form method="dialog"><button class="modal__close" aria-label="Cerrar"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+</header>
+<p id="confirmar-description" class="modal__description">No se puede deshacer.</p>
+<div class="modal__body">
+<form method="dialog"><button value="cancel" autofocus>Cancelar</button></form><a href="/eliminar/">Sí, eliminar</a>
+</div>
+</div>
+</dialog>
+<dialog id="contacto" data-modal data-placement="right" data-mobile="fullscreen" data-backdrop-close="true" data-form-success="close" aria-labelledby="contacto-title">
+<div class="modal__panel">
+<header class="modal__header">
+<h2 id="contacto-title" class="modal__title modal__title--hidden">Contacto</h2>
+<form method="dialog"><button class="modal__close" aria-label="Cerrar"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+</header>
+<div class="modal__body">
+<form data-form="contacto"><input name="nombre" autofocus></form>
+</div>
+</div>
+</dialog>
+<dialog id="oferta" data-modal data-placement="bottom" data-mobile="sheet" data-backdrop-close="true" aria-labelledby="oferta-title" data-modal-auto="scroll" data-modal-scroll="60" data-modal-min-width="768" data-modal-repeat="days:7">
+<div class="modal__panel">
+<header class="modal__header">
+<h2 id="oferta-title" class="modal__title">Oferta</h2>
+<form method="dialog"><button class="modal__close" aria-label="Cerrar"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+</header>
+<div class="modal__body">
+<p>Oferta de bienvenida.</p>
+</div>
+</div>
+</dialog>
+</body>
+</html>

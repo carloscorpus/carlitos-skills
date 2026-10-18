@@ -2,6 +2,15 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.5.0] - 2026-10-17
+
+### Agregado
+- `wp-modal` 1.0.0: skill nueva para modales, confirmaciones, drawers, hojas inferiores y lightbox sobre el `<dialog>` nativo. El diseño sale de Figma; incluye accesibilidad, reglas de SEO, catálogo de movimiento, apertura automática opcional, auditoría estática y la pregunta de `wp-form` o form independiente.
+- `shared/common.mjs`: `detectCssEntry()` (CSS principal de Vite), copiada a cada skill.
+
+### Cambiado
+- `wp-form` 1.3.0: eventos `wp-form:success` / `wp-form:error` en el motor JS para usarlo dentro de un modal.
+
 ## [1.4.0] - 2026-10-17
 
 ### Cambiado

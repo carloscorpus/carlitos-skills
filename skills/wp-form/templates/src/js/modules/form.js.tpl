@@ -68,6 +68,10 @@ function applyTypingFilter(input, filter) {
     }
 }
 
+// Avisa al resto de la página (p. ej. un modal de wp-modal) sin acoplarse a ella: el evento
+// burbujea desde el <form>.
+const notify = (form, name, detail) => form.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
+
 const isToggle = (rule) => rule.type === 'checkbox' || rule.type === 'consent';
 
 // Cuenta caracteres reales (igual que mb_strlen en PHP).
@@ -321,6 +325,7 @@ function initForm(form) {
                 form.reset();
                 setStatus(res.data.message, 'success');
                 renewToken(); // El próximo envío necesita su propio token.
+                notify(form, 'wp-form:success', { message: res.data.message });
                 return;
             }
 
@@ -329,9 +334,11 @@ function initForm(form) {
             // too_fast no renueva: el token actual sigue envejeciendo y el reintento pasa.
             if (res.data.code === 'expired') renewToken();
             setStatus(res.data.message || MSG_GENERIC, 'error');
+            notify(form, 'wp-form:error', { status: res.status, code: res.data.code });
         } catch {
             setStatus(MSG_GENERIC, 'error');
             renewToken();
+            notify(form, 'wp-form:error', { status: 0, code: 'network' });
         } finally {
             if (!redirecting) setBusy(false);
         }
