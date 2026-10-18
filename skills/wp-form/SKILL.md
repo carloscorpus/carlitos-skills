@@ -1,8 +1,8 @@
 ---
 name: wp-form
-description: Build a secure, accessible form in a WordPress theme that uses Vite and pnpm (contact, quote, newsletter, lead forms). Validation with Zod in the front and the same rules in PHP, nonce, sanitizing, anti-spam, double-submit protection, wp_mail (Mailpit local, Fluent SMTP prod) and optional saved submissions in the admin. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.
+description: Build a secure, accessible form in a WordPress theme with Vite and pnpm (contact, quote, newsletter, lead): Zod in the front and the same rules in PHP, nonce, anti-spam, double-submit protection, wp_mail and optional saved submissions. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.
 metadata:
-  version: "1.3.0"
+  version: "1.3.1"
 ---
 
 # wp-form
@@ -21,7 +21,7 @@ The engine files are generic and are **not edited per project**. A new form only
 | `template-parts/forms/<id>.php` | you, from `examples/` + Figma | Yes: the markup and classes |
 | `tests/` (stays in the skill) | — | Run against the theme to check front/back parity |
 
-If the engine needs a change, change the template in this skill (and bump the plugin version), never the copy in a theme.
+If the engine needs a change, change the template in this skill, bump `metadata.version` in its SKILL.md and note it in its CHANGELOG.md; never the copy in a theme.
 
 Detail lives in `references/` and is read only by the step that points to it.
 

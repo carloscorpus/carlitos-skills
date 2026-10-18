@@ -1,8 +1,8 @@
 ---
 name: wp-modal
-description: Build an accessible modal, dialog, confirmation, drawer, bottom sheet or lightbox in a WordPress theme that uses Vite and pnpm (Tailwind by default), on the native HTML `<dialog>` element (semantic, keyboard, screen-reader and mobile friendly, no UI library). The design comes from Figma; the skill adds structure, behavior, accessibility, SEO-safe rules, motion options and a static audit. Asks whether a form inside it uses wp-form or something else. Use when a spec says `skill: wp-modal`, or the user asks for a modal, "ventana emergente", popup, dialog, "diálogo", drawer, "panel lateral", lightbox, "confirmación", or gives a Figma frame of an overlay.
+description: Build an accessible modal, dialog, confirmation, drawer, bottom sheet or lightbox in a WordPress theme with Vite and pnpm (Tailwind by default), on the native `<dialog>`. Design comes from Figma; the skill adds structure, behavior, accessibility, SEO-safe rules, motion and a static audit, and asks whether a form inside uses wp-form or something else. Use when a spec says `skill: wp-modal`, or the user asks for a modal, "ventana emergente", popup, dialog, "diálogo", drawer, "panel lateral", lightbox, "confirmación", or gives a Figma frame of an overlay.
 metadata:
-  version: "1.0.1"
+  version: "1.0.2"
 ---
 
 # wp-modal
@@ -20,7 +20,7 @@ The engine files are generic and are **not edited per project**. A new modal onl
 | `template-parts/modals/<id>.php` | you, from the Figma frame | Yes: the options, the classes and the content |
 | `tests/` (stays in the skill) | — | Static audit of the rendered page |
 
-If the engine needs a change, change the template in this skill (and bump the skill version), never the copy in a theme. The skill ships no example views: you write each view from the frame and the options below.
+If the engine needs a change, change the template in this skill, bump `metadata.version` in its SKILL.md and note it in its CHANGELOG.md; never the copy in a theme. The skill ships no example views: you write each view from the frame and the options below.
 
 Detail lives in `references/` and is read only by the step that points to it.
 
@@ -33,7 +33,7 @@ Detail lives in `references/` and is read only by the step that points to it.
    - **Opens by itself?** Depends on the project. If yes: when (`load` | `delay` | `scroll`), how often (`always` | `session` | `days:N`), on which pages, and whether on mobile too. Read [references/auto-open.md](references/auto-open.md) first and tell the user about the mobile-interstitial risk.
    - **Motion:** only if Figma does not define it. Read [references/motion.md](references/motion.md), offer the options that fit the panel type and recommend one. Never add motion the user did not accept.
    - **Tailwind:** detect it (`tailwindcss` in `package.json` or `@import "tailwindcss"` in the main CSS). If found, use it without asking. If not, ask how the classes should be written.
-   - **Form inside?** none | wp-form | independent. Read [references/forms.md](references/forms.md) and follow its branch.
+   - **Form inside?** none | wp-form (offer it only if its skill is available) | independent. Read [references/forms.md](references/forms.md) and follow its branch.
    - **Close rules:** click outside closes (default yes). A confirmation (`alertdialog`) never closes that way.
    Content is free: do not ask for a content template. Sizes, colors and spacing are not asked: they come from the design (next step).
 

@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.0.2] - 2026-10-17
+
+### Cambiado
+- `wp-form` es opcional de forma explícita: si su skill no está disponible, no se ofrece y se usa el form independiente (`SKILL.md` paso 2 y `references/forms.md`).
+- `description` más corta, con los mismos disparadores; la regla para cambiar el motor ahora dice igual que en `wp-form`. Sin cambios en el motor: la versión sube solo porque se sella en él, así que `install.mjs --check` avisa a los temas con 1.0.1.
+
 ## [1.0.1] - 2026-10-17
 
 ### Corregido
