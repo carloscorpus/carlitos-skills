@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.1.2] - 2026-10-18
+
+### Cambiado
+- La skill y el `CLAUDE.md` generado ya no fijan cómo se crean los campos ACF (antes: "desde el admin"). Siguen sin crear archivos ACF; el método lo define el pedido o la skill que lo haga, y si no está definido se pregunta. Los temas ya generados conservan la línea anterior hasta que se actualice su `CLAUDE.md`.
+
 ## [1.1.1] - 2026-10-17
 
 ### Cambiado

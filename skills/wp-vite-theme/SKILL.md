@@ -1,8 +1,8 @@
 ---
 name: wp-vite-theme
-description: Scaffold a new WordPress theme (Local WP) with Vite + JS + Tailwind (latest) + pnpm. Use when the user starts a new WP theme project, says "inicia tema", "nuevo tema wp", "scaffold theme", "arranca proyecto wp con vite", or asks for the usual enqueue.php / vite.config.ts / style.css / header / footer base.
+description: 'Scaffold a new WordPress theme (Local WP) with Vite + JS + Tailwind (latest) + pnpm. Use when the user starts a new WP theme project, says "inicia tema", "nuevo tema wp", "scaffold theme", "arranca proyecto wp con vite", or asks for the usual enqueue.php / vite.config.ts / style.css / header / footer base.'
 metadata:
-  version: "1.1.1"
+  version: "1.1.2"
 ---
 
 # wp-vite-theme
@@ -30,7 +30,7 @@ The Vite `base` needs no placeholder: `vite.config.ts` derives the theme folder 
    node <skill>/scripts/scaffold.mjs --name "<name>" --author "<author>" --uri "<uri>" --dry-run
    ```
    It prints JSON with `create` and `conflicts`. If `conflicts` is non-empty, show them and ask the user, file by file, whether to overwrite or keep. Never decide for them.
-3. **Generate files.** Same command without `--dry-run`, plus `--overwrite a,b` / `--skip c,d` covering every conflict (paths exactly as listed). Exit codes: `0` ok, `1` invalid input (fix and ask the user if needed), `2` unresolved conflicts, `3` leftover placeholders (a template uses an unknown `{{KEY}}`: fix the script/template, do not patch output by hand). On non-zero exit nothing is written. Do NOT create `index.html` (not needed in WP themes) nor ACF files (user creates those from the admin).
+3. **Generate files.** Same command without `--dry-run`, plus `--overwrite a,b` / `--skip c,d` covering every conflict (paths exactly as listed). Exit codes: `0` ok, `1` invalid input (fix and ask the user if needed), `2` unresolved conflicts, `3` leftover placeholders (a template uses an unknown `{{KEY}}`: fix the script/template, do not patch output by hand). On non-zero exit nothing is written. Do NOT create `index.html` (not needed in WP themes) nor ACF files (this skill does not decide how field groups are created).
 4. **package.json.** If missing: `pnpm init`, then set `"private": true`, `"type": "module"`, `"description": "Tema WordPress <slug>"`, `"license": "UNLICENSED"`, `"engines": { "node": ">=<major of node --version>" }`, scripts `dev: vite` and `build: vite build` only (no `preview`, it does not apply to a WP theme). Remove `main` and the default `test` script.
 5. **Install deps.** Security config lives in `pnpm-workspace.yaml` (copied in step 3). Then:
    ```
