@@ -2,6 +2,15 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.6.0] - 2026-10-17
+
+### Agregado
+- `wp-helper` 1.0.0: skill nueva que instala helpers PHP con el prefijo del tema. Helper de imágenes seguras para campos de ACF (array, ID, URL o vacío) y helper de texto con partes de otro color, con marcadores configurables y sin choques entre estilos. Pregunta cuál incluir o crea uno local nuevo.
+- `shared/common.mjs`: `ensureRequireLine()` (conecta un `require_once` en `functions.php` sin duplicarlo), copiada a cada skill.
+
+### Cambiado
+- `wp-vite-theme` 1.1.1: ofrece `wp-helper` al inicio y la corre al final si está disponible.
+
 ## [1.5.2] - 2026-10-17
 
 ### Cambiado

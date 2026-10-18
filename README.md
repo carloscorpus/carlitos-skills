@@ -13,9 +13,10 @@
 
 | Skill                                            | Versión | Requiere                                                | Qué hace                                                                                                                                             |
 | ------------------------------------------------ | ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.1.0   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
+| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.1.1   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
 | [`wp-form`](skills/wp-form/SKILL.md)             | 1.3.1   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
 | [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.2   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
+| [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.0.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío) y texto con partes de otro color con marcadores configurables. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -103,6 +104,23 @@ template-parts/modals/<id>.php vista de cada modal (diseño de Figma)
 - Sin vistas de ejemplo: la skill las arma desde el frame. El detalle está en `skills/wp-modal/references/`.
 - Auditoría: `node skills/wp-modal/tests/check.mjs <url | archivo.html>` revisa nombre accesible, botón de cerrar, `h1`, ids, disparadores, imágenes e iframes.
 - Un form dentro del modal con `wp-form` necesita `wp-form` 1.3.0 o posterior.
+
+## wp-helper
+
+En un tema WordPress, pide `instala los helpers` (o corre la skill al final de `wp-vite-theme`, que la ofrece). Te pregunta cuál incluir: **imágenes**, **texto de dos colores**, los dos, o uno **local nuevo** solo para ese proyecto. El de imágenes se recomienda en todos los proyectos.
+
+```text
+inc/helpers/images.php         motor: <prefijo>_image_data(), <prefijo>_image() (no se edita por proyecto)
+inc/helpers/text.php           motor: <prefijo>_highlight() (no se edita por proyecto)
+inc/helpers/text-styles.php    estilos del proyecto: marcador + clase (lo escribe --add-style)
+inc/helpers/<nombre>.php       helper local del proyecto
+```
+
+- **Imágenes:** acepta lo que entregue un campo de imagen de ACF (array, ID o URL), un adjunto o un valor vacío. Una imagen borrada o un PDF dan `null` / `''` en vez de romper la vista. Cambiar el formato de retorno del campo no rompe nada.
+- **Texto de dos colores:** `Negro |naranja| y *rojo*`. Cada estilo tiene su marcador (`* | ~ ^ =`) y su clase; `--add-style` falla si el marcador o el nombre ya están en uso y lista los libres. `-` y `_` no se aceptan como marcadores, para no chocar con texto normal.
+- Comandos: `node skills/wp-helper/scripts/install.mjs --list | --helpers images,text | --add-style … | --check`.
+- Prueba: `node skills/wp-helper/tests/check.mjs` (necesita `php`; busca el de Local solo).
+- Guardas de subida en el admin (peso, formatos) no están incluidas.
 
 ## Agregar una skill
 

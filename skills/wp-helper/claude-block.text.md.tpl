@@ -1,0 +1,1 @@
+- Un texto con partes de otro color se imprime con `{{PREFIX}}_highlight($texto)`; ya sale escapado. Los marcadores y sus clases están en `inc/helpers/text-styles.php`: para sumar un estilo corre `install.mjs --add-style` de la skill wp-helper, no lo edites a mano.
