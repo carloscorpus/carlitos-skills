@@ -2,7 +2,7 @@
 name: wp-form
 description: Build a secure, accessible form in a WordPress theme that uses Vite and pnpm (contact, quote, newsletter, lead forms). Validation with Zod in the front and the same rules in PHP, nonce, sanitizing, anti-spam, double-submit protection, wp_mail (Mailpit local, Fluent SMTP prod) and optional saved submissions in the admin. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # wp-form
@@ -83,7 +83,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 ## Do not
 
 - Do not edit `inc/forms.php` or `src/js/modules/form.js` in a theme. Change the skill's templates.
-- Do not add modals, REST routes, axios, translatable strings (`__()`), Turnstile or SMTP config unless the user asks.
+- Do not add REST routes, axios, translatable strings (`__()`), Turnstile or SMTP config unless the user asks. A form inside a modal is built with the `wp-modal` skill (it prints the form view inside the modal); do not build the modal here.
 - Do not hand-write `name`, `id`, `required`, `maxlength` or `aria-*` on fields: the helpers print them from the definition.
 - Do not trust the front: every rule must exist in the definition so PHP enforces it.
 - Do not install a Zod version other than the latest stable.

@@ -181,6 +181,25 @@ export function detectJsEntry(target) {
     return { entry: null, candidates };
 }
 
+// Igual que detectJsEntry, pero para el CSS principal (.css/.scss/.sass/.pcss). Con varios,
+// prefiere input/main/app/style/index/theme; sin ninguno nombrado, usa src/css/input.css si existe.
+export function detectCssEntry(target) {
+    const config = findViteConfig(target);
+    const text = config ? readFileSync(join(target, config), 'utf8') : '';
+    const found = [...text.matchAll(/['"`]((?:[\w.-]+\/)*[\w.-]+\.(?:css|scss|sass|pcss))['"`]/g)]
+        .map((m) => posix.normalize(m[1]))
+        .filter((rel) => statExists(join(target, rel)));
+    const candidates = [...new Set(found)];
+
+    if (candidates.length === 1) return { entry: candidates[0], candidates };
+    const named = candidates.filter((rel) => /^(input|main|app|style|index|theme)\./.test(posix.basename(rel)));
+    if (named.length === 1) return { entry: named[0], candidates };
+    if (!candidates.length && statExists(join(target, 'src/css/input.css'))) {
+        return { entry: 'src/css/input.css', candidates };
+    }
+    return { entry: null, candidates };
+}
+
 function statExists(path) {
     return existsSync(path) && statSync(path).isFile();
 }

@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.0] - 2026-10-17
+
+### Agregado
+- El motor JS avisa con los eventos `wp-form:success` y `wp-form:error` (burbujean desde el `<form>`), para que un modal de `wp-modal` pueda cerrarse o reaccionar sin tocar el motor del form. No cambia el comportamiento de ningún form existente. El motor sube a 1.3.0: `install.mjs --check` avisa a los temas con el anterior (no sobrescribe sin preguntar).
+
+### Cambiado
+- La documentación ya no dice "no modal": un form dentro de un modal se arma con `wp-modal`.
+
 ## [1.2.0] - 2026-10-17
 
 ### Agregado

@@ -10,7 +10,7 @@ Used in step 6 of SKILL.md, when writing `template-parts/forms/<id>.php` from `e
 - **Consent:** the label links to the privacy policy page only when `get_privacy_policy_url()` is not empty; otherwise the text goes without a link (never `href=""`), and tell the user the page is missing.
 - `<?php <prefix>_form_honeypot(); ?>` inside the form.
 - Submit: `<button type="submit" data-loading-label="Enviando...">` with the text in `<span data-submit-label>`. It gets `disabled` and `data-loading` while sending (style with `data-loading:`).
-- Status: `<p data-form-status role="status" aria-live="polite"></p>` near the button. It gets `data-state="success|error"` (style with `data-[state=error]:`). Plain text only: **no modal** (that is a separate skill).
+- Status: `<p data-form-status role="status" aria-live="polite"></p>` near the button. It gets `data-state="success|error"` (style with `data-[state=error]:`). Plain text only: no modal for the status. The form can live inside a modal built with the `wp-modal` skill; the engine emits `wp-form:success` / `wp-form:error` (bubbling from the `<form>`) so the modal can react, and `autofocus` on the first field puts the focus there instead of on the modal's close button.
 - Inputs at least 16px font (`text-base`) so iOS does not zoom; controls at least 44px tall (`min-h-11`).
 
 Escape everything printed: `esc_html`, `esc_attr`, `esc_url`.
