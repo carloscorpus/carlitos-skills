@@ -128,6 +128,20 @@ export function patchFile(path, update) {
     writeFileSync(path, update(original.replace(/\r\n/g, '\n')).replace(/\n/g, eol));
 }
 
+// Agrega `line` (un require_once) tras el último require de functions.php, o al final si no hay
+// ninguno. Idempotente: si `line` ya está, no toca el archivo. Devuelve true si escribió.
+export function ensureRequireLine(path, line) {
+    if (readFileSync(path, 'utf8').includes(line)) return false;
+    patchFile(path, (text) => {
+        const lines = text.split('\n');
+        const last = lines.findLastIndex((l) => /^\s*require(_once)?\b/.test(l));
+        if (last === -1) return text.replace(/\n*$/, '\n') + line + '\n';
+        lines.splice(last + 1, 0, line);
+        return lines.join('\n');
+    });
+    return true;
+}
+
 // ---------- Bloque de una skill en CLAUDE.md ----------
 
 // Cada skill mantiene su bloque corto entre marcas `<!-- <id>:start -->` / `<!-- <id>:end -->`.

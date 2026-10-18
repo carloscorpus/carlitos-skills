@@ -1,0 +1,13 @@
+# Changelog: wp-helper
+
+Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
+
+## [1.0.0] - 2026-10-17
+
+### Agregado
+- Primera versión. Instala helpers PHP con el prefijo del tema en `inc/helpers/` y los conecta desde `functions.php`; pregunta cuál incluir (imágenes, texto, los dos) o crea uno local nuevo.
+- Helper de imágenes (`inc/helpers/images.php`): `<prefix>_image_data()` y `<prefix>_image()` aceptan el array, el ID o la URL que entregue un campo de imagen de ACF, un `WP_Post`, o un valor vacío. Una imagen borrada, un PDF o una URL con protocolo no permitido dan `null` / `''` en vez de romper la vista. El `<img>` sale escapado y con `srcset`, `width`/`height`, `loading` y `fetchpriority`.
+- Helper de texto de dos colores (`inc/helpers/text.php`): `<prefix>_highlight()` marca partes del texto con un carácter (`* | ~ ^ =`), con varios estilos a la vez. Escapa una sola vez (la versión original escapaba `&` dos veces) y el marcador no cuenta si toca letras o números, así `a|b|c` queda intacto. `-` y `_` no son marcadores: aparecen en texto normal (guiones, snake_case).
+- Registro de estilos `inc/helpers/text-styles.php` (configuración del proyecto, nunca se pisa al reinstalar) y `install.mjs --add-style`, que falla si el nombre o el marcador ya están en uso y lista los libres.
+- `install.mjs --list`, `--check` (con `engineVersion`), `--dry-run`, `--overwrite`, `--skip` y bloque corto en el `CLAUDE.md` del tema.
+- `tests/check.mjs`: instala en un tema temporal y corre los casos en PHP real con WordPress simulado.

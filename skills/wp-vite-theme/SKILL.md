@@ -2,7 +2,7 @@
 name: wp-vite-theme
 description: Scaffold a new WordPress theme (Local WP) with Vite + JS + Tailwind (latest) + pnpm. Use when the user starts a new WP theme project, says "inicia tema", "nuevo tema wp", "scaffold theme", "arranca proyecto wp con vite", or asks for the usual enqueue.php / vite.config.ts / style.css / header / footer base.
 metadata:
-  version: "1.1.0"
+  version: "1.1.1"
 ---
 
 # wp-vite-theme
@@ -24,7 +24,7 @@ The Vite `base` needs no placeholder: `vite.config.ts` derives the theme folder 
 
 ## Steps
 
-1. **Detect context.** cwd should be `.../wp-content/themes/<slug>`. Slug = folder name (the script derives it and `PREFIX`/`PREFIX_UPPER`). Ask the user only for what is missing (visible name, author, URI). Never guess author. Also grep the site's `wp-config.php` (`../../../wp-config.php`) for `WP_ENVIRONMENT_TYPE`: it must be `local` or `development`, otherwise dev mode never activates (WP defaults to `production`). Warn the user if not.
+1. **Detect context.** cwd should be `.../wp-content/themes/<slug>`. Slug = folder name (the script derives it and `PREFIX`/`PREFIX_UPPER`). Ask the user only for what is missing (visible name, author, URI). Never guess author. Also grep the site's `wp-config.php` (`../../../wp-config.php`) for `WP_ENVIRONMENT_TYPE`: it must be `local` or `development`, otherwise dev mode never activates (WP defaults to `production`). Warn the user if not. If the `wp-helper` skill is available, ask now whether to run it at the end (optional; its images helper is recommended in every project, its text helper only if the design has texts with two colors).
 2. **Check existing files.** Run a dry run from the theme root (`<skill>` = this skill's folder):
    ```
    node <skill>/scripts/scaffold.mjs --name "<name>" --author "<author>" --uri "<uri>" --dry-run
@@ -62,7 +62,7 @@ The Vite `base` needs no placeholder: `vite.config.ts` derives the theme folder 
        if ($p.Name -eq 'node.exe' -and $p.CommandLine -like "*<theme path>*vite*") { Stop-Process -Id $p.ProcessId -Force }
        ```
        Only kill a `node.exe` whose command line contains this theme's path and `vite`; anything else, report it and stop. Then confirm 5173 is free and delete `hot` (a forced kill skips Vite's cleanup handler, so `hot` is expected to remain). The `hot` cleanup on Ctrl+C cannot be verified from this shell: tell the user it is verified only when they run `pnpm dev` in their own terminal and press Ctrl+C (optional).
-8. Tell user: `pnpm dev`, activate theme in WP admin, create the page "Inicio" with the template "Página de inicio" and set it as the front page (Ajustes → Lectura → Una página estática), and the Deploy rules from the generated `CLAUDE.md`. The theme does not create the page by itself.
+8. Tell user: `pnpm dev`, activate theme in WP admin, create the page "Inicio" with the template "Página de inicio" and set it as the front page (Ajustes → Lectura → Una página estática), and the Deploy rules from the generated `CLAUDE.md`. The theme does not create the page by itself. If the user said yes to `wp-helper` in step 1, run it now.
 
 ## Rules baked into templates
 

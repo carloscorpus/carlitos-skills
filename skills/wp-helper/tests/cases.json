@@ -1,0 +1,553 @@
+{
+  "attachments": {
+    "10": {
+      "mime": "image/jpeg",
+      "url": "https://x.test/a.jpg",
+      "w": 800,
+      "h": 600,
+      "alt": "Foto A",
+      "large": {
+        "url": "https://x.test/a-large.jpg",
+        "w": 400,
+        "h": 300
+      }
+    },
+    "11": {
+      "mime": "application/pdf",
+      "url": "https://x.test/doc.pdf",
+      "w": 0,
+      "h": 0,
+      "alt": ""
+    },
+    "12": {
+      "mime": "image/svg+xml",
+      "url": "https://x.test/logo.svg",
+      "w": 0,
+      "h": 0,
+      "alt": ""
+    }
+  },
+  "data": [
+    {
+      "name": "ID entero",
+      "input": 10,
+      "expect": {
+        "id": 10,
+        "url": "https://x.test/a.jpg",
+        "alt": "Foto A",
+        "width": 800,
+        "height": 600
+      }
+    },
+    {
+      "name": "ID como string",
+      "input": "10",
+      "expect": {
+        "id": 10,
+        "url": "https://x.test/a.jpg",
+        "alt": "Foto A",
+        "width": 800,
+        "height": 600
+      }
+    },
+    {
+      "name": "ID string con espacios",
+      "input": " 10 ",
+      "expect": {
+        "id": 10,
+        "url": "https://x.test/a.jpg",
+        "alt": "Foto A",
+        "width": 800,
+        "height": 600
+      }
+    },
+    {
+      "name": "ID con tamaño",
+      "input": 10,
+      "size": "large",
+      "expect": {
+        "id": 10,
+        "url": "https://x.test/a-large.jpg",
+        "alt": "Foto A",
+        "width": 400,
+        "height": 300
+      }
+    },
+    {
+      "name": "array ACF con sizes",
+      "input": {
+        "ID": 10,
+        "url": "https://x.test/a.jpg",
+        "alt": "Alt ACF",
+        "sizes": {
+          "large": "https://x.test/a-large.jpg",
+          "large-width": 400,
+          "large-height": 300
+        }
+      },
+      "size": "large",
+      "expect": {
+        "id": 10,
+        "url": "https://x.test/a-large.jpg",
+        "alt": "Alt ACF",
+        "width": 400,
+        "height": 300
+      }
+    },
+    {
+      "name": "array ACF sin ese tamaño",
+      "input": {
+        "ID": 10,
+        "url": "https://x.test/a.jpg",
+        "alt": "Alt ACF",
+        "sizes": {}
+      },
+      "size": "large",
+      "expect": {
+        "id": 10,
+        "url": "https://x.test/a-large.jpg",
+        "alt": "Alt ACF",
+        "width": 400,
+        "height": 300
+      }
+    },
+    {
+      "name": "array ACF con alt vacío usa el del adjunto",
+      "input": {
+        "ID": 10,
+        "url": "https://x.test/a.jpg",
+        "alt": ""
+      },
+      "expect": {
+        "id": 10,
+        "url": "https://x.test/a.jpg",
+        "alt": "Foto A",
+        "width": 800,
+        "height": 600
+      }
+    },
+    {
+      "name": "array ACF con id en minúscula",
+      "input": {
+        "id": 10,
+        "alt": "Otra"
+      },
+      "expect": {
+        "id": 10,
+        "url": "https://x.test/a.jpg",
+        "alt": "Otra",
+        "width": 800,
+        "height": 600
+      }
+    },
+    {
+      "name": "array sin ID pero con url",
+      "input": {
+        "url": "https://x.test/z.png",
+        "alt": "Z",
+        "width": 50,
+        "height": 40
+      },
+      "expect": {
+        "id": 0,
+        "url": "https://x.test/z.png",
+        "alt": "Z",
+        "width": 50,
+        "height": 40
+      }
+    },
+    {
+      "name": "URL absoluta",
+      "input": "https://x.test/z.png",
+      "expect": {
+        "id": 0,
+        "url": "https://x.test/z.png",
+        "alt": "",
+        "width": null,
+        "height": null
+      }
+    },
+    {
+      "name": "URL relativa",
+      "input": "/wp-content/uploads/a.png",
+      "expect": {
+        "id": 0,
+        "url": "/wp-content/uploads/a.png",
+        "alt": "",
+        "width": null,
+        "height": null
+      }
+    },
+    {
+      "name": "adjunto WP_Post",
+      "input": {
+        "__post": {
+          "ID": 10,
+          "post_type": "attachment"
+        }
+      },
+      "expect": {
+        "id": 10,
+        "url": "https://x.test/a.jpg",
+        "alt": "Foto A",
+        "width": 800,
+        "height": 600
+      }
+    },
+    {
+      "name": "WP_Post que no es adjunto",
+      "input": {
+        "__post": {
+          "ID": 10,
+          "post_type": "post"
+        }
+      },
+      "expect": null
+    },
+    {
+      "name": "SVG sin medidas",
+      "input": 12,
+      "expect": {
+        "id": 12,
+        "url": "https://x.test/logo.svg",
+        "alt": "",
+        "width": null,
+        "height": null
+      }
+    },
+    {
+      "name": "adjunto borrado",
+      "input": 999,
+      "expect": null
+    },
+    {
+      "name": "array ACF con adjunto borrado",
+      "input": {
+        "ID": 999,
+        "url": "https://x.test/old.jpg",
+        "alt": "Viejo"
+      },
+      "expect": null
+    },
+    {
+      "name": "PDF no es imagen",
+      "input": 11,
+      "expect": null
+    },
+    {
+      "name": "null",
+      "input": null,
+      "expect": null
+    },
+    {
+      "name": "false",
+      "input": false,
+      "expect": null
+    },
+    {
+      "name": "true",
+      "input": true,
+      "expect": null
+    },
+    {
+      "name": "string vacío",
+      "input": "",
+      "expect": null
+    },
+    {
+      "name": "array vacío",
+      "input": [],
+      "expect": null
+    },
+    {
+      "name": "cero",
+      "input": 0,
+      "expect": null
+    },
+    {
+      "name": "cero como string",
+      "input": "0",
+      "expect": null
+    },
+    {
+      "name": "protocolo no permitido",
+      "input": "javascript:alert(1)",
+      "expect": null
+    }
+  ],
+  "image": [
+    {
+      "name": "ID: alt, lazy y url",
+      "input": 10,
+      "contains": [
+        "src=\"https://x.test/a.jpg\"",
+        "alt=\"Foto A\"",
+        "loading=\"lazy\""
+      ]
+    },
+    {
+      "name": "ID: class, eager, fetchpriority y alt propio",
+      "input": 10,
+      "args": {
+        "class": "w-full",
+        "loading": "eager",
+        "fetchpriority": "high",
+        "alt": ""
+      },
+      "contains": [
+        "class=\"w-full\"",
+        "loading=\"eager\"",
+        "fetchpriority=\"high\"",
+        "alt=\"\""
+      ]
+    },
+    {
+      "name": "ID: sin class no imprime class vacío",
+      "input": 10,
+      "notContains": [
+        "class=\"\""
+      ]
+    },
+    {
+      "name": "URL sola: <img> mínimo",
+      "input": "https://x.test/z.png",
+      "equals": "<img src=\"https://x.test/z.png\" alt=\"\" loading=\"lazy\" decoding=\"async\">"
+    },
+    {
+      "name": "URL sola: class escapada",
+      "input": "https://x.test/z.png",
+      "args": {
+        "class": "a\"b"
+      },
+      "contains": [
+        "class=\"a&quot;b\""
+      ],
+      "notContains": [
+        "a\"b\""
+      ]
+    },
+    {
+      "name": "alt con HTML se escapa",
+      "input": "https://x.test/z.png",
+      "args": {
+        "alt": "<b>x</b>"
+      },
+      "contains": [
+        "alt=\"&lt;b&gt;x&lt;/b&gt;\""
+      ]
+    },
+    {
+      "name": "fetchpriority inválido se ignora",
+      "input": 10,
+      "args": {
+        "fetchpriority": "bogus"
+      },
+      "notContains": [
+        "fetchpriority"
+      ]
+    },
+    {
+      "name": "loading inválido cae a lazy",
+      "input": "https://x.test/z.png",
+      "args": {
+        "loading": "bogus"
+      },
+      "contains": [
+        "loading=\"lazy\""
+      ]
+    },
+    {
+      "name": "sin imagen devuelve vacío",
+      "input": null,
+      "equals": ""
+    },
+    {
+      "name": "adjunto borrado devuelve vacío",
+      "input": 999,
+      "equals": ""
+    },
+    {
+      "name": "PDF devuelve vacío",
+      "input": 11,
+      "equals": ""
+    },
+    {
+      "name": "sin imagen usa fallback",
+      "input": null,
+      "args": {
+        "fallback": "https://x.test/fallback.png"
+      },
+      "contains": [
+        "src=\"https://x.test/fallback.png\""
+      ]
+    },
+    {
+      "name": "adjunto borrado usa fallback",
+      "input": 999,
+      "args": {
+        "fallback": "https://x.test/fallback.png"
+      },
+      "contains": [
+        "src=\"https://x.test/fallback.png\""
+      ]
+    },
+    {
+      "name": "SVG sin width ni height",
+      "input": 12,
+      "contains": [
+        "src=\"https://x.test/logo.svg\""
+      ],
+      "notContains": [
+        "width="
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "dos estilos",
+      "styles": [
+        {
+          "name": "naranja",
+          "marker": "|",
+          "class": "text-anaranjado"
+        },
+        {
+          "name": "rojo",
+          "marker": "*",
+          "class": "text-rojo"
+        }
+      ],
+      "text": [
+        {
+          "name": "un estilo",
+          "input": "Hola |mundo|",
+          "expect": "Hola <span class=\"text-anaranjado\">mundo</span>"
+        },
+        {
+          "name": "dos estilos en el mismo texto",
+          "input": "Negro |naranja| y *rojo*",
+          "expect": "Negro <span class=\"text-anaranjado\">naranja</span> y <span class=\"text-rojo\">rojo</span>"
+        },
+        {
+          "name": "solo uno de los estilos",
+          "input": "Negro |naranja| y *rojo*",
+          "only": "rojo",
+          "expect": "Negro |naranja| y <span class=\"text-rojo\">rojo</span>"
+        },
+        {
+          "name": "estilo inexistente no marca nada",
+          "input": "Hola |mundo|",
+          "only": "zzz",
+          "expect": "Hola |mundo|"
+        },
+        {
+          "name": "varios tramos del mismo estilo",
+          "input": "|a| y |b|",
+          "expect": "<span class=\"text-anaranjado\">a</span> y <span class=\"text-anaranjado\">b</span>"
+        },
+        {
+          "name": "& se escapa una sola vez",
+          "input": "a & b |c & d|",
+          "expect": "a &amp; b <span class=\"text-anaranjado\">c &amp; d</span>"
+        },
+        {
+          "name": "HTML del texto se escapa",
+          "input": "<b>x</b> |y|",
+          "expect": "&lt;b&gt;x&lt;/b&gt; <span class=\"text-anaranjado\">y</span>"
+        },
+        {
+          "name": "comillas se escapan",
+          "input": "dijo \"hola\" |ya|",
+          "expect": "dijo &quot;hola&quot; <span class=\"text-anaranjado\">ya</span>"
+        },
+        {
+          "name": "caracteres con tilde",
+          "input": "|ñandú|",
+          "expect": "<span class=\"text-anaranjado\">ñandú</span>"
+        },
+        {
+          "name": "marcador sin cerrar",
+          "input": "Hola |mundo",
+          "expect": "Hola |mundo"
+        },
+        {
+          "name": "espacios en el borde no marcan",
+          "input": "| espacio |",
+          "expect": "| espacio |"
+        },
+        {
+          "name": "marcador pegado a letras no marca",
+          "input": "a|b|c",
+          "expect": "a|b|c"
+        },
+        {
+          "name": "cierre pegado a letra no marca",
+          "input": "|a|b",
+          "expect": "|a|b"
+        },
+        {
+          "name": "marcadores vacíos",
+          "input": "||",
+          "expect": "||"
+        },
+        {
+          "name": "null",
+          "input": null,
+          "expect": ""
+        },
+        {
+          "name": "string vacío",
+          "input": "",
+          "expect": ""
+        }
+      ]
+    },
+    {
+      "name": "los cinco marcadores a la vez (clases con - y _)",
+      "styles": [
+        {
+          "name": "a",
+          "marker": "*",
+          "class": "text-a-b_c-1"
+        },
+        {
+          "name": "b",
+          "marker": "|",
+          "class": "text-a-b_c-1"
+        },
+        {
+          "name": "c",
+          "marker": "~",
+          "class": "text-a-b_c-1"
+        },
+        {
+          "name": "d",
+          "marker": "^",
+          "class": "text-a-b_c-1"
+        },
+        {
+          "name": "e",
+          "marker": "=",
+          "class": "text-a-b_c-1"
+        }
+      ],
+      "text": [
+        {
+          "name": "cada marcador marca una sola vez",
+          "input": "*a* |b| ~c~ ^d^ =e=",
+          "expect": "<span class=\"text-a-b_c-1\">a</span> <span class=\"text-a-b_c-1\">b</span> <span class=\"text-a-b_c-1\">c</span> <span class=\"text-a-b_c-1\">d</span> <span class=\"text-a-b_c-1\">e</span>"
+        },
+        {
+          "name": "guion, teléfono y snake_case intactos",
+          "input": "pre-fijo 555-123-4567 snake_case a=b=c",
+          "expect": "pre-fijo 555-123-4567 snake_case a=b=c"
+        },
+        {
+          "name": "guion y guion bajo no son marcadores",
+          "input": "-oferta- y _nuevo_",
+          "expect": "-oferta- y _nuevo_"
+        }
+      ]
+    }
+  ]
+}

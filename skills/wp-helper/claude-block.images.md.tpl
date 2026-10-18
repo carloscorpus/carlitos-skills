@@ -1,0 +1,1 @@
+- Toda imagen de un campo ACF pasa por `{{PREFIX}}_image($campo, [...])` (devuelve el `<img>` o `''`) o por `{{PREFIX}}_image_data($campo)` (`url`, `alt`, `width`, `height` o `null`). No uses `$campo['url']` ni `wp_get_attachment_image_url()` directo en las vistas. Usa `'loading' => 'eager'` en la imagen principal de la página.

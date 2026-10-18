@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.1.1] - 2026-10-17
+
+### Cambiado
+- Si la skill `wp-helper` está disponible, pregunta al inicio si se corre al final y la corre tras el último paso. Es opcional: sin `wp-helper` no cambia nada. Sin cambios en plantillas ni en `scaffold.mjs`.
+
 ## [1.1.0] - 2026-10-17
 
 ### Agregado
