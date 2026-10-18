@@ -1,6 +1,6 @@
 # {{THEME_NAME}} — tema WordPress
 
-Stack: WordPress (Local WP) + Vite + Tailwind + pnpm. Los campos ACF se crean desde el admin.
+Stack: WordPress (Local WP) + Vite + Tailwind + pnpm.
 
 ## Paquetes (pnpm)
 - Usa solo `pnpm`. Nunca `npm`, `yarn` ni `npx`; para ejecutar un paquete usa `pnpm dlx`.
@@ -13,7 +13,7 @@ Stack: WordPress (Local WP) + Vite + Tailwind + pnpm. Los campos ACF se crean de
 - Pon el código nuevo en un archivo nuevo de `inc/`, y agrégalo a `functions.php`.
 - Empieza todo archivo de `inc/` con `defined('ABSPATH') || exit;`.
 - Escapa toda salida con `esc_html`, `esc_url` o `esc_attr`.
-- Los campos ACF se crean desde el admin: no crees `acf.php` ni field groups en código por iniciativa propia. Si te lo pido, hazlo.
+- No crees `acf.php`, `acf-json/` ni field groups por iniciativa propia. Cómo se crean (admin, ACF JSON o código) lo define el pedido o la skill que lo haga; si no está definido, pregúntame.
 
 ## Páginas
 - Crea cada página con diseño propio como `page-templates/template-<nombre>.php`, con `Template Name:` en la cabecera.
