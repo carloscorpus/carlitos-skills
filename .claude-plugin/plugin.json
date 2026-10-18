@@ -1,7 +1,7 @@
 {
     "name": "carlitos-skills",
     "description": "Skills de Carlos Corpus para temas WordPress con Vite, Tailwind y pnpm.",
-    "version": "1.5.0",
+    "version": "1.5.1",
     "author": {
         "name": "Carlos Corpus"
     },

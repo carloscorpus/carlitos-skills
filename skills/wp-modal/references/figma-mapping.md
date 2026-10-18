@@ -22,7 +22,7 @@ Use the project's `@theme` colors and spacing (read the main CSS) instead of arb
 
 If two or more modals repeat the same radius, padding, backdrop, background or title style, do not paste it in every view. Define it once in the project CSS (after the `modal.css` import) by redefining the engine variables:
 
-`--modal-backdrop`, `--modal-bg`, `--modal-color`, `--modal-padding`, `--modal-close-size`, `--modal-width-default`, `--modal-drawer-width`, `--modal-duration`, `--modal-slide-duration`, `--modal-easing`, `--modal-stagger`.
+`--modal-backdrop`, `--modal-bg`, `--modal-color`, `--modal-padding`, `--modal-close-size`, `--modal-width-default`, `--modal-drawer-width`, `--modal-duration`, `--modal-slide-duration`, `--modal-easing`, `--modal-easing-out`, `--modal-stagger`.
 
 On the first modal of a project, list the values you took as the project baseline and ask the user to confirm them. After that, new modals inherit them.
 

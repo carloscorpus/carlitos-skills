@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.5.1] - 2026-10-17
+
+### Corregido
+- `wp-modal` 1.0.1: el drawer ya no rebota al abrir (`overflow: clip` en el `<dialog>`) y el movimiento usa los tiempos y curvas de Material (entrada 225 ms, salida 195 ms).
+
 ## [1.5.0] - 2026-10-17
 
 ### Agregado

@@ -6,9 +6,9 @@ Figma's motion wins. If the design has no motion spec, offer the options below t
 
 | Option | What the user sees | Recommended for | Cost |
 |---|---|---|---|
-| `scale` | Fade in with a small rise and scale (0.98 → 1), 200 ms | Centered modal, confirmation | Default for `center` |
-| `fade` | Plain fade, 200 ms | Lightbox, anything where movement distracts | Lightest |
-| `slide` | From the edge: right/left drawer, bottom sheet; on a centered modal a longer rise, 300 ms | Drawer, bottom sheet | Default for `right`, `left`, `bottom` |
+| `scale` | Fade in with a small rise and scale (0.98 → 1), 225 ms in / 195 ms out | Centered modal, confirmation | Default for `center` |
+| `fade` | Plain fade, 225 ms in / 195 ms out | Lightbox, anything where movement distracts | Lightest |
+| `slide` | From the edge: right/left drawer, bottom sheet; on a centered modal a longer rise, 225 ms in / 195 ms out | Drawer, bottom sheet | Default for `right`, `left`, `bottom` |
 | `none` | Appears instantly | The user asked for no animation | None |
 
 On mobile, `mobile => 'sheet'` slides up from the bottom automatically (unless `motion => 'fade'`).
@@ -30,7 +30,11 @@ One short question with the options for that panel type and a recommendation, fo
 
 ## Tuning
 
-Durations and easing are variables: `--modal-duration`, `--modal-slide-duration`, `--modal-easing`, `--modal-stagger`. Change them once in the project CSS, not per modal. Keep durations under 400 ms; anything longer feels slow on repeated use.
+Timing follows Material: the panel enters decelerating (`--modal-easing: cubic-bezier(0, 0, 0.2, 1)`, 225 ms) and leaves shorter with a neutral curve (`--modal-easing-out: cubic-bezier(0.4, 0, 0.6, 1)`, 87 % of the entrance, 195 ms). Durations and easing are variables: `--modal-duration`, `--modal-slide-duration`, `--modal-easing`, `--modal-easing-out`, `--modal-stagger`. Change them once in the project CSS, not per modal. Keep durations under 400 ms; anything longer feels slow on repeated use.
+
+## Why `overflow: clip` on the dialog
+
+`showModal()` focuses the first control (the close button) at once, while a drawer is still translated off-screen. On an `overflow: hidden` container the browser scrolls it to reveal the focused element, so the drawer seems to jump or "bounce" sideways while the transform runs. `overflow: clip` crops the same but cannot be scrolled. Do not change it back to `hidden`.
 
 ## Do not
 
