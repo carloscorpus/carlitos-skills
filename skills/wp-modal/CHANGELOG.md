@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.0.1] - 2026-10-17
+
+### Corregido
+- Drawers (y todo modal que entra desde un borde): al abrir daban un rebote lateral en Chrome, Firefox y Edge. `showModal()` enfoca el botón de cerrar con el panel aún fuera de pantalla y el `<dialog>` (`overflow: hidden`) se desplazaba solo para mostrarlo (`scrollLeft` quedaba igual al ancho del panel). Ahora usa `overflow: clip`, que no se puede desplazar.
+
+### Cambiado
+- Movimiento tipo Material: entrada de 225 ms desacelerando (`cubic-bezier(0, 0, 0.2, 1)`) y salida más corta (195 ms) con una curva neutra (`cubic-bezier(0.4, 0, 0.6, 1)`). El fundido del fondo y del panel centrado es lineal. Variable nueva `--modal-easing-out`; `--modal-duration`, `--modal-slide-duration` y `--modal-easing` siguen existiendo y pasan a 225 ms / 225 ms / la curva de entrada.
+
 ## [1.0.0] - 2026-10-17
 
 ### Agregado

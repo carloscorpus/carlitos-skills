@@ -17,9 +17,12 @@
         --modal-drawer-width: 28rem;
         --modal-padding: 1.5rem;
         --modal-close-size: 2.75rem; /* 44 px: tamaño táctil mínimo */
-        --modal-duration: 200ms; /* fundido y escala */
-        --modal-slide-duration: 300ms; /* paneles laterales y hoja inferior */
-        --modal-easing: cubic-bezier(0.32, 0.72, 0, 1);
+        /* Tiempos y curvas de Material: entra desacelerando (225 ms) y sale más corto y neutro
+           (la salida dura 87 % de la entrada, 195 ms). */
+        --modal-duration: 225ms; /* fundido y escala */
+        --modal-slide-duration: 225ms; /* paneles laterales y hoja inferior */
+        --modal-easing: cubic-bezier(0, 0, 0.2, 1); /* entrada */
+        --modal-easing-out: cubic-bezier(0.4, 0, 0.6, 1); /* salida */
         --modal-stagger: 45ms; /* retraso entre elementos del cuerpo (data-stagger) */
     }
 
@@ -37,7 +40,10 @@
         border: 0;
         background: transparent;
         color: var(--modal-color);
-        overflow: hidden;
+        /* `clip`, no `hidden`: showModal() enfoca el primer control con el panel aún fuera de
+           pantalla, y un contenedor `hidden` se desplaza solo para mostrarlo (el drawer "rebota").
+           `clip` recorta igual pero no se puede desplazar. */
+        overflow: clip;
     }
 
     dialog[data-modal][open] { display: grid; }
@@ -195,29 +201,39 @@
             dialog[data-modal][data-mobile='sheet']:not([data-motion='fade']) .modal__panel { --from: translateY(100%); }
         }
 
+        /* La transición del estado base manda al CERRAR y la de [open] al ABRIR. Así la salida
+           es más corta y con otra curva que la entrada. */
+        dialog[data-modal] { --modal-anim-leave: calc(var(--modal-anim) * 0.87); }
+
         /* Mantiene el <dialog> visible mientras dura la animación de salida. */
         dialog[data-modal] {
             transition:
-                display var(--modal-anim) allow-discrete,
-                overlay var(--modal-anim) allow-discrete;
+                display var(--modal-anim-leave) allow-discrete,
+                overlay var(--modal-anim-leave) allow-discrete;
         }
 
         dialog[data-modal]::backdrop {
             opacity: 0;
             transition:
-                opacity var(--modal-anim) ease,
+                opacity var(--modal-anim-leave) linear,
+                display var(--modal-anim-leave) allow-discrete,
+                overlay var(--modal-anim-leave) allow-discrete;
+        }
+
+        dialog[data-modal][open]::backdrop {
+            opacity: 1;
+            transition:
+                opacity var(--modal-anim) linear,
                 display var(--modal-anim) allow-discrete,
                 overlay var(--modal-anim) allow-discrete;
         }
-
-        dialog[data-modal][open]::backdrop { opacity: 1; }
 
         dialog[data-modal] .modal__panel {
             opacity: 0;
             transform: var(--from);
             transition:
-                opacity var(--modal-anim) ease,
-                transform var(--modal-anim) var(--modal-easing);
+                opacity var(--modal-anim-leave) linear,
+                transform var(--modal-anim-leave) var(--modal-easing-out);
         }
 
         /* Los paneles laterales y la hoja inferior se deslizan opacos. */
@@ -232,6 +248,9 @@
         dialog[data-modal][open] .modal__panel {
             opacity: 1;
             transform: none;
+            transition:
+                opacity var(--modal-anim) linear,
+                transform var(--modal-anim) var(--modal-easing);
         }
 
         @starting-style {

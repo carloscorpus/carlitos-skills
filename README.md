@@ -15,7 +15,7 @@
 | ------------------------------------------------ | ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.1.0   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
 | [`wp-form`](skills/wp-form/SKILL.md)             | 1.3.0   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
-| [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
+| [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.1   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 

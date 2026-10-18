@@ -2,7 +2,7 @@
 name: wp-modal
 description: Build an accessible modal, dialog, confirmation, drawer, bottom sheet or lightbox in a WordPress theme that uses Vite and pnpm (Tailwind by default), on the native HTML `<dialog>` element (semantic, keyboard, screen-reader and mobile friendly, no UI library). The design comes from Figma; the skill adds structure, behavior, accessibility, SEO-safe rules, motion options and a static audit. Asks whether a form inside it uses wp-form or something else. Use when a spec says `skill: wp-modal`, or the user asks for a modal, "ventana emergente", popup, dialog, "diálogo", drawer, "panel lateral", lightbox, "confirmación", or gives a Figma frame of an overlay.
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # wp-modal
