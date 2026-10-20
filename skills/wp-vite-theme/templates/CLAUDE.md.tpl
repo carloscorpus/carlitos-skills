@@ -16,9 +16,9 @@ Stack: WordPress (Local WP) + Vite + Tailwind + pnpm.
 - No crees `acf.php`, `acf-json/` ni field groups por iniciativa propia. Cómo se crean (admin, ACF JSON o código) lo define el pedido o la skill que lo haga; si no está definido, pregúntame.
 
 ## Páginas
-- Crea cada página con diseño propio como `page-templates/template-<nombre>.php`, con `Template Name:` en la cabecera.
+- La portada es `front-page.php`: WordPress la usa sola para la página "Inicio" (fijada en Ajustes → Lectura). No tiene `Template Name` ni se elige en el admin. El tema crea "Inicio" al activarse (`inc/crear-inicio.php`).
+- Crea cada otra página con diseño propio como `pages/template-<nombre>.php`, con `Template Name:` en la cabecera.
 - Llama una sola vez a `get_header()` y a `get_footer()` en cada plantilla, y pon el contenido dentro de `<main id="main-content">`.
-- La página de inicio es `page-templates/template-inicio.php`. No crees `front-page.php`: WordPress lo usa antes que la plantilla elegida en el admin.
 - Pon las secciones reutilizables en `template-parts/sections/`.
 
 ## Tailwind
