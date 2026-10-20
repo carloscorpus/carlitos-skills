@@ -13,7 +13,7 @@
 
 | Skill                                            | Versión | Requiere                                                | Qué hace                                                                                                                                             |
 | ------------------------------------------------ | ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.1.2   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
+| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.2.0   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
 | [`wp-form`](skills/wp-form/SKILL.md)             | 1.3.1   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
 | [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.2   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
 | [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.1.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
@@ -55,13 +55,15 @@ Genera:
 
 ```text
 style.css, functions.php, header.php, footer.php, index.php
-page-templates/template-inicio.php   plantilla "Página de inicio"
-inc/{setup,enqueue,cleanup}.php
+front-page.php                       portada del sitio
+pages/                               plantillas de las demás páginas
+inc/{setup,enqueue,cleanup,crear-inicio}.php
 src/css/input.css, src/js/main.js
 vite.config.ts, pnpm-workspace.yaml, package.json
 ```
 
-- Las páginas con diseño propio van en `page-templates/template-<nombre>.php`. No se crea `front-page.php`: en el admin crea la página "Inicio", elige la plantilla "Página de inicio" y fíjala en Ajustes → Lectura.
+- La portada es `front-page.php`: WordPress la usa sola, sin elegir plantilla. Al activar el tema se crea la página "Inicio" y queda como portada (solo si el sitio aún no tiene una); ahí se guardan los campos de la home.
+- Las demás páginas con diseño propio van en `pages/template-<nombre>.php`.
 - `pnpm dev`: inicia Vite y crea el indicador `hot`.
 - `pnpm build`: genera `dist/manifest.json` y los assets finales.
 - WordPress usa Vite en desarrollo y el manifest en producción.

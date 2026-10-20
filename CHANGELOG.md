@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.8.0] - 2026-10-20
+
+### Cambiado
+- `wp-vite-theme` 1.2.0: la portada es `front-page.php` y el tema crea la página "Inicio" al activarse; las demás plantillas van en `pages/`.
+
 ## [1.7.0] - 2026-10-18
 
 ### Agregado

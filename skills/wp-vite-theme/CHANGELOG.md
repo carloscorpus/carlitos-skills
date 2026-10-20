@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.2.0] - 2026-10-20
+
+### Cambiado
+- La portada es `front-page.php` en la raíz del tema (antes `page-templates/template-inicio.php` con `Template Name: Página de inicio`). WordPress la usa sola: ya no hay que elegir plantilla y nadie puede romper la home cambiándola en el admin.
+- Las demás plantillas de página van en `pages/` (antes `page-templates/`).
+
+### Agregado
+- `inc/crear-inicio.php`: al activar el tema crea la página "Inicio" y la fija como portada. Solo actúa si el sitio aún no tiene una portada estática publicada; si ya existe una página `inicio` publicada, la reutiliza.
+
+Los temas ya generados no cambian.
+
 ## [1.1.2] - 2026-10-18
 
 ### Cambiado
