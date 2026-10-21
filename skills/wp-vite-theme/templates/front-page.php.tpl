@@ -11,7 +11,7 @@ get_header();
 ?>
 
 <main id="main-content">
-    <!-- Secciones de la portada: una por archivo en template-parts/sections/ -->
+    <!-- Secciones de la portada: una por archivo en template-parts/pages/home/ -->
 </main>
 
 <?php

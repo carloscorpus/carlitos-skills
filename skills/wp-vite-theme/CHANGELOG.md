@@ -2,6 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.0] - 2026-10-21
+
+### Agregado
+- Carpetas `template-parts/pages/` (secciones de una sola página, una subcarpeta por página: `home/`, `nosotros/`) y `template-parts/components/` (piezas reutilizables en 2 o más páginas). El `CLAUDE.md` del tema trae la regla de decisión y cómo pasar datos con `get_template_part(..., $args)`.
+
+### Cambiado
+- Reemplaza la regla `template-parts/sections/` (la carpeta nunca se creaba). `forms/` y `modals/` siguen siendo de `wp-form` y `wp-modal`.
+
+Los temas ya generados no cambian.
+
 ## [1.2.0] - 2026-10-20
 
 ### Cambiado
