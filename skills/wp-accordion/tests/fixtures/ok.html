@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Acordeón correcto</title></head>
+<body>
+<main>
+    <h1>Preguntas frecuentes</h1>
+
+    <div id="faq" class="accordion" data-accordion data-exclusive>
+        <details id="faq-1" class="accordion__item" name="faq" data-accordion-item open>
+            <summary class="accordion__summary">
+                <span class="accordion__title">¿Cómo pago?</span>
+                <svg class="accordion__icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+            </summary>
+            <div class="accordion__panel"><p>Con tarjeta o transferencia.</p></div>
+        </details>
+        <details id="envios" class="accordion__item" name="faq" data-accordion-item>
+            <summary class="accordion__summary">
+                <h3 class="accordion__title">¿Hacen envíos?</h3>
+            </summary>
+            <div class="accordion__panel">
+                <p>Sí, a todo el país.</p>
+                <img src="envio.jpg" alt="Paquete en camino" width="320" height="200" loading="lazy">
+                <iframe src="https://example.com/mapa" title="Mapa de cobertura" loading="lazy"></iframe>
+            </div>
+        </details>
+        <details id="faq-3" class="accordion__item" name="faq" data-accordion-item>
+            <summary class="accordion__summary"><span class="accordion__title">¿Puedo devolver?</span></summary>
+            <div class="accordion__panel"><p>Dentro de los 30 días.</p></div>
+        </details>
+    </div>
+
+    <div id="specs" class="accordion" data-accordion>
+        <details id="specs-1" class="accordion__item" data-accordion-item open>
+            <summary class="accordion__summary"><span class="accordion__title">Medidas</span></summary>
+            <div class="accordion__panel"><p>10 x 20 cm.</p></div>
+        </details>
+        <details id="specs-2" class="accordion__item" data-accordion-item>
+            <summary class="accordion__summary"><span class="accordion__title">Peso</span></summary>
+            <div class="accordion__panel"><p>300 g.</p></div>
+        </details>
+    </div>
+
+    <!-- Un <details> suelto que no es del motor no se audita -->
+    <details><summary>Menú</summary><a href="/">Inicio</a></details>
+</main>
+</body>
+</html>

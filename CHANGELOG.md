@@ -2,6 +2,14 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.11.0] - 2026-10-21
+
+### Agregado
+- `wp-accordion` 1.0.0: skill nueva para acordeones y FAQ sobre el `<details>` nativo. El diseño sale de Figma (o del HTML de `design-import`); incluye accesibilidad, reglas de SEO, movimiento de altura solo con CSS que respeta `prefers-reduced-motion`, modo exclusivo, abrir por `#ancla`, versión en una llamada para listas (repeater de ACF) y auditoría estática. Sin datos estructurados `FAQPage` (Google ya no los muestra a sitios normales).
+
+### Cambiado
+- `design-import` 1.0.1: delega los acordeones a `wp-accordion` y `analyze.mjs` la sugiere.
+
 ## [1.10.0] - 2026-10-21
 
 ### Agregado

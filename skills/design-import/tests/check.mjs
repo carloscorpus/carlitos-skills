@@ -81,6 +81,7 @@ try {
         assert.equal(byType.form.suggestedSkill, 'wp-form');
         assert.equal(byType.form.fields.length, 2);
         assert.equal(byType.modal.suggestedSkill, 'wp-modal');
+        assert.equal(byType.accordion.suggestedSkill, 'wp-accordion');
         assert.equal(analysis.json.interactions.filter((i) => i.type === 'accordion').length, 1, 'un acordeón es una sola interacción');
     });
 
@@ -163,7 +164,7 @@ try {
     };
     const edit = (file, from, to) => (dir) => {
         const path = join(dir, file);
-        const text = readFileSync(path, 'utf8');
+        const text = readFileSync(path, 'utf8').replace(/\r\n/g, '\n'); // Windows puede traer los fixtures con CRLF
         assert.ok(text.includes(from), `el fixture ya no contiene "${from}"`);
         writeFileSync(path, text.replace(from, to));
     };

@@ -2,7 +2,7 @@
 name: design-import
 description: 'Turn a folder exported by Claude Design (static HTML + CSS + JS with bad practices) into a clean WordPress theme front end: tokens, components, page sections and page templates, following the wp-vite-theme structure or the structure it detects in another project. Writes one reviewable spec per page (sections, ACF Pro field tables, acceptance criteria) and applies only what the user approves. Use when the user adds a design folder (/add-dir) and says "importa el diseño", "reordena el diseño de Claude Design", "pasa este diseño al tema", "design import", "limpia el HTML/CSS del diseño", or a spec says `skill: design-import`.'
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # design-import
@@ -38,7 +38,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 
 5. **Stage A, serial: tokens and shared pieces.** Fill `specs/_shared.md` from the inventory: `@theme` tokens (colors, fonts, font sizes, spacing, radii, shadows), shared components (`repeated` groups with `kind: cross-page`, plus small blocks like buttons and cards) and the naming rules. Use the project's existing tokens when present; propose a token only for values the design repeats. **Stop and ask the user to approve `_shared.md`** (set `Estado: aprobado`). Nothing in stage B starts before this.
 
-6. **Stage B: one spec per page.** Fill `specs/<page>.md`: the summary and one `## Sección: <name>` block per section, in order, as [references/formato-spec.md](references/formato-spec.md) says. Field names, types, descriptions and the recommended (never imposed) lengths and image sizes follow [references/campos-acf.md](references/campos-acf.md). Sections that are forms, modals or accordions get `Skill: wp-form` / `wp-modal` / the accordion skill and no markup of yours. Copy the relevant criteria of [references/acceptance.md](references/acceptance.md) into each section. With more than three pages, [references/paralelo.md](references/paralelo.md) says how to give each page to a subagent. **Stop and ask the user to review each page**: they set it to `aprobado` or `descartado` (also in `_index.md`).
+6. **Stage B: one spec per page.** Fill `specs/<page>.md`: the summary and one `## Sección: <name>` block per section, in order, as [references/formato-spec.md](references/formato-spec.md) says. Field names, types, descriptions and the recommended (never imposed) lengths and image sizes follow [references/campos-acf.md](references/campos-acf.md). Sections that are forms, modals or accordions get `Skill: wp-form` / `wp-modal` / `wp-accordion` and no markup of yours. Copy the relevant criteria of [references/acceptance.md](references/acceptance.md) into each section. With more than three pages, [references/paralelo.md](references/paralelo.md) says how to give each page to a subagent. **Stop and ask the user to review each page**: they set it to `aprobado` or `descartado` (also in `_index.md`).
 
 7. **Stage C: apply only what is approved.** For each `aprobado` page, in order:
    1. Tokens of `_shared.md` into the main CSS (`@theme`), once.
@@ -46,7 +46,7 @@ Detail lives in `references/` and is read only by the step that points to it.
    3. Sections into `template-parts/pages/<page>/<section>.php`, and the page template (`front-page.php` or `pages/template-<slug>.php`) that only calls `get_header()`, `<main id="main-content">`, the `get_template_part()` calls and `get_footer()`.
    4. Images, fonts and JS: assets under `src/` as the destination reference says; JS rewritten as modules (no inline handlers).
    5. Fix the bad practices the findings listed for that page ([references/malas-practicas.md](references/malas-practicas.md)). Keep what the user sees identical.
-   6. Sections with a `Skill:` go to that skill (wp-form, wp-modal, wp-helper for images, links and two-color text) with the spec as input. The HTML of the design is their visual reference where they ask for a Figma frame.
+   6. Sections with a `Skill:` go to that skill (wp-form, wp-modal, wp-accordion, wp-helper for images, links and two-color text) with the spec as input. The HTML of the design is their visual reference where they ask for a Figma frame.
    7. Mark the section's criteria `- [x]` as they are verified, set `Estado: aplicado` on section and page, and update `_index.md`.
 
 8. **Verify.** `php -l` on every PHP file touched, `pnpm build`, then `node <skill>/scripts/check.mjs` from the theme root (must exit `0`; errors exit `4`). Open the page and compare it with the original by eye; automatic visual comparison is not part of this skill. Tell the user which specs are ready for the ACF step and which texts, images and links are still fixed in the templates.
