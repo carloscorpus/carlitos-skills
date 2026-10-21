@@ -22,7 +22,7 @@
 
 `Resumen`: what the page is about and what the visitor does there, in one or two sentences. `Skills usadas`: `ninguna` or the skills the sections delegate to.
 
-`Tipo`: `estática`, `listado` or `detalle`. `Contenido`: `ninguno` for a static page; for a list or detail, the name of a row of the "Contenido dinámico" table in `_shared.md` (`check.mjs` verifies it). `Grupo ACF`: the name of the page's field group. `Ubicación`: its location rule, in plain words. `init.mjs --page` fills all four with defaults you adjust. A 1.0 spec without them still validates, with a warning.
+`Tipo`: `estática`, `listado`, `detalle` or `global` (only the `opciones` spec, for what repeats on every page). `Contenido`: `ninguno` for a static page; for a list or detail, the name of a row of the "Contenido dinámico" table in `_shared.md` (`check.mjs` verifies it). `Grupo ACF`: the name of the page's field group. `Ubicación`: its location rule, in plain words. `init.mjs --page` fills all four with defaults you adjust. A 1.0 spec without them still validates, with a warning.
 
 ## Section block
 

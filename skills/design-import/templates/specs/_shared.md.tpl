@@ -28,6 +28,19 @@ Una fila por tipo de contenido que se repite o se filtra (entradas, productos, p
 - `Plantillas`: archivo de listado, de detalle y de taxonomía (`archive-producto.php`, `single-producto.php`).
 - `Acción`: qué hace el botón de cada elemento (WhatsApp con mensaje, formulario de consulta, contacto, carrito de Woo, ninguna) y de dónde sale el dato (campo global, campo del elemento).
 
+## Sitio
+
+Lo que se repite en todas las páginas (cabecera, menú, pie). Aquí solo se decide dónde vive cada cosa; los campos van en `specs/opciones.md`. Nada se crea en esta etapa.
+
+- **Identidad del sitio** (Personalizar > Identidad del sitio, nativo de WordPress): logo principal, ícono del sitio, nombre y descripción. No son campos ACF.
+- **Menús** (Apariencia > Menús): cada menú es una ubicación del tema, no un campo.
+- **Todo lo demás que se repite** (logo alternativo, contacto, redes, copyright, textos fijos del pie, aviso superior): campos de la página de opciones "Ajustes del sitio", en `specs/opciones.md`.
+
+### Menús
+
+| Ubicación | Dónde se muestra | Enlaces del diseño |
+|---|---|---|
+
 ## Tokens
 
 Van en `@theme` del CSS principal. Todo valor repetido del diseño se reemplaza por su token.

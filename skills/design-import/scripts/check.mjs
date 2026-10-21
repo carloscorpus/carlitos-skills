@@ -31,7 +31,7 @@ if (!existsSync(specsDir)) fail(1, `No existe ${args.specs}/: corre primero init
 
 const STATES = ['pendiente', 'aprobado', 'descartado', 'aplicado'];
 const PAGE_LABELS = ['Resumen', 'Fuente', 'Plantilla', 'Secciones (en orden)', 'Skills usadas', 'Notas de página', 'Estado'];
-const PAGE_TYPES = ['estática', 'listado', 'detalle'];
+const PAGE_TYPES = ['estática', 'listado', 'detalle', 'global'];
 const ORIGINS = ['post', 'cpt', 'woo'];
 const SCOPES = ['estática', 'blog', 'catálogo', 'woocommerce', 'otro'];
 const noAccent = (value) => value.toLowerCase().replace('estatica', 'estática').replace('catalogo', 'catálogo');
@@ -103,6 +103,14 @@ else {
             if (!value) error('_shared.md', `${where}: falta "${label}" (usa "ninguno" si no aplica).`);
         }
     }
+    const locations = new Set();
+    for (const cells of parseTable(chunk('Sitio') ?? '')) {
+        const [location, where, links] = cells.map((cell) => unwrap(cell ?? ''));
+        if (!/^[a-z][a-z0-9_-]*$/.test(location)) error('_shared.md', `Menús › "${location}": la ubicación va en minúsculas, sin tildes ni espacios (principal, pie).`);
+        else if (locations.has(location)) error('_shared.md', `Menús › "${location}": ubicación repetida.`);
+        else locations.add(location);
+        if (!where || !links) error('_shared.md', `Menús › "${location}": falta dónde se muestra o los enlaces del diseño.`);
+    }
     for (const cells of parseTable(chunk('Alcance') ?? '')) {
         const [design, scope, content] = cells.map((cell) => unwrap(cell ?? ''));
         const where = `Alcance › ${design || '(sin nombre)'}`;
@@ -153,8 +161,10 @@ for (const name of pageFiles) {
         for (const label of ['Tipo', 'Contenido', 'Ubicación']) if (!pageLabels[label]) error(name, `Falta "${label}" en el resumen de la página.`);
         const type = noAccent(pageLabels.Tipo ?? '');
         const content = unwrap(pageLabels.Contenido ?? '');
-        if (pageLabels.Tipo && !PAGE_TYPES.includes(type)) error(name, `Tipo inválido "${pageLabels.Tipo}": estática, listado o detalle.`);
-        else if (type === 'estática' && content && content !== 'ninguno') error(name, 'Una página estática lleva "Contenido: ninguno".');
+        if (pageLabels.Tipo && !PAGE_TYPES.includes(type)) error(name, `Tipo inválido "${pageLabels.Tipo}": estática, listado, detalle o global.`);
+        else if (['estática', 'global'].includes(type) && content && content !== 'ninguno') error(name, `Una página ${type} lleva "Contenido: ninguno".`);
+        if (type === 'global' && page !== 'opciones') error(name, 'El spec global se llama "opciones" (opciones.md): sus campos empiezan con opciones_.');
+        if (page === 'opciones' && type !== 'global') error(name, 'El spec "opciones" es del tipo global.');
         else if (['listado', 'detalle'].includes(type) && !dynamicContent.has(content)) {
             error(name, `El contenido "${content}" no está en la tabla "Contenido dinámico" de _shared.md.`);
         }

@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.13.0] - 2026-10-21
+
+### Agregado
+- `design-import` 1.2.0: contenido de todo el sitio (logo de Personalizar, menús de WordPress y un spec `opciones` con los campos de cabecera, pie, contacto y redes). Detalle en `skills/design-import/CHANGELOG.md`.
+
 ## [1.12.0] - 2026-10-21
 
 ### Agregado

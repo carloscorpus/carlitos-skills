@@ -6,12 +6,14 @@
 //       Crea specs/_index.md y specs/_shared.md y mantiene un bloque corto de la skill en el
 //       CLAUDE.md del tema (entre <!-- design-import:start --> y <!-- design-import:end -->).
 //   node init.mjs --page <slug> --title <título> --source <archivo del diseño> --template <ruta de la plantilla>
-//                 [--type estática|listado|detalle] [--content <contenido>] [--group <nombre>] [--location <texto>]
+//                 [--type estática|listado|detalle|global] [--content <contenido>] [--group <nombre>] [--location <texto>]
 //                 [--target <dir>] [--dry-run] [--overwrite specs/<slug>.md]
 //       Crea specs/<slug>.md desde la plantilla de página y agrega su fila (pendiente) a _index.md.
 //       --type (por defecto estática); listado y detalle exigen --content, en snake_case, igual al de la tabla
 //       "Contenido dinámico" de _shared.md. --group es el nombre del grupo de campos (por defecto el título);
 //       --location, la regla de ubicación de ACF (por defecto según el tipo y la plantilla).
+//       global es el spec de lo que se repite en todo el sitio (cabecera, pie, contacto, redes): el slug es
+//       siempre "opciones" y no lleva --content.
 //       Córrelo uno por uno desde el hilo principal: si varios subagentes editan _index.md a la vez se pisan.
 //
 // Requisitos: el tema tiene style.css y functions.php. Sale con JSON en stdout. Códigos: 0 ok,
@@ -84,15 +86,18 @@ if (args.page !== undefined) {
         if (args[key] !== undefined && /[\r\n|`]/.test(args[key])) fail(1, `"${key}" no puede tener saltos de línea, "|" ni comillas invertidas.`);
     }
     const type = args.type.trim().replace('estatica', 'estática');
-    if (!['estática', 'listado', 'detalle'].includes(type)) fail(1, `Tipo inválido "${type}": estática, listado o detalle.`);
+    if (!['estática', 'listado', 'detalle', 'global'].includes(type)) fail(1, `Tipo inválido "${type}": estática, listado, detalle o global.`);
+    if (type === 'global' && page !== 'opciones') fail(1, 'El spec global se llama "opciones" (--page opciones): sus campos empiezan con opciones_.');
+    if (page === 'opciones' && type !== 'global') fail(1, 'La página "opciones" es del tipo global.');
     const content = args.content?.trim() || 'ninguno';
-    if (type === 'estática' && content !== 'ninguno') fail(1, 'Una página estática no lleva --content.');
-    if (type !== 'estática' && (content === 'ninguno' || !/^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(content))) {
+    if (['estática', 'global'].includes(type) && content !== 'ninguno') fail(1, `Una página ${type} no lleva --content.`);
+    if (['listado', 'detalle'].includes(type) && (content === 'ninguno' || !/^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(content))) {
         fail(1, `--content es obligatorio en un ${type} y va en snake_case: el nombre de la tabla "Contenido dinámico" de _shared.md.`);
     }
     const template = args.template.trim();
     const location = args.location?.trim()
-        || (type === 'detalle' ? `tipo de contenido = ${content}`
+        || (type === 'global' ? 'página de opciones: Ajustes del sitio'
+            : type === 'detalle' ? `tipo de contenido = ${content}`
             : type === 'listado' ? `página de opciones: archivo de ${content}`
             : template === 'front-page.php' ? 'página de inicio (front page)' : `plantilla ${template}`);
     if (!existsSync(join(target, INDEX))) fail(1, `Falta ${INDEX}: corre primero init.mjs sin --page.`);

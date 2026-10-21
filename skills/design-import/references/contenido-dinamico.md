@@ -65,7 +65,7 @@ It changes per project, so it is asked and recorded, never assumed.
 
 | Answer | What the spec says |
 |---|---|
-| WhatsApp | A link `https://wa.me/<number>?text=<message>`. The number comes from a global field (`opciones_whatsapp_numero`, same for all items) or a field of the item (`producto_ficha_whatsapp`). The message is a template with `{producto}` and `{url}`. The link goes through the `wp-helper` links helper. |
+| WhatsApp | A link `https://wa.me/<number>?text=<message>`. The number comes from a global field (`opciones_contacto_whatsapp`, same for all items, in the `opciones` spec) or a field of the item (`producto_ficha_whatsapp`). The message is a template with `{producto}` and `{url}`. The link goes through the `wp-helper` links helper. |
 | Enquiry form | Section with `Skill: wp-form`, the item's name in a hidden field. |
 | Contact page | A link to the contact page with the item in the query string, or none. |
 | Woo cart | Woo's own button; nothing documented. |
