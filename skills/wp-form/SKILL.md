@@ -2,7 +2,7 @@
 name: wp-form
 description: 'Build a secure, accessible form in a WordPress theme with Vite and pnpm (contact, quote, newsletter, lead): Zod in the front and the same rules in PHP, nonce, anti-spam, double-submit protection, wp_mail and optional saved submissions. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.'
 metadata:
-  version: "1.3.1"
+  version: "1.3.2"
 ---
 
 # wp-form
@@ -27,7 +27,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 
 ## Steps
 
-1. **Read context.** From the theme root: read `CLAUDE.md` if the theme has one (prefix, slug) and the form's spec if there is one. Without `CLAUDE.md`, the prefix is the theme folder name with `-` turned into `_` (`install.mjs` prints it as `values.PREFIX`); if the theme's existing PHP functions use another prefix, ask the user and pass it with `--slug`. The theme only needs `style.css`, `functions.php` and `vite.config.*`: it does not have to come from `wp-vite-theme`. If a Figma link is given, read the frame through the Figma MCP for the view (follow the Figma server's design-to-code instructions). The spec says what the form does; Figma says how it looks. If they contradict (fields, required ones), stop and ask: do not decide.
+1. **Read context.** From the theme root: read `CLAUDE.md` if the theme has one (prefix, slug) and the form's spec if there is one. Without `CLAUDE.md`, the prefix is the theme folder name with `-` turned into `_` (`install.mjs` prints it as `values.PREFIX`); if the theme's existing PHP functions use another prefix, ask the user and pass it with `--slug`. The theme only needs `style.css`, `functions.php` and `vite.config.*`: it does not have to come from `wp-vite-theme`. If a Figma link is given, read the frame through the Figma MCP for the view (follow the Figma server's design-to-code instructions). The spec says what the form does; Figma says how it looks. If they contradict (fields, required ones), stop and ask: do not decide. If the spec points to a design folder or HTML file (from `design-import`) instead of a Figma link, read that HTML and its CSS as the visual reference, with the same rule.
 
 2. **Ask what is missing.** Ask only what the spec and `CLAUDE.md` do not answer, in one message (AskUserQuestion when available):
    - **Recipients:** which emails receive it (`to`). Empty means the site's admin email; confirm that is intended.

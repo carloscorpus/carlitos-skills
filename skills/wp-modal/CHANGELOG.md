@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.0.3] - 2026-10-21
+
+### Cambiado
+- El paso 1 y `references/figma-mapping.md` aceptan como referencia visual el HTML de un diseño (carpeta de `design-import`) además de un frame de Figma. Sin cambios en el motor: la versión sube solo porque se sella en él, así que `install.mjs --check` avisa a los temas con 1.0.2.
+
 ## [1.0.2] - 2026-10-17
 
 ### Cambiado

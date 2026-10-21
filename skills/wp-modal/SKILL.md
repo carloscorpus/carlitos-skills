@@ -2,7 +2,7 @@
 name: wp-modal
 description: 'Build an accessible modal, dialog, confirmation, drawer, bottom sheet or lightbox in a WordPress theme with Vite and pnpm (Tailwind by default), on the native `<dialog>`. Design comes from Figma; the skill adds structure, behavior, accessibility, SEO-safe rules, motion and a static audit, and asks whether a form inside uses wp-form or something else. Use when a spec says `skill: wp-modal`, or the user asks for a modal, "ventana emergente", popup, dialog, "diálogo", drawer, "panel lateral", lightbox, "confirmación", or gives a Figma frame of an overlay.'
 metadata:
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # wp-modal
@@ -26,7 +26,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 
 ## Steps
 
-1. **Read context.** From the theme root: read `CLAUDE.md` if there is one (prefix) and the modal's spec. If a Figma link is given, read the frame (desktop and mobile) through the Figma MCP and follow the Figma server's design-to-code instructions. The spec says what the modal does; Figma says how it looks. If they contradict, stop and ask: do not decide.
+1. **Read context.** From the theme root: read `CLAUDE.md` if there is one (prefix) and the modal's spec. If a Figma link is given, read the frame (desktop and mobile) through the Figma MCP and follow the Figma server's design-to-code instructions. The spec says what the modal does; Figma says how it looks. If they contradict, stop and ask: do not decide. If the spec points to a design folder or HTML file (from `design-import`) instead of a Figma link, read that HTML and its CSS as the visual reference (desktop width from the container, mobile layout from its media queries), with the same rule.
 
 2. **Decide the panel type, then ask what is missing.** Read [references/panel-type.md](references/panel-type.md) and classify the frame (centered modal, confirmation, drawer, bottom sheet, lightbox). Decide from the design; ask only if it is ambiguous. Then ask only what the spec and the design do not answer, in one message (AskUserQuestion when available), always with a recommendation:
    - **Trigger:** a button, or a link. If a real page exists with the same content, recommend an `<a href>` (crawlable, works without JavaScript).
