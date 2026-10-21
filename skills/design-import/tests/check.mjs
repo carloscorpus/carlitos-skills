@@ -102,6 +102,19 @@ try {
         assert.equal(existsSync(join(source, 'x.json')), false);
     });
 
+    test('analyze: el listado con filtros y precios es candidato a contenido dinámico', () => {
+        const catalog = run('analyze.mjs', ['--source', join(fixtures, 'fuente-catalogo')]);
+        assert.equal(catalog.code, 0, catalog.stderr);
+        const [candidate] = catalog.json.dynamicCandidates;
+        assert.equal(candidate.file, 'productos.html');
+        for (const reason of ['nombre', 'filtros', 'comercio', 'paginación', 'repetidos']) assert.ok(candidate.reasons.includes(reason), `falta el motivo ${reason}`);
+        const filter = catalog.json.interactions.find((i) => i.type === 'form');
+        assert.equal(filter.kind, 'filter');
+        assert.equal(filter.suggestedSkill, null, 'un filtro no es un formulario de envío');
+        assert.deepEqual(analysis.json.dynamicCandidates, [], 'la fuente estática no tiene candidatos');
+        assert.equal(analysis.json.interactions.find((i) => i.type === 'form').kind, undefined);
+    });
+
     // ---------- init ----------
     const theme = join(tmp, 'tema');
     mkdirSync(theme);
@@ -141,6 +154,30 @@ try {
         assert.equal(run('init.mjs', ['--target', theme, '--page', 'Sobre Nosotros', '--title', 't', '--source', 's', '--template', 'p']).code, 1);
     });
 
+    test('init --page: tipo, contenido y ubicación por defecto', () => {
+        const base = ['--target', theme, '--source', 'productos.html'];
+        const list = run('init.mjs', [...base, '--page', 'productos', '--title', 'Productos', '--template', 'archive-producto.php', '--type', 'listado', '--content', 'producto']);
+        assert.equal(list.code, 0, list.stdout);
+        const spec = readFileSync(join(theme, 'specs/productos.md'), 'utf8');
+        assert.match(spec, /\*\*Tipo:\*\* listado/);
+        assert.match(spec, /\*\*Contenido:\*\* producto/);
+        assert.match(spec, /\*\*Grupo ACF:\*\* Productos/);
+        assert.match(spec, /\*\*Ubicación:\*\* página de opciones: archivo de producto/);
+        const detail = run('init.mjs', [...base, '--page', 'producto', '--title', 'Producto', '--template', 'single-producto.php', '--type', 'detalle', '--content', 'producto']);
+        assert.equal(detail.code, 0, detail.stdout);
+        assert.match(readFileSync(join(theme, 'specs/producto.md'), 'utf8'), /\*\*Ubicación:\*\* tipo de contenido = producto/);
+        assert.match(readFileSync(join(theme, 'specs/sobre-nosotros.md'), 'utf8'), /\*\*Ubicación:\*\* plantilla pages\/template-sobre-nosotros\.php/);
+        const bad = (extra) => run('init.mjs', [...base, '--page', 'otra', '--title', 'Otra', '--template', 'p.php', ...extra]).code;
+        assert.equal(bad(['--type', 'listado']), 1, 'un listado exige --content');
+        assert.equal(bad(['--type', 'tienda']), 1, 'tipo desconocido');
+        assert.equal(bad(['--content', 'producto']), 1, 'una estática no lleva contenido');
+        assert.equal(bad(['--type', 'detalle', '--content', 'Producto Nuevo']), 1, 'contenido en snake_case');
+        rmSync(join(theme, 'specs/productos.md'));
+        rmSync(join(theme, 'specs/producto.md'));
+        const indexPath = join(theme, 'specs/_index.md');
+        writeFileSync(indexPath, readFileSync(indexPath, 'utf8').split('\n').filter((line) => !/\((productos|producto)\.md\)/.test(line)).join('\n'));
+    });
+
     test('check: una página recién creada (sin secciones) pasa', () => {
         const r = run('check.mjs', ['--target', theme]);
         assert.equal(r.code, 0, r.stdout);
@@ -152,7 +189,8 @@ try {
     test('check: el tema de ejemplo pasa', () => {
         const r = run('check.mjs', ['--target', ok]);
         assert.equal(r.code, 0, r.stdout);
-        assert.equal(r.json.fields, 3);
+        assert.equal(r.json.fields, 5);
+        assert.equal(r.json.groups, 3);
         assert.deepEqual(r.json.warnings, []);
     });
 
@@ -217,6 +255,35 @@ try {
         });
         assert.match(messages(r), /destino .* no existe/);
         assert.ok(r.json.warnings.some((w) => /no coincide con _index/.test(w.message)));
+    });
+
+    test('check: un spec de la 1.0 avisa, no falla', () => {
+        const r = broken('legacy', (dir) => {
+            const path = join(dir, 'specs/home.md');
+            const text = readFileSync(path, 'utf8').replace(/\r\n/g, '\n')
+                .replace(/- \*\*(Tipo|Contenido|Grupo ACF|Ubicación):\*\*.*\n/g, '').replace(/- \*\*Grupo:\*\*.*\n/g, '');
+            writeFileSync(path, text);
+        });
+        assert.equal(r.code, 0, r.stdout);
+        assert.ok(r.json.warnings.some((w) => /formato 1\.0/.test(w.message)));
+    });
+
+    test('check: el grupo de la sección y sus campos', () => {
+        assert.match(messages(broken('grupo-pagina', edit('specs/home.md', '**Grupo:** `home_hero`', '**Grupo:** `inicio_hero`'))), /debe empezar con "home_"/);
+        assert.match(messages(broken('grupo-campo', edit('specs/home.md', '**Grupo:** `home_hero`', '**Grupo:** `home_portada`'))), /debe empezar con el grupo "home_portada_"/);
+        assert.match(messages(broken('grupo-falta', edit('specs/home.md', '- **Grupo:** `home_hero`\n', ''))), /Falta "Grupo"/);
+        assert.match(messages(broken('grupo-ninguno', edit('specs/home.md', '**Grupo:** `home_hero`', '**Grupo:** ninguno'))), /tiene campos/);
+        assert.match(messages(broken('grupo-repetido', edit('specs/producto.md', '`producto_ficha`', '`home_hero`'))), /debe empezar con "producto_"/);
+    });
+
+    test('check: contenido dinámico en el spec y en _shared.md', () => {
+        assert.match(messages(broken('contenido', edit('specs/productos.md', '**Contenido:** producto', '**Contenido:** servicio'))), /"servicio" no está en la tabla/);
+        assert.match(messages(broken('tipo', edit('specs/productos.md', '**Tipo:** listado', '**Tipo:** tienda'))), /Tipo inválido/);
+        assert.match(messages(broken('estatica', edit('specs/home.md', '**Contenido:** ninguno', '**Contenido:** producto'))), /lleva "Contenido: ninguno"/);
+        assert.match(messages(broken('origen', edit('specs/_shared.md', '| cpt |', '| tienda |'))), /Origen "tienda"/);
+        assert.match(messages(broken('accion', edit('specs/_shared.md', '| WhatsApp con "Hola, me interesa {producto}"; número en un campo global |', '|  |'))), /falta "Acción"/);
+        assert.match(messages(broken('alcance', edit('specs/_shared.md', '| productos.html | catálogo | producto |', '| productos.html | catálogo | ninguno |'))), /necesita un Contenido/);
+        assert.match(messages(broken('alcance-2', edit('specs/_shared.md', '| productos.html | catálogo | producto |', '| productos.html | tienda | producto |'))), /"Qué es" debe ser/);
     });
 
     test('check: no se aprueban páginas con _shared.md pendiente', () => {

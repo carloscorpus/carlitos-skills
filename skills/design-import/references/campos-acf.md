@@ -7,7 +7,9 @@ The specs describe the fields; they do not create them. The ACF step later turns
 - `<page>_<section>_<field>`, snake_case, Spanish, no accents or `ñ`: `home_hero_titulo`, `sobre_nosotros_equipo_miembros`.
 - `<page>` is the spec file name with `-` turned into `_`. `check.mjs` rejects a field that does not start with it, and a name used twice.
 - A repeated group (cards, FAQ items, team members) is one `repeater` named `<page>_<section>_<plural>` with its subfields written below it as `<repeater>.<subfield>`: `home_servicios_items.titulo`. The first item's text is the "valor actual"; mention the item count in the description.
-- No ACF `group` fields to organize a section: the prefix already does it. Flat names are easier to read in templates.
+- Organization: **one ACF field group per page** (the spec's `Grupo ACF`, e.g. "Inicio") with its location rule in `Ubicación` (`página de inicio (front page)`, `plantilla pages/template-nosotros.php`, `tipo de contenido = producto`). **Each section is a `group` field** named `<page>_<section>` (the section's `Grupo`, e.g. `home_hero`) and the rows of its table are its subfields.
+- The names in the table are the full stored names: ACF saves the subfield `titulo` of the group `home_hero` as `home_hero_titulo`, so `get_field('home_hero')['titulo']` and `get_field('home_hero_titulo')` read the same value. `check.mjs` requires every field to start with its section's group. A section with no fields has `Grupo: ninguno`.
+- This skill defines the structure (groups, names, types, descriptions, location); the ACF step only creates it from the spec.
 - Names say what the content is, not how it looks: `titulo`, `bajada`, `imagen`, `boton`, never `texto_grande` or `azul`.
 
 ## Types

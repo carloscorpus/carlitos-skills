@@ -7,7 +7,8 @@
 //
 // Imprime un JSON con: summary, pages (secciones y su contenido), assets, tokens (colores,
 // tipografías, espaciados, radios, sombras), repeated (bloques repetidos = candidatos a componente),
-// interactions (formularios, modales, acordeones, sliders, tabs) y findings (malas prácticas con
+// interactions (formularios, filtros, modales, acordeones, sliders, tabs), dynamicCandidates (páginas que
+// parecen listados o tienda) y findings (malas prácticas con
 // archivo:línea). Códigos: 0 ok, 1 error de uso. No escribe nada salvo --out (fuera de la fuente).
 
 import { createHash } from 'node:crypto';
@@ -334,6 +335,10 @@ function analyzeJs(file, text, baseLine = 1) {
 const INTERACTIVE = new Set(['a', 'button', 'input', 'select', 'textarea', 'summary']);
 const NON_CONTENT = new Set(['script', 'style', 'link', 'meta', 'noscript', 'template']);
 const FORM_SKIP = new Set(['hidden', 'submit', 'button', 'reset', 'image']);
+const FILTER_HINT = /\b(filters?|filtros?|facets?|search|buscador|busqueda|ordenar|sort)\b/i;
+const PAGINATION_HINT = /\b(pagination|paginacion|paginador|page-numbers|load-more|cargar-mas)\b/i;
+const COMMERCE_HINT = /\b(price|precio|add-to-cart|cart|carrito|checkout)\b/i;
+const DYNAMIC_NAME = /(blog|noticia|news|articulo|post|producto|product|catalogo|tienda|shop|proyecto|portafolio|portfolio|propiedad|inmueble|evento|curso|carrito|cart|checkout|cuenta|account|buscar|search|categoria|category)/i;
 const MODAL_HINT = /\b(modal|dialog|popup|lightbox|drawer|overlay)\b/i;
 const ACCORDION_HINT = /\b(accordion|acordeon|faq|collapse)\b/i;
 const SLIDER_HINT = /\b(swiper|slick|carousel|slider|splide|glide)\b/i;
@@ -341,6 +346,8 @@ const TABS_HINT = /\b(tabs?|tablist)\b/i;
 
 const pages = [];
 const interactions = [];
+const dynamicHints = new Map(); // archivo -> motivos por los que parece contenido dinámico
+const hintFor = (file) => dynamicHints.get(file) ?? dynamicHints.set(file, new Set()).get(file);
 const signatureGroups = new Map();
 const sigMemo = new WeakMap();
 
@@ -432,8 +439,13 @@ function analyzeHtml({ file, full }) {
     const scripts = [];
     const matched = new Map(); // tipo de interacción -> elementos ya detectados
 
+    if (DYNAMIC_NAME.test(file.replace(/\.[^.]+$/, ''))) hintFor(file).add('nombre');
+
     for (const el of all) {
         const { attrs } = el;
+        const classHint = `${attrs.class ?? ''} ${attrs.id ?? ''}`;
+        if (PAGINATION_HINT.test(classHint)) hintFor(file).add('paginación');
+        if (COMMERCE_HINT.test(classHint)) hintFor(file).add('comercio');
         if (attrs.style) {
             add('inline-style', 'medium', 'Atributo `style`: el estilo va en clases (Tailwind o CSS del proyecto).', file, el.line);
             analyzeInlineStyle(file, el.line, attrs.style);
@@ -496,9 +508,15 @@ function analyzeHtml({ file, full }) {
                 matched.set(type, seen);
                 const entry = { type, file, line: el.line, suggestedSkill: { form: 'wp-form', modal: 'wp-modal', accordion: 'wp-accordion' }[type] ?? null };
                 if (type === 'form') {
-                    entry.fields = elementsOf(el)
-                        .filter((n) => ['input', 'select', 'textarea'].includes(n.tag) && !FORM_SKIP.has((n.attrs.type ?? '').toLowerCase()))
-                        .map((n) => ({ tag: n.tag, type: n.attrs.type ?? null, name: n.attrs.name ?? n.attrs.id ?? null, required: n.attrs.required !== undefined }));
+                    const controls = elementsOf(el).filter((n) => ['input', 'select', 'textarea'].includes(n.tag) && !FORM_SKIP.has((n.attrs.type ?? '').toLowerCase()));
+                    entry.fields = controls.map((n) => ({ tag: n.tag, type: n.attrs.type ?? null, name: n.attrs.name ?? n.attrs.id ?? null, required: n.attrs.required !== undefined }));
+                    // Un formulario que filtra un listado no es un formulario de envío: no va a wp-form.
+                    const onlyPickers = controls.length > 0 && controls.every((n) => n.tag === 'select' || ['checkbox', 'radio', 'search', 'range'].includes((n.attrs.type ?? '').toLowerCase()));
+                    if (FILTER_HINT.test(hint) || attrs.role === 'search' || (onlyPickers && (attrs.method ?? 'get').toLowerCase() === 'get')) {
+                        entry.kind = 'filter';
+                        entry.suggestedSkill = null;
+                        hintFor(file).add('filtros');
+                    }
                 } else {
                     entry.hint = hint.trim() || el.tag;
                 }
@@ -576,6 +594,9 @@ for (const group of [...signatureGroups.values()].sort((a, b) => b.size - a.size
     members.forEach(({ node }) => accepted.add(node));
     const fileSet = [...new Set(members.map((m) => m.file))];
     const first = members[0].node;
+    const perFile = new Map();
+    for (const { file } of members) perFile.set(file, (perFile.get(file) ?? 0) + 1);
+    for (const [file, n] of perFile) if (n >= 6) hintFor(file).add('repetidos');
     repeated.push({
         id: group.key,
         tag: first.tag,
@@ -589,6 +610,11 @@ for (const group of [...signatureGroups.values()].sort((a, b) => b.size - a.size
     });
 }
 repeated.sort((a, b) => b.count * b.size - a.count * a.size);
+
+// Páginas que parecen listados, detalles o tienda: la skill las lista y el usuario dice qué son.
+const dynamicCandidates = [...dynamicHints]
+    .filter(([, reasons]) => reasons.size > 0)
+    .map(([file, reasons]) => ({ file, reasons: [...reasons] }));
 
 const top = (map) => [...map.values()]
     .sort((a, b) => b.count - a.count)
@@ -610,6 +636,7 @@ const report = {
         sections: pages.reduce((total, p) => total + p.sections.length, 0),
         repeatedGroups: repeated.length,
         interactions: interactions.length,
+        dynamicCandidates: dynamicCandidates.length,
         findings: sortedFindings.reduce((total, f) => total + f.count, 0),
     },
     pages,
@@ -630,6 +657,7 @@ const report = {
     },
     repeated: repeated.slice(0, 40),
     interactions,
+    dynamicCandidates,
     findings: sortedFindings,
     skipped,
 };

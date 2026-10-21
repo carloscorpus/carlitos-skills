@@ -2,6 +2,19 @@
 
 - **Estado:** aprobado
 
+## Alcance
+
+| Diseño | Qué es | Contenido |
+|---|---|---|
+| index.html | estática | ninguno |
+| productos.html | catálogo | producto |
+
+## Contenido dinámico
+
+| Contenido | Origen | Taxonomías | Campos por elemento | Filtros | Plantillas | Acción |
+|---|---|---|---|---|---|---|
+| producto | cpt | `categoria_producto` (jerárquica: Sillas, Mesas) | precio, galería | categoría, orden | `archive-producto.php`, `single-producto.php` | WhatsApp con "Hola, me interesa {producto}"; número en un campo global |
+
 ## Tokens
 
 | Token | Valor | Uso | Origen |

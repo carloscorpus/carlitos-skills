@@ -10,13 +10,19 @@
 - **Resumen:** Presenta la empresa y lleva al visitante a pedir una cotización.
 - **Fuente:** `index.html`
 - **Plantilla:** `front-page.php`
+- **Tipo:** estática
+- **Contenido:** ninguno
 - **Secciones (en orden):** hero, servicios, testimonios, contacto
 - **Skills usadas:** wp-form (contacto), wp-helper
+- **Grupo ACF:** Inicio
+- **Ubicación:** página de inicio (front page)
 - **Notas de página:** h1 en el hero; título SEO "Inicio | Empresa"; sin meta descripción en el diseño
 - **Estado:** pendiente
 ```
 
 `Resumen`: what the page is about and what the visitor does there, in one or two sentences. `Skills usadas`: `ninguna` or the skills the sections delegate to.
+
+`Tipo`: `estática`, `listado` or `detalle`. `Contenido`: `ninguno` for a static page; for a list or detail, the name of a row of the "Contenido dinámico" table in `_shared.md` (`check.mjs` verifies it). `Grupo ACF`: the name of the page's field group. `Ubicación`: its location rule, in plain words. `init.mjs --page` fills all four with defaults you adjust. A 1.0 spec without them still validates, with a warning.
 
 ## Section block
 
@@ -25,6 +31,7 @@
 
 - **Origen:** `index.html` líneas 14-39
 - **Destino:** `template-parts/pages/home/hero.php`
+- **Grupo:** `home_hero`
 - **Skill:** ninguna
 - **Comportamiento:** el botón lleva a la sección contacto; la imagen se recorta con `object-cover` (relación 16:9); en móvil el texto va sobre la imagen
 - **Estado:** pendiente
@@ -50,6 +57,7 @@
 ## Rules
 
 - `Origen` points to the file and lines of the design; `Destino` to the file(s) in the theme (comma-separated if there are several, relative to the theme root).
+- `Grupo`: the `group` field of the section (`<page>_<section>`, unique in the theme) or `ninguno` when the section has no fields. Every field of the table starts with it.
 - `Skill`: `ninguna`, `wp-form`, `wp-modal`, `wp-accordion`, `wp-helper`. A section with a skill has no markup of yours: `Comportamiento` says what the skill must do (recipients, trigger, motion).
 - `Estado` of each section: `pendiente`, `aprobado`, `descartado`, `aplicado`. The page's `Estado` and its row in `_index.md` must match.
 - "Campos ACF" lists every text, image, link and repeated group of the section. A static section (a divider) has a header-only table. Value `—` for images and links.

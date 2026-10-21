@@ -51,3 +51,7 @@ If the design's script does something the browser does natively (accordion → `
 ## Do not "fix" by changing the design
 
 If a fix would change what the user sees (a spacing that matches no token, a font size between two steps), keep the exact value and list it in the section's "Comportamiento" so the user decides.
+
+## Not a bad practice: filters
+
+A `<form>` whose controls are only selects, checkboxes, radios or search fields and that uses `method="get"` is a filter, not a message form (`analyze.mjs` marks it `kind: filter` and suggests no skill). It stays as labelled markup; never send it to `wp-form`. See `contenido-dinamico.md`.

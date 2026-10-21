@@ -18,7 +18,7 @@
 | [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.3   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
 | [`wp-accordion`](skills/wp-accordion/SKILL.md)   | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Acordeones y FAQ con el `<details>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento solo con CSS, responsive y auditoría. |
 | [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.1.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
-| [`design-import`](skills/design-import/SKILL.md) | 1.0.1   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los campos ACF documentados y aplica solo lo que apruebas. |
+| [`design-import`](skills/design-import/SKILL.md) | 1.1.0   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también blog, catálogo y Woo, solo maquetados) y aplica solo lo que apruebas. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -156,7 +156,7 @@ En un tema WordPress (con `wp-vite-theme` o a mano), agrega la carpeta del dise�
 Trabaja por etapas y se detiene a que apruebes:
 
 1. **Inventario** (`analyze.mjs`, solo lectura): páginas y secciones, colores, tipografías, espaciados, bloques repetidos, formularios/modales/acordeones y malas prácticas con archivo:línea.
-2. **Compartido** (`specs/_shared.md`): tokens, componentes y nomenclatura. Lo apruebas antes de seguir.
+2. **Compartido** (`specs/_shared.md`): primero el alcance (te pregunta qué es cada página: estática, blog, catálogo o WooCommerce, con sus taxonomías, filtros y la acción del botón) y luego tokens, componentes y nomenclatura. Lo apruebas antes de seguir.
 3. **Un spec por página** (`specs/<página>.md`): resumen, y por sección origen, destino, skill, campos ACF, comportamiento y criterios de aceptación. Con más de tres páginas, un subagente por página.
 4. **Aplicar** solo las páginas `aprobado`. Formularios, modales y acordeones van a `wp-form` / `wp-modal` / `wp-accordion`; imágenes y enlaces, a `wp-helper`.
 
@@ -170,6 +170,8 @@ template-parts/components/<nombre>.php
 
 - **Destino:** si el tema tiene la estructura de `wp-vite-theme`, la usa sin preguntar. Si es otro proyecto, lo analiza y confirma el mapeo una sola vez.
 - **Solo front:** los campos ACF se documentan en el spec (nombre `<página>_<sección>_<campo>` en español, tipo, descripción, valor actual); no se crean. El texto queda fijo en la plantilla y cada campo apunta a su valor actual para pasarlo a ACF después.
+- **Grupos ACF:** cada página es un grupo de campos con su regla de ubicación y cada sección es un campo `group` (`home_hero`); los nombres siguen siendo `home_hero_titulo`.
+- **Blog, catálogo y WooCommerce:** se preguntan una vez y se documentan (tipo de contenido, taxonomías, filtros, plantillas, acción del botón). Se maquetan con elementos de ejemplo fijos; no escribe consultas, filtrado real, paginación ni lógica de Woo.
 - **Sin límites para el usuario:** la descripción de un campo recomienda largo de texto y medida de imagen, pero no se valida nada; la imagen se adapta al diseño con `aspect-ratio` y `object-cover`.
 - Comandos: `node skills/design-import/scripts/analyze.mjs --source <carpeta>`, `init.mjs [--page <slug> …]`, `check.mjs`.
 - Prueba: `node skills/design-import/tests/check.mjs`.

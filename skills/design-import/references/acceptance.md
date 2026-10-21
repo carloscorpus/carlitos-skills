@@ -19,6 +19,7 @@ Copy the base set into every section's "Criterios de aceptación" and add the on
 - Section with links: destinos reales; los externos con `rel` seguro (helper de enlaces de `wp-helper`).
 - Section with behavior: el JS vive en `src/js/modules/`, se activa por `data-` o clase, funciona con teclado y respeta `prefers-reduced-motion`.
 - Section with a skill: pasa los criterios de esa skill (`wp-form`, `wp-modal`, `wp-accordion` y `wp-helper` tienen su `references/acceptance.md`).
+- Listado o detalle (blog, catálogo, WooCommerce): la tarjeta es un componente con `$args`; los filtros son marcado con `label` y no usan `wp-form`; la paginación es un `<nav aria-label="Paginación">`; el botón del elemento sigue la "Acción" de `_shared.md`; no hay `WP_Query` ni lógica de Woo.
 - Repeated block: un solo componente con `$args`, usado en todos los lugares donde se repetía.
 - Component: documentado en `_shared.md` con sus argumentos y dónde se usa.
 

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Productos</title>
+</head>
+<body>
+<main>
+    <section class="catalogo">
+        <h1>Productos</h1>
+        <form class="filtros" method="get">
+            <label for="cat">Categoría</label>
+            <select id="cat" name="categoria"><option>Todas</option><option>Sillas</option></select>
+            <label for="orden">Ordenar</label>
+            <select id="orden" name="orden"><option>Recientes</option></select>
+        </form>
+        <ul class="grid">
+            <li class="producto"><h2>Silla A</h2><span class="price">S/ 100</span><a href="#detalle">Ver</a></li>
+            <li class="producto"><h2>Silla B</h2><span class="price">S/ 120</span><a href="#detalle">Ver</a></li>
+            <li class="producto"><h2>Silla C</h2><span class="price">S/ 130</span><a href="#detalle">Ver</a></li>
+            <li class="producto"><h2>Silla D</h2><span class="price">S/ 140</span><a href="#detalle">Ver</a></li>
+            <li class="producto"><h2>Silla E</h2><span class="price">S/ 150</span><a href="#detalle">Ver</a></li>
+            <li class="producto"><h2>Silla F</h2><span class="price">S/ 160</span><a href="#detalle">Ver</a></li>
+        </ul>
+        <nav class="pagination"><a href="#">1</a><a href="#">2</a></nav>
+    </section>
+</main>
+</body>
+</html>
