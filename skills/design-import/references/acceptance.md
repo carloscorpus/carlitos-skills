@@ -18,7 +18,7 @@ Copy the base set into every section's "Criterios de aceptación" and add the on
 - Section with images: `width`/`height` o `aspect-ratio` para no mover el layout; `loading="lazy"` salvo las que están en la primera pantalla.
 - Section with links: destinos reales; los externos con `rel` seguro (helper de enlaces de `wp-helper`).
 - Section with behavior: el JS vive en `src/js/modules/`, se activa por `data-` o clase, funciona con teclado y respeta `prefers-reduced-motion`.
-- Section with a skill: pasa los criterios de esa skill (`wp-form`, `wp-modal` y `wp-helper` tienen su `references/acceptance.md`).
+- Section with a skill: pasa los criterios de esa skill (`wp-form`, `wp-modal`, `wp-accordion` y `wp-helper` tienen su `references/acceptance.md`).
 - Repeated block: un solo componente con `$args`, usado en todos los lugares donde se repetía.
 - Component: documentado en `_shared.md` con sus argumentos y dónde se usa.
 

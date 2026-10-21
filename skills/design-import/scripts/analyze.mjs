@@ -494,7 +494,7 @@ function analyzeHtml({ file, full }) {
             if (!nested) {
                 seen.add(el);
                 matched.set(type, seen);
-                const entry = { type, file, line: el.line, suggestedSkill: { form: 'wp-form', modal: 'wp-modal' }[type] ?? null };
+                const entry = { type, file, line: el.line, suggestedSkill: { form: 'wp-form', modal: 'wp-modal', accordion: 'wp-accordion' }[type] ?? null };
                 if (type === 'form') {
                     entry.fields = elementsOf(el)
                         .filter((n) => ['input', 'select', 'textarea'].includes(n.tag) && !FORM_SKIP.has((n.attrs.type ?? '').toLowerCase()))

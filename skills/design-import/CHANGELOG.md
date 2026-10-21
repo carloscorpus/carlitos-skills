@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.0.1] - 2026-10-21
+
+### Cambiado
+- Los acordeones se delegan a `wp-accordion` (antes decía "la skill de acordeón"): `analyze.mjs` la sugiere en la interacción `accordion`, y `SKILL.md`, `formato-spec.md`, `malas-practicas.md`, `acceptance.md` y `destino-wp-vite-theme.md` la nombran (destino `template-parts/accordions/`).
+
 ## [1.0.0] - 2026-10-21
 
 ### Agregado

@@ -50,7 +50,7 @@
 ## Rules
 
 - `Origen` points to the file and lines of the design; `Destino` to the file(s) in the theme (comma-separated if there are several, relative to the theme root).
-- `Skill`: `ninguna`, `wp-form`, `wp-modal`, `wp-helper` or the accordion skill. A section with a skill has no markup of yours: `Comportamiento` says what the skill must do (recipients, trigger, motion).
+- `Skill`: `ninguna`, `wp-form`, `wp-modal`, `wp-accordion`, `wp-helper`. A section with a skill has no markup of yours: `Comportamiento` says what the skill must do (recipients, trigger, motion).
 - `Estado` of each section: `pendiente`, `aprobado`, `descartado`, `aplicado`. The page's `Estado` and its row in `_index.md` must match.
 - "Campos ACF" lists every text, image, link and repeated group of the section. A static section (a divider) has a header-only table. Value `—` for images and links.
 - Criteria are verifiable by a command or by looking at the page. Copy the base set from `acceptance.md` and add the ones specific to the section. Never fewer than the base set.

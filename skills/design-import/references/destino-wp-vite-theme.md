@@ -13,6 +13,7 @@ Use this when the theme has `front-page.php`, `pages/`, `template-parts/` and `i
 | `<header>` / `<nav>` | `header.php` (site-wide, never per page) |
 | `<footer>` | `footer.php` |
 | Form / modal | `template-parts/forms/` / `template-parts/modals/`, written by `wp-form` / `wp-modal` |
+| Accordion | `template-parts/accordions/`, written by `wp-accordion` |
 | Colors, fonts, sizes, radii, shadows | `@theme` in `src/css/input.css`, after `@import "tailwindcss";` |
 | Fonts | `src/fonts/`, loaded with `@font-face` in `src/css/input.css` (Vite hashes them into `dist/`) |
 | Images used by CSS | `src/img/`, referenced from the CSS |

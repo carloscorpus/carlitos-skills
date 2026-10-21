@@ -16,8 +16,9 @@
 | [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.3.0   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
 | [`wp-form`](skills/wp-form/SKILL.md)             | 1.3.2   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
 | [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.3   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
+| [`wp-accordion`](skills/wp-accordion/SKILL.md)   | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Acordeones y FAQ con el `<details>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento solo con CSS, responsive y auditoría. |
 | [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.1.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
-| [`design-import`](skills/design-import/SKILL.md) | 1.0.0   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los campos ACF documentados y aplica solo lo que apruebas. |
+| [`design-import`](skills/design-import/SKILL.md) | 1.0.1   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los campos ACF documentados y aplica solo lo que apruebas. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -111,6 +112,24 @@ template-parts/modals/<id>.php vista de cada modal (diseño de Figma)
 - Auditoría: `node skills/wp-modal/tests/check.mjs <url | archivo.html>` revisa nombre accesible, botón de cerrar, `h1`, ids, disparadores, imágenes e iframes.
 - Un form dentro del modal con `wp-form` necesita `wp-form` 1.3.0 o posterior.
 
+## wp-accordion
+
+En un tema WordPress con Vite y pnpm, pide `arma el acordeón de preguntas frecuentes` o pásale un frame de Figma (o un spec con `skill: wp-accordion`). Te pregunta lo que falta: uno abierto a la vez o varios, cuál empieza abierto, si los títulos son encabezados de la página, si el contenido sale de una lista (por ejemplo un repeater de ACF) y el movimiento. Instala el motor la primera vez.
+
+El diseño es de Figma: clases por parte, ícono (`chevron` o `plus`, al inicio o al final) y estilos compartidos como variables `--accordion-*`. La skill pone lo demás: un `<details>` nativo por ítem (teclado, estado y nombre accesible sin JavaScript), `<summary>` de al menos 44 px, foco visible, panel sin alturas fijas y movimiento de altura solo con CSS que se apaga con `prefers-reduced-motion`.
+
+```text
+inc/accordions.php                 motor (no se edita por proyecto)
+src/js/modules/accordion.js        motor JS mínimo (no se edita por proyecto)
+src/css/accordion.css              motor CSS en @layer components, variables --accordion-*
+template-parts/accordions/<id>.php vista de cada acordeón (diseño de Figma)
+```
+
+- JS mínimo: modo exclusivo en navegadores viejos, abrir el ítem al llegar con un `#ancla` y eventos `accordion:open` / `accordion:close`. Sin él, el acordeón funciona igual.
+- Sin datos estructurados `FAQPage`: desde 2023 Google solo muestra ese resultado a sitios de gobierno y salud, así que en un sitio normal no aporta. El detalle está en `skills/wp-accordion/references/seo.md`.
+- Auditoría: `node skills/wp-accordion/tests/check.mjs <url | archivo.html>` revisa título del botón, interactivos dentro del `<summary>`, `h1`, ARIA armado a mano, paneles ocultos, `name` en modo exclusivo, ids, imágenes e iframes.
+- Sin vistas de ejemplo: la skill las arma desde el diseño. El detalle está en `skills/wp-accordion/references/`.
+
 ## wp-helper
 
 En un tema WordPress, pide `instala los helpers` (o corre la skill al final de `wp-vite-theme`, que la ofrece). Te pregunta cuál incluir: **imágenes**, **enlaces**, **texto de dos colores**, todos, o uno **local nuevo** solo para ese proyecto. El de imágenes y el de enlaces se recomiendan en todos los proyectos.
@@ -139,7 +158,7 @@ Trabaja por etapas y se detiene a que apruebes:
 1. **Inventario** (`analyze.mjs`, solo lectura): páginas y secciones, colores, tipografías, espaciados, bloques repetidos, formularios/modales/acordeones y malas prácticas con archivo:línea.
 2. **Compartido** (`specs/_shared.md`): tokens, componentes y nomenclatura. Lo apruebas antes de seguir.
 3. **Un spec por página** (`specs/<página>.md`): resumen, y por sección origen, destino, skill, campos ACF, comportamiento y criterios de aceptación. Con más de tres páginas, un subagente por página.
-4. **Aplicar** solo las páginas `aprobado`. Formularios y modales van a `wp-form` / `wp-modal`; imágenes y enlaces, a `wp-helper`.
+4. **Aplicar** solo las páginas `aprobado`. Formularios, modales y acordeones van a `wp-form` / `wp-modal` / `wp-accordion`; imágenes y enlaces, a `wp-helper`.
 
 ```text
 specs/_index.md                          páginas y su estado (pendiente, aprobado, descartado, aplicado)

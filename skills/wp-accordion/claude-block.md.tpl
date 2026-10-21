@@ -1,0 +1,5 @@
+## Acordeones (wp-accordion {{ENGINE_VERSION}})
+- Cada acordeón es una vista en `template-parts/accordions/<id>.php` que se muestra con `get_template_part('template-parts/accordions/<id>')`. Ábrelo con `{{PREFIX}}_accordion_start($id, [...])`, un `{{PREFIX}}_accordion_item_start($titulo)` / `_item_end()` por ítem y `{{PREFIX}}_accordion_end()`; el contenido de cada ítem es libre. Con una lista (p. ej. un repeater de ACF) usa `{{PREFIX}}_accordion($id, $items)`.
+- El diseño sale de Figma: clases por parte (`class`, `item_class`, `summary_class`, `title_class`, `icon_class`, `panel_class`), `icon` e `icon_position`. Lo que se repite en varios acordeones va una vez como variable `--accordion-*` en el CSS del proyecto.
+- Es un `<details>` nativo: no pongas enlaces ni botones dentro del título, no ocultes el panel con `display: none` ni armes uno con `div` y `aria-expanded`. Para enlazar un ítem, dale `id` y usa `<a href="#id">`.
+- No edites el motor (`inc/accordions.php`, `src/js/modules/accordion.js`, `src/css/accordion.css`): se actualiza desde la skill wp-accordion.

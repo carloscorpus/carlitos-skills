@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Acordeón con errores</title></head>
+<body>
+<!-- expect: duplicate-id, no-summary, no-title, summary-interactive, h1-inside, panel-hidden, img-alt, lazy, iframe-title, tabindex, no-name, all-open, aria-div, exclusive-open -->
+<main>
+    <!-- Exclusivo sin name en un ítem + id repetido + varios errores de contenido -->
+    <div id="a" data-accordion data-exclusive>
+        <details id="dup" data-accordion-item name="a" open>
+            <summary><span>Sin enlaces</span> <a href="/x">ver</a></summary>
+            <div>
+                <h1>Título principal repetido</h1>
+                <p hidden>Texto oculto a mano</p>
+                <img src="a.jpg">
+                <iframe src="https://example.com/v"></iframe>
+                <div tabindex="3">Foco forzado</div>
+            </div>
+        </details>
+        <details id="dup" data-accordion-item name="a" open>
+            <summary></summary>
+            <div><p>Sin título en el botón.</p></div>
+        </details>
+        <details id="sin-name" data-accordion-item>
+            <summary>Sin name</summary>
+            <p>Este ítem no tiene name y el acordeón es exclusivo.</p>
+        </details>
+    </div>
+
+    <!-- Un <details> del motor sin <summary> -->
+    <div id="b" data-accordion>
+        <details id="nosum" data-accordion-item><p>Sin resumen.</p></details>
+    </div>
+
+    <!-- Todos abiertos (3 o más) -->
+    <div id="c" data-accordion>
+        <details id="c1" data-accordion-item open><summary>Uno</summary><p>1</p></details>
+        <details id="c2" data-accordion-item open><summary>Dos</summary><p>2</p></details>
+        <details id="c3" data-accordion-item open><summary>Tres</summary><p>3</p></details>
+    </div>
+
+    <!-- Exclusivo con dos ítems abiertos al inicio -->
+    <div id="d" data-accordion data-exclusive>
+        <details id="d1" data-accordion-item name="d" open><summary>Uno</summary><p>1</p></details>
+        <details id="d2" data-accordion-item name="d" open><summary>Dos</summary><p>2</p></details>
+    </div>
+
+    <!-- Acordeón armado a mano -->
+    <div class="acc">
+        <div role="button" aria-expanded="false" aria-controls="p1">Pregunta</div>
+        <div id="p1">Respuesta</div>
+    </div>
+</main>
+</body>
+</html>

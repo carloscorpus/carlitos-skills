@@ -46,7 +46,7 @@ Also: `px` font sizes and spacings that match the scale become `rem` tokens; med
 | `var-declaration` | Function scope surprises | `const` / `let` |
 | `global-function` | Called from inline handlers | Module functions, wired with `addEventListener` |
 
-If the design's script does something the browser does natively (accordion → `<details>`, modal → `<dialog>`), do not port it: use the skill that covers it (`wp-modal`, the accordion skill) or the native element.
+If the design's script does something the browser does natively (accordion → `<details>`, modal → `<dialog>`), do not port it: use the skill that covers it (`wp-modal`, `wp-accordion`) or the native element.
 
 ## Do not "fix" by changing the design
 
