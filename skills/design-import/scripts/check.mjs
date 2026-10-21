@@ -5,7 +5,7 @@
 //   node check.mjs [--target <dir>] [--specs specs]
 //
 // Revisa: _index.md (filas, estados, archivos), _shared.md (estado), cada página (resumen y partes
-// por sección), nombres de campo (<página>_<sección>_<campo>, snake_case, únicos), tipos y
+// por sección, con su grupo ACF), la tabla de contenido dinámico de _shared.md, nombres de campo (<página>_<sección>_<campo>, snake_case, únicos), tipos y
 // descripciones. Con estado `aplicado` además comprueba que el destino exista, que cada "valor actual"
 // de texto esté en el PHP y avisa de textos fijos del PHP que no están en el spec.
 //
@@ -31,6 +31,10 @@ if (!existsSync(specsDir)) fail(1, `No existe ${args.specs}/: corre primero init
 
 const STATES = ['pendiente', 'aprobado', 'descartado', 'aplicado'];
 const PAGE_LABELS = ['Resumen', 'Fuente', 'Plantilla', 'Secciones (en orden)', 'Skills usadas', 'Notas de página', 'Estado'];
+const PAGE_TYPES = ['estática', 'listado', 'detalle'];
+const ORIGINS = ['post', 'cpt', 'woo'];
+const SCOPES = ['estática', 'blog', 'catálogo', 'woocommerce', 'otro'];
+const noAccent = (value) => value.toLowerCase().replace('estatica', 'estática').replace('catalogo', 'catálogo');
 const SECTION_LABELS = ['Origen', 'Destino', 'Skill', 'Comportamiento', 'Estado'];
 const FIELD_TYPES = new Set([
     'text', 'textarea', 'wysiwyg', 'number', 'range', 'email', 'url', 'password', 'image', 'file', 'gallery', 'oembed',
@@ -77,12 +81,34 @@ function parseTable(block) {
 // ---------- _shared.md ----------
 
 let sharedState = null;
+const dynamicContent = new Map(); // contenido -> origen
 const sharedPath = join(specsDir, '_shared.md');
 if (!existsSync(sharedPath)) error('_shared.md', 'Falta _shared.md.');
 else {
-    sharedState = labels(read(sharedPath)).Estado ?? null;
+    const sharedText = read(sharedPath);
+    sharedState = labels(sharedText).Estado ?? null;
     if (!['pendiente', 'aprobado', 'aplicado'].includes(sharedState)) {
         error('_shared.md', `Estado inválido "${sharedState}" (pendiente, aprobado o aplicado).`);
+    }
+    const chunk = (heading) => sharedText.split(/^## /m).find((part) => part.startsWith(heading))?.split('\n').slice(1).join('\n');
+
+    for (const cells of parseTable(chunk('Contenido dinámico') ?? '')) {
+        const [rawName, origin, , , filters, templates, action] = cells.map((cell) => unwrap(cell ?? ''));
+        const where = `Contenido dinámico › ${rawName || '(sin nombre)'}`;
+        if (!/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/.test(rawName)) error('_shared.md', `${where}: el nombre va en snake_case, sin tildes.`);
+        else if (dynamicContent.has(rawName)) error('_shared.md', `${where}: contenido repetido.`);
+        else dynamicContent.set(rawName, origin);
+        if (!ORIGINS.includes(origin)) error('_shared.md', `${where}: Origen "${origin}" debe ser post, cpt o woo.`);
+        for (const [label, value] of [['Filtros', filters], ['Plantillas', templates], ['Acción', action]]) {
+            if (!value) error('_shared.md', `${where}: falta "${label}" (usa "ninguno" si no aplica).`);
+        }
+    }
+    for (const cells of parseTable(chunk('Alcance') ?? '')) {
+        const [design, scope, content] = cells.map((cell) => unwrap(cell ?? ''));
+        const where = `Alcance › ${design || '(sin nombre)'}`;
+        if (!SCOPES.includes(noAccent(scope))) error('_shared.md', `${where}: "Qué es" debe ser estática, blog, catálogo, woocommerce u otro.`);
+        else if (noAccent(scope) !== 'estática' && (!content || content === 'ninguno')) error('_shared.md', `${where}: una página ${scope} necesita un Contenido de la tabla "Contenido dinámico".`);
+        if (content && content !== 'ninguno' && !dynamicContent.has(content)) error('_shared.md', `${where}: el contenido "${content}" no está en "Contenido dinámico".`);
     }
 }
 
@@ -106,6 +132,7 @@ else {
 
 const pageFiles = readdirSync(specsDir).filter((name) => name.endsWith('.md') && !name.startsWith('_'));
 const allFields = new Map();
+const allGroups = new Map();
 let sectionCount = 0;
 let fieldCount = 0;
 
@@ -119,6 +146,19 @@ for (const name of pageFiles) {
 
     const pageLabels = labels(header);
     for (const label of PAGE_LABELS) if (!pageLabels[label]) error(name, `Falta "${label}" en el resumen de la página.`);
+    // Los specs de la 1.0 no traen Tipo, Contenido, Grupo ACF ni Ubicación: avisan, no fallan.
+    const grouped = pageLabels['Grupo ACF'] !== undefined;
+    if (!grouped) warn(name, 'Spec con formato 1.0: agrega Tipo, Contenido, Grupo ACF y Ubicación en el resumen, y Grupo en cada sección.');
+    else {
+        for (const label of ['Tipo', 'Contenido', 'Ubicación']) if (!pageLabels[label]) error(name, `Falta "${label}" en el resumen de la página.`);
+        const type = noAccent(pageLabels.Tipo ?? '');
+        const content = unwrap(pageLabels.Contenido ?? '');
+        if (pageLabels.Tipo && !PAGE_TYPES.includes(type)) error(name, `Tipo inválido "${pageLabels.Tipo}": estática, listado o detalle.`);
+        else if (type === 'estática' && content && content !== 'ninguno') error(name, 'Una página estática lleva "Contenido: ninguno".');
+        else if (['listado', 'detalle'].includes(type) && !dynamicContent.has(content)) {
+            error(name, `El contenido "${content}" no está en la tabla "Contenido dinámico" de _shared.md.`);
+        }
+    }
     const pageState = pageLabels.Estado;
     if (pageState && !STATES.includes(pageState)) error(name, `Estado de página inválido "${pageState}".`);
     const row = indexRows.find((r) => r.file === name);
@@ -135,6 +175,16 @@ for (const name of pageFiles) {
         const where = `${name} › ${sectionName}`;
         const data = labels(block);
         for (const label of SECTION_LABELS) if (!data[label]) error(where, `Falta "${label}".`);
+        const group = unwrap(data.Grupo ?? '');
+        if (grouped) {
+            if (!group) error(where, 'Falta "Grupo" (el campo group de ACF de la sección, o "ninguno" si no tiene campos).');
+            else if (group !== 'ninguno') {
+                if (!/^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$/.test(group)) error(where, `Grupo inválido "${group}": snake_case, <página>_<sección>.`);
+                else if (!group.startsWith(pagePrefix)) error(where, `El grupo "${group}" debe empezar con "${pagePrefix}".`);
+                else if (allGroups.has(group)) error(where, `El grupo "${group}" ya existe en ${allGroups.get(group)}.`);
+                else allGroups.set(group, where);
+            }
+        }
         const state = data.Estado;
         if (state && !STATES.includes(state)) error(where, `Estado inválido "${state}".`);
 
@@ -152,6 +202,9 @@ for (const name of pageFiles) {
             else if (!field.startsWith(pagePrefix)) error(where, `El campo "${field}" debe empezar con "${pagePrefix}".`);
             if (allFields.has(field)) error(where, `El campo "${field}" ya existe en ${allFields.get(field)}.`);
             else allFields.set(field, where);
+            if (grouped && group && FIELD_NAME.test(field) && !field.startsWith(`${group}_`)) {
+                error(where, group === 'ninguno' ? `${field}: la sección dice "Grupo: ninguno" pero tiene campos.` : `El campo "${field}" debe empezar con el grupo "${group}_".`);
+            }
             const fieldType = unwrap(type ?? '');
             if (!FIELD_TYPES.has(fieldType)) error(where, `${field}: tipo "${fieldType}" no es un tipo de ACF conocido.`);
             if (!description) error(where, `${field}: falta la descripción.`);
@@ -191,6 +244,8 @@ console.log(JSON.stringify({
     ok: errors.length === 0,
     pages: pageFiles.length,
     sections: sectionCount,
+    groups: allGroups.size,
+    dynamicContent: [...dynamicContent.keys()],
     fields: fieldCount,
     errors,
     warnings,

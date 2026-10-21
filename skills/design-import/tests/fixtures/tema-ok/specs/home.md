@@ -3,8 +3,12 @@
 - **Resumen:** Presenta la empresa y lleva al visitante a pedir una cotización.
 - **Fuente:** `index.html`
 - **Plantilla:** `front-page.php`
+- **Tipo:** estática
+- **Contenido:** ninguno
 - **Secciones (en orden):** hero
 - **Skills usadas:** ninguna
+- **Grupo ACF:** Inicio
+- **Ubicación:** página de inicio (front page)
 - **Notas de página:** h1 en el hero
 - **Estado:** aplicado
 
@@ -12,6 +16,7 @@
 
 - **Origen:** `index.html` líneas 14-20
 - **Destino:** `template-parts/pages/home/hero.php`
+- **Grupo:** `home_hero`
 - **Skill:** ninguna
 - **Comportamiento:** el botón lleva a la sección contacto
 - **Estado:** aplicado

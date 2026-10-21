@@ -3,8 +3,12 @@
 - **Resumen:** de qué trata la página y qué busca quien la visita
 - **Fuente:** `{{FUENTE}}`
 - **Plantilla:** `{{PLANTILLA}}`
+- **Tipo:** {{TIPO}}
+- **Contenido:** {{CONTENIDO}}
 - **Secciones (en orden):** lista separada por comas
 - **Skills usadas:** ninguna
+- **Grupo ACF:** {{GRUPO_ACF}}
+- **Ubicación:** {{UBICACION}}
 - **Notas de página:** `h1`, título SEO, meta descripción y cualquier cosa que afecte a toda la página
 - **Estado:** pendiente
 

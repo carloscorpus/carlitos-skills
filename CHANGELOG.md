@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.12.0] - 2026-10-21
+
+### Agregado
+- `design-import` 1.1.0: alcance del diseño (blog, catálogo, WooCommerce) que se pregunta una vez y se documenta en `_shared.md`; páginas `listado` y `detalle`; grupos de ACF por página y por sección; los filtros ya no se confunden con formularios. Detalle en `skills/design-import/CHANGELOG.md`.
+
 ## [1.11.0] - 2026-10-21
 
 ### Agregado

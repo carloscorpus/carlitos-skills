@@ -6,8 +6,12 @@
 //       Crea specs/_index.md y specs/_shared.md y mantiene un bloque corto de la skill en el
 //       CLAUDE.md del tema (entre <!-- design-import:start --> y <!-- design-import:end -->).
 //   node init.mjs --page <slug> --title <título> --source <archivo del diseño> --template <ruta de la plantilla>
+//                 [--type estática|listado|detalle] [--content <contenido>] [--group <nombre>] [--location <texto>]
 //                 [--target <dir>] [--dry-run] [--overwrite specs/<slug>.md]
 //       Crea specs/<slug>.md desde la plantilla de página y agrega su fila (pendiente) a _index.md.
+//       --type (por defecto estática); listado y detalle exigen --content, en snake_case, igual al de la tabla
+//       "Contenido dinámico" de _shared.md. --group es el nombre del grupo de campos (por defecto el título);
+//       --location, la regla de ubicación de ACF (por defecto según el tipo y la plantilla).
 //       Córrelo uno por uno desde el hilo principal: si varios subagentes editan _index.md a la vez se pisan.
 //
 // Requisitos: el tema tiene style.css y functions.php. Sale con JSON en stdout. Códigos: 0 ok,
@@ -38,6 +42,10 @@ try {
             title: { type: 'string' },
             source: { type: 'string' },
             template: { type: 'string' },
+            type: { type: 'string', default: 'estática' },
+            content: { type: 'string' },
+            group: { type: 'string' },
+            location: { type: 'string' },
             'dry-run': { type: 'boolean', default: false },
             overwrite: { type: 'string' },
             skip: { type: 'string' },
@@ -72,16 +80,32 @@ if (args.page !== undefined) {
     }
     const missing = ['title', 'source', 'template'].filter((key) => !args[key]?.trim());
     if (missing.length) fail(1, `Faltan datos: ${missing.join(', ')}.`, { missing });
-    for (const key of ['title', 'source', 'template']) {
-        if (/[\r\n|`]/.test(args[key])) fail(1, `"${key}" no puede tener saltos de línea, "|" ni comillas invertidas.`);
+    for (const key of ['title', 'source', 'template', 'group', 'location']) {
+        if (args[key] !== undefined && /[\r\n|`]/.test(args[key])) fail(1, `"${key}" no puede tener saltos de línea, "|" ni comillas invertidas.`);
     }
+    const type = args.type.trim().replace('estatica', 'estática');
+    if (!['estática', 'listado', 'detalle'].includes(type)) fail(1, `Tipo inválido "${type}": estática, listado o detalle.`);
+    const content = args.content?.trim() || 'ninguno';
+    if (type === 'estática' && content !== 'ninguno') fail(1, 'Una página estática no lleva --content.');
+    if (type !== 'estática' && (content === 'ninguno' || !/^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(content))) {
+        fail(1, `--content es obligatorio en un ${type} y va en snake_case: el nombre de la tabla "Contenido dinámico" de _shared.md.`);
+    }
+    const template = args.template.trim();
+    const location = args.location?.trim()
+        || (type === 'detalle' ? `tipo de contenido = ${content}`
+            : type === 'listado' ? `página de opciones: archivo de ${content}`
+            : template === 'front-page.php' ? 'página de inicio (front page)' : `plantilla ${template}`);
     if (!existsSync(join(target, INDEX))) fail(1, `Falta ${INDEX}: corre primero init.mjs sin --page.`);
 
     const pageValues = {
         ...values,
         PAGINA_TITULO: args.title.trim(),
         FUENTE: args.source.trim(),
-        PLANTILLA: args.template.trim(),
+        PLANTILLA: template,
+        TIPO: type,
+        CONTENIDO: content,
+        GRUPO_ACF: args.group?.trim() || args.title.trim(),
+        UBICACION: location,
     };
     const files = renderTemplates(templatesDir, pageValues, target, (f) => f.rel === 'specs/pagina.md')
         .map((f) => ({ ...f, rel: `specs/${page}.md`, dest: join(target, 'specs', `${page}.md`) }));

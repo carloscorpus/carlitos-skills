@@ -12,6 +12,8 @@ Use this when the theme has `front-page.php`, `pages/`, `template-parts/` and `i
 | Block used in 2+ pages, or small block (button, card, section title) | `template-parts/components/<name>.php` |
 | `<header>` / `<nav>` | `header.php` (site-wide, never per page) |
 | `<footer>` | `footer.php` |
+| List / detail of a content type or posts (blog, catalog) | `archive-<contenido>.php`, `single-<contenido>.php`, `taxonomy-<taxonomía>.php` at the theme root (`home.php`, `single.php`, `archive.php` for posts); sections in `template-parts/pages/<contenido>/`, the item in `template-parts/components/<contenido>-card.php`. See `contenido-dinamico.md` |
+| WooCommerce design | `woocommerce/` overrides (`archive-product.php`, `content-product.php`, `single-product.php`, ...), markup only |
 | Form / modal | `template-parts/forms/` / `template-parts/modals/`, written by `wp-form` / `wp-modal` |
 | Accordion | `template-parts/accordions/`, written by `wp-accordion` |
 | Colors, fonts, sizes, radii, shadows | `@theme` in `src/css/input.css`, after `@import "tailwindcss";` |
