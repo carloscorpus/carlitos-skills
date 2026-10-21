@@ -8,7 +8,7 @@
 // Imprime un JSON con: summary, pages (secciones y su contenido), assets, tokens (colores,
 // tipografías, espaciados, radios, sombras), repeated (bloques repetidos = candidatos a componente),
 // interactions (formularios, filtros, modales, acordeones, sliders, tabs), dynamicCandidates (páginas que
-// parecen listados o tienda) y findings (malas prácticas con
+// parecen listados o tienda), siteWide (cabecera, pie y bloques que se repiten en todo el sitio) y findings (malas prácticas con
 // archivo:línea). Códigos: 0 ok, 1 error de uso. No escribe nada salvo --out (fuera de la fuente).
 
 import { createHash } from 'node:crypto';
@@ -611,6 +611,30 @@ for (const group of [...signatureGroups.values()].sort((a, b) => b.size - a.size
 }
 repeated.sort((a, b) => b.count * b.size - a.count * a.size);
 
+// Contenido que se repite en todo el sitio (cabecera, menú, pie y bloques iguales entre páginas): va a los
+// "Ajustes del sitio", no a una página. Se toma la primera aparición como muestra.
+const chromeByTag = new Map();
+for (const page of pages) {
+    for (const section of page.sections.filter((s) => s.kind === 'chrome')) {
+        const entry = chromeByTag.get(section.tag) ?? {
+            tag: section.tag,
+            classes: section.classes,
+            files: [],
+            texts: section.texts.slice(0, 8).map((t) => t.text),
+            links: section.links.slice(0, 12).map((l) => ({ href: l.href, text: l.text })),
+            images: section.images.map((i) => ({ src: i.src, alt: i.alt, logo: /logo|brand|marca/i.test(`${i.src} ${i.alt ?? ''}`) })),
+        };
+        entry.files.push(page.file);
+        chromeByTag.set(section.tag, entry);
+    }
+}
+const siteWide = {
+    chrome: [...chromeByTag.values()],
+    repeated: repeated
+        .filter((g) => g.kind === 'cross-page' && !['header', 'footer', 'nav'].includes(g.tag))
+        .map(({ tag, classes, files: where, sample }) => ({ tag, classes, files: where, sample })),
+};
+
 // Páginas que parecen listados, detalles o tienda: la skill las lista y el usuario dice qué son.
 const dynamicCandidates = [...dynamicHints]
     .filter(([, reasons]) => reasons.size > 0)
@@ -658,6 +682,7 @@ const report = {
     repeated: repeated.slice(0, 40),
     interactions,
     dynamicCandidates,
+    siteWide,
     findings: sortedFindings,
     skipped,
 };

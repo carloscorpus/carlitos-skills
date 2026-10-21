@@ -2,6 +2,16 @@
 
 - **Estado:** aprobado
 
+## Sitio
+
+- **Identidad del sitio:** logo principal e ícono en Personalizar.
+
+### Menús
+
+| Ubicación | Dónde se muestra | Enlaces del diseño |
+|---|---|---|
+| principal | cabecera (`header.php`) | Inicio, Nosotros |
+
 ## Alcance
 
 | Diseño | Qué es | Contenido |

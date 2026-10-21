@@ -2,6 +2,18 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.2.0] - 2026-10-21
+
+### Agregado
+- Contenido de todo el sitio: `_shared.md` trae la sección "Sitio" (identidad, menús) y el spec `opciones` (`init.mjs --page opciones --type global`) documenta lo que se repite en todas las páginas: logo alternativo, contacto, redes, textos del pie, aviso superior. Campos `opciones_<área>_<campo>` en una página de opciones de ACF.
+- El logo principal y el ícono del sitio se documentan como Personalizar (Identidad del sitio) y los menús como menús de WordPress; ninguno es un campo ACF.
+- `analyze.mjs`: `siteWide` (cabecera, menú, pie y bloques repetidos entre páginas, con las imágenes que parecen logo).
+- `check.mjs`: tipo `global`, el slug `opciones` y la tabla de menús.
+- `references/sitio-global.md`.
+
+### Cambiado
+- El número de WhatsApp global de los catálogos sale de `opciones_contacto_whatsapp`.
+
 ## [1.1.0] - 2026-10-21
 
 ### Agregado

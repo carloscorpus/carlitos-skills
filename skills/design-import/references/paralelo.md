@@ -4,7 +4,7 @@ Use it when the design has more than three pages. With three or fewer, do it in 
 
 ## Order
 
-1. **Main thread, serial:** analyze, `init.mjs`, register every page with `init.mjs --page`, and finish **stage A** (`_shared.md` approved by the user). Subagents start only after that: if they run first, each one invents its own button.
+1. **Main thread, serial:** analyze, `init.mjs`, register every page with `init.mjs --page`, and finish **stage A** (`_shared.md` and `specs/opciones.md` approved by the user). Subagents start only after that: if they run first, each one invents its own button.
 2. **Subagents, parallel (stage B):** one per page, 3 or 4 at a time. Each writes **only** `specs/<slug>.md`.
 3. **Main thread, serial:** review the specs together (duplicated sections across pages become components, field names do not clash: run `check.mjs`), then the user approves page by page.
 4. **Stage C:** tokens and components first, in the main thread. Then each approved page can go to a subagent, which writes only `template-parts/pages/<slug>/` and its page template. The main thread runs `php -l`, `pnpm build` and `check.mjs` at the end.

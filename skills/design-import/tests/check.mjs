@@ -115,6 +115,14 @@ try {
         assert.equal(analysis.json.interactions.find((i) => i.type === 'form').kind, undefined);
     });
 
+    test('analyze: cabecera y pie repetidos son contenido de todo el sitio', () => {
+        const byTag = Object.fromEntries(analysis.json.siteWide.chrome.map((c) => [c.tag, c]));
+        assert.deepEqual(byTag.header.files, ['index.html', 'nosotros.html']);
+        assert.deepEqual(byTag.header.links.map((l) => l.text), ['Inicio', 'Nosotros']);
+        assert.ok(byTag.footer.texts.includes('© Demo'));
+        assert.deepEqual(analysis.json.siteWide.repeated, [], 'las cards son de una sola página');
+    });
+
     // ---------- init ----------
     const theme = join(tmp, 'tema');
     mkdirSync(theme);
@@ -178,6 +186,21 @@ try {
         writeFileSync(indexPath, readFileSync(indexPath, 'utf8').split('\n').filter((line) => !/\((productos|producto)\.md\)/.test(line)).join('\n'));
     });
 
+    test('init --page: el spec global es siempre "opciones"', () => {
+        const base = ['--target', theme, '--source', 'index.html', '--template', 'header.php', '--title', 'Ajustes del sitio'];
+        assert.equal(run('init.mjs', [...base, '--page', 'sitio', '--type', 'global']).code, 1, 'el slug debe ser opciones');
+        assert.equal(run('init.mjs', [...base, '--page', 'opciones']).code, 1, 'opciones es global');
+        assert.equal(run('init.mjs', [...base, '--page', 'opciones', '--type', 'global', '--content', 'producto']).code, 1, 'global no lleva contenido');
+        const r = run('init.mjs', [...base, '--page', 'opciones', '--type', 'global']);
+        assert.equal(r.code, 0, r.stdout);
+        const spec = readFileSync(join(theme, 'specs/opciones.md'), 'utf8');
+        assert.match(spec, /\*\*Tipo:\*\* global/);
+        assert.match(spec, /\*\*Ubicación:\*\* página de opciones: Ajustes del sitio/);
+        rmSync(join(theme, 'specs/opciones.md'));
+        const indexPath = join(theme, 'specs/_index.md');
+        writeFileSync(indexPath, readFileSync(indexPath, 'utf8').split('\n').filter((line) => !/\(opciones\.md\)/.test(line)).join('\n'));
+    });
+
     test('check: una página recién creada (sin secciones) pasa', () => {
         const r = run('check.mjs', ['--target', theme]);
         assert.equal(r.code, 0, r.stdout);
@@ -189,8 +212,8 @@ try {
     test('check: el tema de ejemplo pasa', () => {
         const r = run('check.mjs', ['--target', ok]);
         assert.equal(r.code, 0, r.stdout);
-        assert.equal(r.json.fields, 5);
-        assert.equal(r.json.groups, 3);
+        assert.equal(r.json.fields, 6);
+        assert.equal(r.json.groups, 4);
         assert.deepEqual(r.json.warnings, []);
     });
 
@@ -284,6 +307,14 @@ try {
         assert.match(messages(broken('accion', edit('specs/_shared.md', '| WhatsApp con "Hola, me interesa {producto}"; número en un campo global |', '|  |'))), /falta "Acción"/);
         assert.match(messages(broken('alcance', edit('specs/_shared.md', '| productos.html | catálogo | producto |', '| productos.html | catálogo | ninguno |'))), /necesita un Contenido/);
         assert.match(messages(broken('alcance-2', edit('specs/_shared.md', '| productos.html | catálogo | producto |', '| productos.html | tienda | producto |'))), /"Qué es" debe ser/);
+    });
+
+    test('check: spec global y menús', () => {
+        assert.match(messages(broken('global-tipo', edit('specs/opciones.md', '**Tipo:** global', '**Tipo:** estática'))), /"opciones" es del tipo global/);
+        assert.match(messages(broken('global-contenido', edit('specs/opciones.md', '**Contenido:** ninguno', '**Contenido:** producto'))), /global lleva "Contenido: ninguno"/);
+        assert.match(messages(broken('global-prefijo', edit('specs/opciones.md', '`opciones_pie_copyright`', '`pie_copyright`'))), /debe empezar con "opciones_"/);
+        assert.match(messages(broken('menu-nombre', edit('specs/_shared.md', '| principal |', '| Menú Principal |'))), /la ubicación va en minúsculas/);
+        assert.match(messages(broken('menu-enlaces', edit('specs/_shared.md', '| Inicio, Nosotros |', '|  |'))), /falta dónde se muestra o los enlaces/);
     });
 
     test('check: no se aprueban páginas con _shared.md pendiente', () => {
