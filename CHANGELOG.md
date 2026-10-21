@@ -2,6 +2,14 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.10.0] - 2026-10-21
+
+### Agregado
+- `design-import` 1.0.0: reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas del tema, con un spec por página (campos ACF documentados) y aplicando solo lo aprobado.
+
+### Cambiado
+- `wp-form` 1.3.2 y `wp-modal` 1.0.3: aceptan como referencia visual el HTML de un diseño (de `design-import`) además de un frame de Figma.
+
 ## [1.9.0] - 2026-10-21
 
 ### Cambiado

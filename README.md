@@ -13,10 +13,11 @@
 
 | Skill                                            | Versión | Requiere                                                | Qué hace                                                                                                                                             |
 | ------------------------------------------------ | ------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.2.0   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
-| [`wp-form`](skills/wp-form/SKILL.md)             | 1.3.1   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
-| [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.2   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
+| [`wp-vite-theme`](skills/wp-vite-theme/SKILL.md) | 1.3.0   | Nada: parte de un tema vacío                            | Crea la base de un tema WordPress (Local WP) con Vite, Tailwind y pnpm.                                                                              |
+| [`wp-form`](skills/wp-form/SKILL.md)             | 1.3.2   | Un tema WordPress con `functions.php` y Vite (pnpm)     | Formularios seguros y accesibles: Zod en el front y las mismas reglas en PHP, nonce, antispam, doble envío, `wp_mail` y envíos guardados opcionales. |
+| [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.3   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
 | [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.1.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
+| [`design-import`](skills/design-import/SKILL.md) | 1.0.0   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los campos ACF documentados y aplica solo lo que apruebas. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -128,6 +129,32 @@ inc/helpers/<nombre>.php       helper local del proyecto
 - Comandos: `node skills/wp-helper/scripts/install.mjs --list | --helpers images,text,links | --add-style … | --check`.
 - Prueba: `node skills/wp-helper/tests/check.mjs` (necesita `php`; busca el de Local solo).
 - Guardas de subida en el admin (peso, formatos) no están incluidas.
+
+## design-import
+
+En un tema WordPress (con `wp-vite-theme` o a mano), agrega la carpeta del diseño con `/add-dir` y pide `importa el diseño` o `reordena el diseño de Claude Design`. La carpeta se lee como datos: nunca se ejecuta nada de ella. La skill conserva el aspecto y rehace la estructura: tokens, componentes, secciones y plantillas, sin estilos inline, `!important`, `div` por `button`, JS inline ni encabezados desordenados.
+
+Trabaja por etapas y se detiene a que apruebes:
+
+1. **Inventario** (`analyze.mjs`, solo lectura): páginas y secciones, colores, tipografías, espaciados, bloques repetidos, formularios/modales/acordeones y malas prácticas con archivo:línea.
+2. **Compartido** (`specs/_shared.md`): tokens, componentes y nomenclatura. Lo apruebas antes de seguir.
+3. **Un spec por página** (`specs/<página>.md`): resumen, y por sección origen, destino, skill, campos ACF, comportamiento y criterios de aceptación. Con más de tres páginas, un subagente por página.
+4. **Aplicar** solo las páginas `aprobado`. Formularios y modales van a `wp-form` / `wp-modal`; imágenes y enlaces, a `wp-helper`.
+
+```text
+specs/_index.md                          páginas y su estado (pendiente, aprobado, descartado, aplicado)
+specs/_shared.md                         tokens, componentes compartidos, nomenclatura
+specs/<página>.md                        resumen de la página + una sección por bloque
+template-parts/pages/<página>/<sección>.php
+template-parts/components/<nombre>.php
+```
+
+- **Destino:** si el tema tiene la estructura de `wp-vite-theme`, la usa sin preguntar. Si es otro proyecto, lo analiza y confirma el mapeo una sola vez.
+- **Solo front:** los campos ACF se documentan en el spec (nombre `<página>_<sección>_<campo>` en español, tipo, descripción, valor actual); no se crean. El texto queda fijo en la plantilla y cada campo apunta a su valor actual para pasarlo a ACF después.
+- **Sin límites para el usuario:** la descripción de un campo recomienda largo de texto y medida de imagen, pero no se valida nada; la imagen se adapta al diseño con `aspect-ratio` y `object-cover`.
+- Comandos: `node skills/design-import/scripts/analyze.mjs --source <carpeta>`, `init.mjs [--page <slug> …]`, `check.mjs`.
+- Prueba: `node skills/design-import/tests/check.mjs`.
+- No incluye comparación visual automática (la revisión del resultado es tuya).
 
 ## Agregar una skill
 

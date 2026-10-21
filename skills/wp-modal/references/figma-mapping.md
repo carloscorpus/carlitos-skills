@@ -1,6 +1,6 @@
 # Figma → options, classes and tokens
 
-The skill never invents the look. Read the frame (desktop and mobile) and translate it.
+The skill never invents the look. Read the frame (desktop and mobile) and translate it. When the reference is an HTML file from `design-import` instead of a frame, read the same things from its HTML and CSS: the table below applies as is.
 
 ## Per modal
 

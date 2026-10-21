@@ -1,0 +1,10 @@
+:root { --brand: #ff6600; --ink: #111; }
+body { font-family: "Inter", sans-serif; color: #111111; margin: 0; }
+#hero { height: 600px; background: #ff6600; padding: 80px 24px; border-radius: 12px; }
+.card { padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.15); color: #333; margin: 0 0 16px 0; }
+.card2 { padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.15); color: #333; margin: 0 0 16px 0; }
+.card3 { padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.15); color: #333; margin: 0 0 16px 0; }
+.btn { color: #FFF !important; background: #ff6600; font-size: 18px; padding: 12px 24px; }
+.page .wrap .grid .item .label { font-size: 14px; }
+.faq-item { margin: 0 0 8px; }
+.modal { position: fixed; background: rgba(0,0,0,.5); }
