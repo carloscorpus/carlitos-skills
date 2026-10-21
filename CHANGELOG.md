@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.9.0] - 2026-10-21
+
+### Cambiado
+- `wp-vite-theme` 1.3.0: el tema trae `template-parts/pages/<página>/` para las secciones de cada página y `template-parts/components/` para las piezas reutilizables.
+
 ## [1.8.0] - 2026-10-20
 
 ### Cambiado

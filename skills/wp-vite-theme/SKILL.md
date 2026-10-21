@@ -2,7 +2,7 @@
 name: wp-vite-theme
 description: 'Scaffold a new WordPress theme (Local WP) with Vite + JS + Tailwind (latest) + pnpm. Use when the user starts a new WP theme project, says "inicia tema", "nuevo tema wp", "scaffold theme", "arranca proyecto wp con vite", or asks for the usual enqueue.php / vite.config.ts / style.css / header / footer base.'
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # wp-vite-theme
@@ -77,5 +77,6 @@ The Vite `base` needs no placeholder: `vite.config.ts` derives the theme folder 
 - `header.php` calls `wp_body_open()`; `footer.php` calls `wp_footer()`.
 - The home is `front-page.php` in the theme root: WordPress uses it alone for the front page, with no template to choose. `inc/crear-inicio.php` creates the page "Inicio" on theme activation and sets it as the front page, only if the site has no static front page yet (never overrides one).
 - Other page templates live in `pages/template-<name>.php` with `Template Name:`. Each template calls `get_header()` / `get_footer()` once.
+- Page pieces live in `template-parts/`: sections of a single page in `pages/<page>/<section>.php` (the home uses `home/`), pieces reused in 2+ pages or small blocks (card, button) in `components/<name>.php`; a page section that gets a second user moves to `components/`. Include with `get_template_part('template-parts/...', null, $args)` and read `$args` inside, escaping output. `forms/` and `modals/` belong to `wp-form` / `wp-modal`; do not mix them into `components/`.
 - New features → new file in `inc/`, required from `functions.php`. Keep `functions.php` only as loader.
 - Deploy: `dist/` is gitignored; build with dev server stopped, upload `dist/` plus modified PHP. Never upload `hot`, `node_modules/`, `src/`, or config files.

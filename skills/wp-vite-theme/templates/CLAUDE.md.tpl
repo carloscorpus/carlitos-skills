@@ -19,7 +19,9 @@ Stack: WordPress (Local WP) + Vite + Tailwind + pnpm.
 - La portada es `front-page.php`: WordPress la usa sola para la página "Inicio" (fijada en Ajustes → Lectura). No tiene `Template Name` ni se elige en el admin. El tema crea "Inicio" al activarse (`inc/crear-inicio.php`).
 - Crea cada otra página con diseño propio como `pages/template-<nombre>.php`, con `Template Name:` en la cabecera.
 - Llama una sola vez a `get_header()` y a `get_footer()` en cada plantilla, y pon el contenido dentro de `<main id="main-content">`.
-- Pon las secciones reutilizables en `template-parts/sections/`.
+- Pon cada sección de una sola página en `template-parts/pages/<página>/<sección>.php` (la portada usa `home/`).
+- Pon las piezas que se repiten en 2 o más páginas, o los bloques chicos (card, botón), en `template-parts/components/<nombre>.php`. Si una sección de página pasa a usarse en una segunda, muévela a `components/`.
+- Incluye cada pieza con `get_template_part('template-parts/...', null, $args)` y lee `$args` dentro, escapando la salida. Los forms y modals tienen sus propias carpetas (`forms/`, `modals/`).
 
 ## Tailwind
 - No agregues `@source`: Tailwind detecta las clases solo. Agrégalo únicamente si una ruta no se detecta.

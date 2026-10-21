@@ -57,6 +57,8 @@ Genera:
 style.css, functions.php, header.php, footer.php, index.php
 front-page.php                       portada del sitio
 pages/                               plantillas de las demás páginas
+template-parts/pages/<página>/       secciones de una sola página (home/, nosotros/)
+template-parts/components/           piezas reutilizables (card, botón)
 inc/{setup,enqueue,cleanup,crear-inicio}.php
 src/css/input.css, src/js/main.js
 vite.config.ts, pnpm-workspace.yaml, package.json
@@ -64,6 +66,7 @@ vite.config.ts, pnpm-workspace.yaml, package.json
 
 - La portada es `front-page.php`: WordPress la usa sola, sin elegir plantilla. Al activar el tema se crea la página "Inicio" y queda como portada (solo si el sitio aún no tiene una); ahí se guardan los campos de la home.
 - Las demás páginas con diseño propio van en `pages/template-<nombre>.php`.
+- Una sección que usa una sola página va en `template-parts/pages/<página>/`; si se repite en 2 o más páginas (o es un bloque chico), en `template-parts/components/`.
 - `pnpm dev`: inicia Vite y crea el indicador `hot`.
 - `pnpm build`: genera `dist/manifest.json` y los assets finales.
 - WordPress usa Vite en desarrollo y el manifest en producción.
