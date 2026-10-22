@@ -63,3 +63,14 @@ The template keeps the design's HTML. It replaces fixed sample data with the eng
 - `Al filtrar: botón aplicar` keeps a submit button. With `sin recargar` the button can be visually hidden, but it stays in the form so the list works without JavaScript.
 - `Filtros en móvil: panel`: the form goes inside the `wp-modal` drawer of the spec; it is the same form, not a copy.
 - The empty state is inside `resultados`, with a link to `<prefix>_query_reset_url()` when the design has one.
+
+## Without reload (`src/js/modules/query.js`)
+
+The main JS imports the module only on pages with `[data-query="resultados"]`. It needs nothing from the template beyond the zones; the list's settings (`Al filtrar`, `Paginación`) come in `<script id="wp-query-config">`, printed by the engine.
+
+- **Filtering.** With `Al filtrar: sin recargar`, any change in the form loads the new URL; a search, number or range field waits 300 ms after the last key. With `botón aplicar`, only submitting does. Empty values, `paged` and a range end equal to its input's `min`/`max` are left out of the URL; several values become `categoria=sillas,mesas`.
+- **The request.** The same URL with the header `X-WP-Query: 1`. The engine renders the page with its normal template and answers JSON with the HTML of every `data-query` zone. The module replaces each zone it receives (any name, not only the four of the table), keeps the focus and the caret of the field being typed in, sets `aria-busy` on `resultados`, updates the title and announces the new total. A response that is HTML (a page cache) is read the same way; any error opens the URL as a normal page.
+- **History.** Each filter is a new history entry (typing replaces it). The back button reloads the zones of that URL.
+- **Links.** Links inside a zone (chips, "Limpiar", pagination numbers) load without reload; links inside `resultados` (the cards) and links with `data-query-ignorar` are normal links. A pagination number scrolls to the results (instantly with `prefers-reduced-motion`).
+- **Load more / infinite.** The `data-query-mas` link of `<prefix>_query_pagination()` appends the next page's items. When the grid is an inner element of the zone, mark it `data-query-items` (the items are its children); otherwise the zone's children are the items. `cargar más` moves the focus to the first new item; `infinito` loads when the link comes into view and keeps the link as a fallback.
+- **Event.** After each update `document` receives `wp-query:update` (`detail`: `url`, `total`, `zonas`), for example to close the mobile filters drawer or re-run an animation.

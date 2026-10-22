@@ -1045,6 +1045,94 @@ function {{PREFIX}}_query_related($post = null, int $count = 3): WP_Query
     return new WP_Query($args);
 }
 
+// ---------- Respuesta parcial (filtrar sin recargar) ----------
+
+/*
+ * Zonas de un HTML: cada elemento con data-query="<zona>" -> su HTML completo (outerHTML). Recorre las etiquetas
+ * del mismo nombre para hallar su cierre, así una zona puede tener otras etiquetas iguales dentro. Sin DOMDocument:
+ * no reescribe el HTML del diseño.
+ */
+function {{PREFIX}}_query_zones(string $html): array
+{
+    $zones = [];
+    if (!preg_match_all('/<([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*\sdata-query=(["\'])([a-z0-9_-]+)\2[^>]*>/', $html, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)) {
+        return $zones;
+    }
+    foreach ($matches as $match) {
+        $tag = strtolower($match[1][0]);
+        $zone = $match[3][0];
+        $start = $match[0][1];
+        if (isset($zones[$zone])) {
+            continue;
+        }
+        $depth = 0;
+        $offset = $start;
+        $pattern = '/<(\/?)' . preg_quote($tag, '/') . '\b[^>]*>/i';
+        while (preg_match($pattern, $html, $tagMatch, PREG_OFFSET_CAPTURE, $offset)) {
+            $depth += $tagMatch[1][0] === '/' ? -1 : 1;
+            $offset = $tagMatch[0][1] + strlen($tagMatch[0][0]);
+            if ($depth === 0) {
+                $zones[$zone] = substr($html, $start, $offset - $start);
+                break;
+            }
+        }
+    }
+    return $zones;
+}
+
+// ¿El pedido viene del JS del motor? (encabezado X-WP-Query: 1)
+function {{PREFIX}}_query_is_partial(): bool
+{
+    return ($_SERVER['HTTP_X_WP_QUERY'] ?? '') === '1';
+}
+
+// Los listados cambian según el encabezado: una caché de páginas no debe servir el JSON como HTML ni al revés.
+add_action('send_headers', function () {
+    if (!is_admin() && {{PREFIX}}_query_current()) {
+        header('Vary: X-WP-Query', false);
+    }
+});
+
+/*
+ * Con X-WP-Query: 1 el listado se arma con su plantilla de siempre (una sola fuente de HTML) y se responde un JSON
+ * con sus zonas: { ok, url, zonas: { filtros, resultados, paginacion, total, ... }, total, pagina, paginas, titulo }.
+ * Si la plantilla no tiene zonas, ok es false y el JS abre la página completa.
+ */
+add_action('template_redirect', function () {
+    if (!{{PREFIX}}_query_is_partial() || !{{PREFIX}}_query_current()) {
+        return;
+    }
+    global $wp_query;
+    $meta = [
+        'url'     => {{PREFIX}}_query_url({{PREFIX}}_query_active_values()),
+        'total'   => (int) $wp_query->found_posts,
+        'pagina'  => max(1, (int) get_query_var('paged')),
+        'paginas' => (int) $wp_query->max_num_pages,
+        'titulo'  => wp_get_document_title(),
+    ];
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=' . get_option('blog_charset'));
+        header('X-Robots-Tag: noindex');
+        header('Vary: X-WP-Query', false);
+    }
+    ob_start(function ($html) use ($meta) {
+        $zones = {{PREFIX}}_query_zones((string) $html);
+        return wp_json_encode(array_merge(['ok' => (bool) $zones, 'zonas' => (object) $zones], $meta));
+    });
+}, 99);
+
+// Ajustes del listado para el JS del motor (cómo filtra y cómo pagina).
+add_action('wp_footer', function () {
+    $def = {{PREFIX}}_query_current();
+    if (!$def) {
+        return;
+    }
+    printf(
+        '<script type="application/json" id="wp-query-config">%s</script>' . "\n",
+        wp_json_encode(['modo' => $def['al_filtrar'] ?? 'auto', 'paginacion' => $def['paginacion'] ?? 'numeros'], JSON_HEX_TAG | JSON_HEX_AMP)
+    );
+});
+
 // ---------- SEO ----------
 
 // Las combinaciones de filtros no se indexan (serían miles de páginas casi iguales); la paginación sola sí.

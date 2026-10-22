@@ -5,7 +5,8 @@
 //   node check.mjs [--target <dir>] [--specs specs] [--states aplicado] [--page productos] [--php <ruta a php>]
 //
 // Revisa, para los listados con el estado pedido (por defecto `aplicado`):
-//   - El motor (inc/query/motor.php) está instalado y cargado desde functions.php.
+//   - El motor (inc/query/motor.php) está instalado y cargado desde functions.php, y su JS
+//     (src/js/modules/query.js) está copiado e importado en el JS principal de Vite.
 //   - Cada listado tiene su definición inc/query/<contenido>.php igual a la que generaría generate.mjs.
 //   - En los listados con alguna sección `Query: conectado`, su Plantilla y los Destino de esas secciones:
 //     las zonas data-query (resultados; filtros si hay filtros; paginacion si hay paginación; total es un aviso),
@@ -21,7 +22,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
-import { fail, toList } from './lib/common.mjs';
+import { detectJsEntry, fail, toList } from './lib/common.mjs';
 import { buildDefinitions, definitionPhp } from './lib/query-build.mjs';
 import { hasSpecs, loadSpecs, read, unwrap } from './lib/specs.mjs';
 
@@ -58,6 +59,12 @@ const engine = text(ENGINE);
 if (engine === null) error(ENGINE, 'Falta el motor: corre install.mjs.');
 else if (!read(join(target, 'functions.php')).includes('inc/query/motor.php')) error('functions.php', 'No carga inc/query/motor.php: corre install.mjs.');
 const prefix = /function\s+(\w+?)_query_defs\s*\(/.exec(engine ?? '')?.[1] ?? null;
+// El JS del motor (filtrar sin recargar): copiado e importado en el JS principal de Vite.
+const ENGINE_JS = 'src/js/modules/query.js';
+const jsEntry = detectJsEntry(target).entry;
+if (engine !== null && text(ENGINE_JS) === null) error(ENGINE_JS, 'Falta el JS del motor (filtrar sin recargar): corre install.mjs.');
+else if (engine !== null && !jsEntry) warn(ENGINE_JS, 'No pude saber cuál es el JS principal de Vite para ver si importa el motor: install.mjs --check --entry <ruta>.');
+else if (engine !== null && !(text(jsEntry) ?? '').includes('modules/query.js')) error(jsEntry, 'El JS principal no importa modules/query.js: corre install.mjs.');
 
 // ---------- Definiciones ----------
 
