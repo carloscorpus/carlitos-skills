@@ -16,11 +16,14 @@
 - **Skills usadas:** wp-form (contacto), wp-helper
 - **Grupo ACF:** Inicio
 - **Ubicación:** página de inicio (front page)
-- **Notas de página:** h1 en el hero; título SEO "Inicio | Empresa"; sin meta descripción en el diseño
+- **Notas de página:**
+  - h1 en el hero
+  - título SEO "Inicio | Empresa"
+  - sin meta descripción en el diseño
 - **Estado:** pendiente
 ```
 
-`Resumen`: what the page is about and what the visitor does there, in one or two sentences. `Skills usadas`: `ninguna` or the skills the sections delegate to.
+`Notas de página`: a list, one note per indented line under the label (`h1`, SEO title and description, `noindex`, animations, anything that affects the whole page). No acceptance criteria here: those are in `_shared.md`. `check.mjs` warns about a long single-line paragraph. `Resumen`: what the page is about and what the visitor does there, in one or two sentences. `Skills usadas`: `ninguna` or the skills the sections delegate to.
 
 `Tipo`: `estática`, `listado`, `detalle` or `global` (only the `opciones` spec, for what repeats on every page). `Contenido`: `ninguno` for a static page; for a list or detail, the name of a row of the "Contenido dinámico" table in `_shared.md` (`check.mjs` verifies it). `Grupo ACF`: the name of the page's field group. `Ubicación`: its location rule, in plain words. `init.mjs --page` fills all four with defaults you adjust. A 1.0 spec without them still validates, with a warning.
 
@@ -46,12 +49,8 @@
 
 **Criterios de aceptación**
 
-- [ ] Un solo `h1` y los encabezados siguen el orden del diseño
-- [ ] Sin estilos inline, `!important` ni manejadores `onclick`
-- [ ] Imagen con `alt` y proporción fija (`aspect-ratio` + `object-cover`)
-- [ ] Tokens del `_shared.md`, sin colores ni tamaños sueltos que ya tengan token
-- [ ] Mismo aspecto que el original en escritorio y móvil
-- [ ] `php -l` y `pnpm build` sin errores
+- [ ] Cumple los criterios comunes de `_shared.md`
+- [ ] La imagen se recorta con `object-cover` sin deformarse en móvil
 ```
 
 ## Rules
@@ -61,5 +60,5 @@
 - `Skill`: `ninguna`, `wp-form`, `wp-modal`, `wp-accordion`, `wp-helper`. A section with a skill has no markup of yours: `Comportamiento` says what the skill must do (recipients, trigger, motion).
 - `Estado` of each section: `pendiente`, `aprobado`, `descartado`, `aplicado`. The page's `Estado` and its row in `_index.md` must match.
 - "Campos ACF" lists every text, image, link and repeated group of the section. A static section (a divider) has a header-only table. Value `—` for images and links.
-- Criteria are verifiable by a command or by looking at the page. Copy the base set from `acceptance.md` and add the ones specific to the section. Never fewer than the base set.
+- Criteria are verifiable by a command or by looking at the page. The common set is written once in "Criterios comunes" of `_shared.md`; the section starts with the line "Cumple los criterios comunes de `_shared.md`" and adds only its own. Do not copy the common set: `check.mjs` warns when three or more are repeated.
 - Elements kept out of the page (cookie banners, chat widgets) go in the summary's notes, not as blocks.

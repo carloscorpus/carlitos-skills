@@ -59,6 +59,35 @@ Cada componente vive en `template-parts/components/<nombre>.php` y recibe sus da
 - **Argumentos:** lista de `$args` (nombre, tipo, requerido)
 - **Se usa en:** páginas y secciones
 
+## Criterios comunes
+
+Valen para todas las secciones y páginas. Cada sección lo declara con una sola línea ("Cumple los criterios comunes") y solo lista los suyos. Se marcan `[x]` en la sección cuando se comprueban.
+
+### Todas las secciones
+
+- [ ] Un solo `h1` por página y los encabezados no saltan de nivel
+- [ ] Sin estilos inline, `!important` ni manejadores `onclick=` en el HTML
+- [ ] Controles correctos: acciones con `<button>`, navegación con `<a href>`, campos con `<label>`
+- [ ] Imágenes con `alt` (vacío si son decorativas) y proporción fija (`aspect-ratio` + `object-cover`)
+- [ ] Colores, tipografías, radios y sombras salen de los tokens de este archivo; los valores sueltos están listados en "Comportamiento"
+- [ ] Mismo aspecto que el original en escritorio y en móvil (espaciados, tamaños y colores iguales)
+- [ ] Toda la salida PHP escapada (`esc_html`, `esc_url`, `esc_attr`) y el archivo empieza con `defined('ABSPATH') || exit;`
+- [ ] `php -l` sin errores en cada archivo creado y `pnpm build` sin errores
+
+### Según lo que tenga la sección
+
+- Imágenes: `width`/`height` o `aspect-ratio` para no mover el layout; `loading="lazy"` salvo las de la primera pantalla.
+- Enlaces: destinos reales; los externos con `rel` seguro (helper de enlaces de `wp-helper`).
+- Comportamiento con JS: el JS vive en `src/js/modules/`, se activa por `data-` o clase, funciona con teclado y respeta `prefers-reduced-motion`.
+- Con skill (`wp-form`, `wp-modal`, `wp-accordion`, `wp-helper`): pasa los criterios de esa skill.
+- Bloque repetido: un solo componente con `$args`, usado en todos los lugares donde se repetía.
+
+### Cada página (una vez, al final)
+
+- [ ] `check.mjs` sale con `0`
+- [ ] Los enlaces internos apuntan a las páginas del tema, no a los `.html` del diseño
+- [ ] `header.php` y `footer.php` no se repiten dentro de la plantilla de la página
+
 ## Nomenclatura
 
 - Un grupo de campos por página (`Grupo ACF`) con su regla de ubicación; cada sección es un campo de tipo `group` (`home_hero`) y sus subcampos se guardan como `<sección>_<campo>`.

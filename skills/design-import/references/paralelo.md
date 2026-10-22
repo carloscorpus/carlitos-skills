@@ -18,7 +18,7 @@ Use it when the design has more than three pages. With three or fewer, do it in 
 ## Brief
 
 > Stage B for the page `<slug>` of the design in `<design folder>`.
-> Read `<skill>/references/formato-spec.md`, `campos-acf.md` and `acceptance.md`, the approved `specs/_shared.md` and `<design folder>/<source file>`. The inventory for this page is in `<analysis json>` (page `<source file>`).
+> Read `<skill>/references/formato-spec.md`, `campos-acf.md` and `acceptance.md` (the common criteria are in `_shared.md`: a section only says "Cumple los criterios comunes" and lists its own), the approved `specs/_shared.md` and `<design folder>/<source file>`. The inventory for this page is in `<analysis json>` (page `<source file>`).
 > If the page is a list or detail, also read `references/contenido-dinamico.md` and the "Alcance" and "Contenido dinámico" tables of `_shared.md`; its `Tipo` and `Contenido` are already in the spec.
 > Fill `specs/<slug>.md` (already created): the summary and one block per section. Use the tokens and components of `_shared.md`; sections that are forms, modals or accordions get `Skill:` and no markup. Edit only that file.
 > Answer with: the sections you wrote, anything that should be shared (new tokens, repeated blocks), and anything you could not decide.

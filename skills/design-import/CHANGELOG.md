@@ -2,6 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.0] - 2026-10-21
+
+### Cambiado
+- Los criterios de aceptación comunes se escriben una sola vez, en la sección "Criterios comunes" de `_shared.md` (todas las secciones, según lo que tenga la sección y cada página). Cada sección dice "Cumple los criterios comunes de `_shared.md`" y lista solo los suyos; un spec ya no repite el mismo bloque en cada sección.
+- Las notas de página son una lista (una nota por línea) y ya no llevan los criterios de página.
+- `references/acceptance.md` y `formato-spec.md` describen el formato nuevo.
+
+### Agregado
+- `check.mjs` avisa cuando una sección repite tres o más criterios comunes, cuando remite a "Criterios comunes" sin que `_shared.md` los tenga, y cuando las notas de página son un párrafo largo o traen criterios de página. Los specs anteriores a la 1.3.0 siguen pasando.
+
 ## [1.2.0] - 2026-10-21
 
 ### Agregado

@@ -9,7 +9,9 @@
 - **Skills usadas:** ninguna
 - **Grupo ACF:** {{GRUPO_ACF}}
 - **Ubicación:** {{UBICACION}}
-- **Notas de página:** `h1`, título SEO, meta descripción y cualquier cosa que afecte a toda la página
+- **Notas de página:**
+  - `h1`, título SEO y meta descripción
+  - cualquier cosa que afecte a toda la página (una nota por línea)
 - **Estado:** pendiente
 
 <!-- Una sección por bloque, con el formato de references/formato-spec.md -->

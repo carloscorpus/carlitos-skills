@@ -18,7 +18,7 @@
 | [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.3   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
 | [`wp-accordion`](skills/wp-accordion/SKILL.md)   | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Acordeones y FAQ con el `<details>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento solo con CSS, responsive y auditoría. |
 | [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.1.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
-| [`design-import`](skills/design-import/SKILL.md) | 1.2.0   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también lo que se repite en todo el sitio, blog, catálogo y Woo, solo documentados o maquetados) y aplica solo lo que apruebas. |
+| [`design-import`](skills/design-import/SKILL.md) | 1.3.0   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también lo que se repite en todo el sitio, blog, catálogo y Woo, solo documentados o maquetados) y aplica solo lo que apruebas. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -157,7 +157,7 @@ Trabaja por etapas y se detiene a que apruebes:
 
 1. **Inventario** (`analyze.mjs`, solo lectura): páginas y secciones, colores, tipografías, espaciados, bloques repetidos, formularios/modales/acordeones y malas prácticas con archivo:línea.
 2. **Compartido** (`specs/_shared.md`): primero el alcance (te pregunta qué es cada página: estática, blog, catálogo o WooCommerce, con sus taxonomías, filtros y la acción del botón) y luego tokens, componentes y nomenclatura. Lo apruebas antes de seguir.
-3. **Un spec por página** (`specs/<página>.md`): resumen, y por sección origen, destino, skill, campos ACF, comportamiento y criterios de aceptación. Con más de tres páginas, un subagente por página.
+3. **Un spec por página** (`specs/<página>.md`): resumen, y por sección origen, destino, skill, campos ACF, comportamiento y criterios de aceptación propios (los comunes están una sola vez en `_shared.md`). Con más de tres páginas, un subagente por página.
 4. **Aplicar** solo las páginas `aprobado`. Formularios, modales y acordeones van a `wp-form` / `wp-modal` / `wp-accordion`; imágenes y enlaces, a `wp-helper`.
 
 ```text

@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.14.0] - 2026-10-21
+
+### Cambiado
+- `design-import` 1.3.0: los criterios de aceptación comunes van una sola vez en `_shared.md` y las notas de página son una lista, para que los specs sean más cortos y fáciles de revisar. Detalle en `skills/design-import/CHANGELOG.md`.
+
 ## [1.13.0] - 2026-10-21
 
 ### Agregado
