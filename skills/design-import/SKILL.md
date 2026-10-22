@@ -2,7 +2,7 @@
 name: design-import
 description: 'Turn a folder exported by Claude Design (static HTML + CSS + JS with bad practices) into a clean WordPress theme front end: tokens, components, page sections and page templates, following the wp-vite-theme structure or the structure it detects in another project. Writes one reviewable spec per page (sections, ACF Pro field groups and tables, acceptance criteria) and applies only what the user approves. Blog, catalog and WooCommerce designs are asked about once and documented (content types, taxonomies, filters, templates), not wired. What repeats on every page (logo, menus, footer data) is documented once as site-wide settings. Use when the user adds a design folder (/add-dir) and says "importa el diseño", "reordena el diseño de Claude Design", "pasa este diseño al tema", "design import", "limpia el HTML/CSS del diseño", or a spec says `skill: design-import`.'
 metadata:
-  version: "1.4.0"
+  version: "1.4.1"
 ---
 
 # design-import
@@ -24,9 +24,9 @@ Detail lives in `references/` and is read only by the step that points to it.
 
 ## Steps
 
-1. **Read context.** The design folder is the one the user added with `/add-dir`; if there are several candidates, ask which. From the theme root read `CLAUDE.md` (prefix) and the main CSS. Check the theme has `style.css` and `functions.php`.
+1. **Read context.** The design folder is the one the user added with `/add-dir`; if there are several candidates, ask which. From the theme root run `node <skill>/scripts/status.mjs` first: one read-only call that says whether the theme has the wp-vite-theme structure (`askStructure`), its prefix and `wp-helper` helpers, whether specs exist and how many pages are in each state, whether `wp-acf` is installed, and the next step (`next`). Trust it and skip what it shows as done; do not explore the theme to find out the same things. Then read `CLAUDE.md` (prefix) and the main CSS only if you need them.
 
-2. **Decide the destination.** If the theme has the wp-vite-theme signs (`front-page.php`, `pages/`, `template-parts/pages/`, `inc/enqueue.php`, `vite.config.ts`), read [references/destino-wp-vite-theme.md](references/destino-wp-vite-theme.md) and do not ask. Otherwise read [references/destino-generico.md](references/destino-generico.md), analyze the project and confirm the structure with the user once (AskUserQuestion when available, with a recommendation). A new kind of destination is one new file in `references/`, not a change here.
+2. **Decide the destination.** If `status.mjs` says `askStructure: false` (the wp-vite-theme signs: `front-page.php`, `pages/`, `template-parts/`, `inc/enqueue.php`, `vite.config.ts`), read [references/destino-wp-vite-theme.md](references/destino-wp-vite-theme.md) and do not ask. Otherwise read [references/destino-generico.md](references/destino-generico.md), analyze the project and confirm the structure with the user once (AskUserQuestion when available, with a recommendation). A new kind of destination is one new file in `references/`, not a change here.
 
 3. **Analyze.** `node <skill>/scripts/analyze.mjs --source <design folder>` (`<skill>` = this skill's folder). It only reads. Keep the JSON (`--out` writes it outside the source). It lists pages and sections, tokens, repeated blocks, interactions (forms, modals, accordions, sliders, tabs; a form that only filters is marked `kind: filter` and gets no skill), `dynamicCandidates` (pages that look like a list, catalog or shop, with the reasons), `siteWide` (header, nav, footer and blocks repeated across pages) and findings. Read [references/malas-practicas.md](references/malas-practicas.md) for what each finding id means and its fix.
 

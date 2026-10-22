@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.17.0] - 2026-10-22
+
+### Agregado
+- `status.mjs` en `wp-acf` 1.2.0 y `design-import` 1.4.1: una lectura del tema que dice qué ya está hecho y qué sigue, para que el agente no explore ni pregunte lo que ya se sabe. Código común en `shared/tema.mjs`.
+
 ## [1.16.0] - 2026-10-22
 
 ### Corregido

@@ -368,6 +368,38 @@ try {
         const r = broken('shared', edit('specs/_shared.md', 'aprobado', 'pendiente'));
         assert.match(messages(r), /Aprueba _shared\.md/);
     });
+
+    // ---------- status ----------
+    const viteTheme = () => {
+        const dir = join(tmp, `status-${Math.random().toString(36).slice(2)}`);
+        cpSync(join(fixtures, 'tema-ok'), dir, { recursive: true });
+        for (const rel of ['pages', 'template-parts', 'inc']) mkdirSync(join(dir, rel), { recursive: true });
+        writeFileSync(join(dir, 'front-page.php'), '<?php\n');
+        writeFileSync(join(dir, 'inc/enqueue.php'), '<?php\n');
+        writeFileSync(join(dir, 'vite.config.ts'), '');
+        writeFileSync(join(dir, 'inc/images.php'), "<?php\nfunction demo_image($img) {}\nfunction demo_link($l) {}\nfunction demo_highlight($t) {}\n");
+        return dir;
+    };
+
+    test('status: un tema wp-vite-theme no pregunta la estructura y trae prefijo, helpers y páginas por estado', () => {
+        const r = run('status.mjs', ['--target', viteTheme()]);
+        assert.equal(r.code, 0, r.stdout);
+        assert.equal(r.json.viteTheme, true);
+        assert.equal(r.json.askStructure, false);
+        assert.equal(r.json.prefix, 'demo');
+        assert.deepEqual(r.json.helpers, { images: 'demo', links: 'demo', text: 'demo' });
+        assert.equal(r.json.specs, true);
+        assert.ok(Object.keys(r.json.pagesByState).length > 0);
+        assert.equal(r.json.acfEngine, null);
+    });
+
+    test('status: sin las señales de wp-vite-theme pide confirmar la estructura; sin tema falla', () => {
+        const r = run('status.mjs', ['--target', join(fixtures, 'tema-ok')]);
+        assert.equal(r.json.askStructure, true);
+        assert.match(r.json.next[0], /Estructura distinta/);
+        const noTheme = run('status.mjs', ['--target', tmp]);
+        assert.equal(noTheme.code, 1);
+    });
 } finally {
     rmSync(tmp, { recursive: true, force: true });
 }
