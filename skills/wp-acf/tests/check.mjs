@@ -378,6 +378,30 @@ try {
         const dir = theme((d) => rmSync(join(d, 'style.css')));
         assert.equal(run('install.mjs', ['--target', dir, '--slug', 'demo']).code, 1);
     });
+
+    test('status: sin motor pide instalarlo; instalado y al día no; lista lo que falta conectar', () => {
+        const dir = bare();
+        const before = run('status.mjs', ['--target', dir]);
+        assert.equal(before.code, 0, before.stdout);
+        assert.equal(before.json.engine.runner, false);
+        assert.match(before.json.next[0], /Instalar el motor/);
+        run('install.mjs', ['--target', dir, '--slug', 'demo-theme']);
+        const after = run('status.mjs', ['--target', dir]);
+        assert.equal(after.json.engine.upToDate, true);
+        assert.ok(!after.json.next.some((n) => /motor/.test(n)), after.stdout);
+        const full = run('status.mjs', ['--target', theme()]);
+        assert.ok(full.json.pages.some((p) => p.slug === 'home' && p.connected === p.sections), full.stdout);
+    });
+
+    test('status: un motor de otra versión se avisa; un tema sin style.css falla', () => {
+        const dir = bare();
+        run('install.mjs', ['--target', dir, '--slug', 'demo-theme']);
+        writeFileSync(join(dir, 'inc/acf/runner.php'), readFileSync(join(dir, 'inc/acf/runner.php'), 'utf8').replace(/Versión del motor: \S+/, 'Versión del motor: 0.9.0'));
+        const r = run('status.mjs', ['--target', dir]);
+        assert.equal(r.json.engine.upToDate, false);
+        assert.match(r.json.next[0], /Actualizar el motor \(instalado 0\.9\.0/);
+        assert.equal(run('status.mjs', ['--target', theme((d) => rmSync(join(d, 'style.css')))]).code, 1);
+    });
 } finally {
     rmSync(tmp, { recursive: true, force: true });
 }

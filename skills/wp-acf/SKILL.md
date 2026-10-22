@@ -2,7 +2,7 @@
 name: wp-acf
 description: 'Turn the specs written by design-import into manageable ACF Pro: field groups, content types, taxonomies and options pages as ACF JSON (synced into the database so everything is editable in the admin), the design''s text and images loaded as real content, templates switched from fixed text to get_field, plus menus, logo and the WordPress pages. One group per page, one script for all the JSON, one subagent per page for the templates. Use when the user says "pasa los specs a ACF", "crea los campos ACF", "ACF JSON", "conecta los campos", "carga el contenido", "hazlo administrable", or a spec says `skill: wp-acf`. Needs ACF Pro 6.2 or later. Queries, filters, search and WooCommerce are other skills.'
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # wp-acf
@@ -18,7 +18,7 @@ Everything ACF can describe is ACF JSON in the theme's `acf-json/` (field groups
 
 ## Flow
 
-1. **Read the context.** The theme root, `specs/_index.md`, `_shared.md` and the pages with `Estado: aplicado` (only those are connected; ask the user before touching a page that is only `aprobado`). Find the ACF version: `<wp-content>/plugins/advanced-custom-fields-pro/acf.php` (`Version:` header). It must be Pro and 6.2 or later (post types and taxonomies 6.1, options pages 6.2). If it cannot be found, ask; if it is older, stop and tell the user.
+1. **Read the context.** From the theme root run `node <skill>/scripts/status.mjs` first: one read-only call that says whether the engine is installed and up to date, whether `wp-helper` helpers exist, whether the JSON was generated, each page's state with how many sections are `conectado`, and the next steps (`next`). Skip every step it shows as done (for example do not run `install.mjs` when the engine is installed and `upToDate`) and do not explore the theme to find out the same things. Then the theme root, `specs/_index.md`, `_shared.md` and the pages with `Estado: aplicado` (only those are connected; ask the user before touching a page that is only `aprobado`). Find the ACF version: `<wp-content>/plugins/advanced-custom-fields-pro/acf.php` (`Version:` header). It must be Pro and 6.2 or later (post types and taxonomies 6.1, options pages 6.2). If it cannot be found, ask; if it is older, stop and tell the user.
 
 2. **Install the engine.** From the theme root: `node <skill>/scripts/install.mjs --dry-run`, show `conflicts` and ask file by file, then run it for real with `--overwrite` / `--skip` (`<skill>` = this skill's folder). It copies `inc/acf/runner.php` (generic, never edited per project), `inc/acf/sitio.php` and `inc/acf/seed/`, adds the `require_once` to `functions.php` and a short block to `CLAUDE.md`. Exit codes: `0` ok, `1` invalid input, `2` unresolved conflicts, `3` leftover placeholders.
 

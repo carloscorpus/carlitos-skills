@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.4.1] - 2026-10-22
+
+### Agregado
+- `status.mjs`: una sola lectura del tema (solo lee) que dice si tiene la estructura de `wp-vite-theme` (`askStructure`), su prefijo y los helpers de `wp-helper`, si hay specs y cuántas páginas hay por estado, si el motor de `wp-acf` está instalado y el siguiente paso. El paso 1 de `SKILL.md` lo corre primero, para no explorar el tema a mano ni preguntar una estructura que ya se conoce.
+
 ## [1.4.0] - 2026-10-21
 
 ### Agregado

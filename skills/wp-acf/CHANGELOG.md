@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.2.0] - 2026-10-22
+
+### Agregado
+- `status.mjs`: una sola lectura del tema (solo lee) que dice si el motor está instalado y al día (versión), si existen los helpers de `wp-helper`, si el JSON está generado, el estado de cada página con sus secciones `conectado` y su carga, y la lista `next` de lo que falta. El paso 1 de `SKILL.md` lo corre primero y salta lo ya hecho (por ejemplo no repite `install.mjs`), en vez de explorar el tema.
+
 ## [1.1.0] - 2026-10-22
 
 ### Corregido
