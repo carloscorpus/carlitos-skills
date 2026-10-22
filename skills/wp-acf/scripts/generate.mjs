@@ -93,9 +93,51 @@ const files = entries.map((entry) => ({ ...fileFor(entry.json), kind: entry.kind
 // inc/acf/paginas.php: las páginas de WordPress que crea el motor. Sale de todas las páginas estáticas con
 // el estado pedido (no solo de --page), así una corrida parcial no recorta la lista.
 const phpString = (value) => `'${String(value).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
-const wpPages = all
-    .filter((page) => states.includes(page.labels.Estado))
-    .filter((page) => (page.labels.Tipo ?? 'estática').replace('estatica', 'estática') === 'estática');
+const isStatic = (page) => (page.labels.Tipo ?? 'estática').replace('estatica', 'estática') === 'estática';
+const parentOf = (page) => (page.labels.Padre ?? '').replace(/`/g, '').trim().replace(/^ninguno$/, '');
+const listed = all.filter((page) => states.includes(page.labels.Estado)).filter(isStatic);
+
+// Una página hija va después de su padre: el motor las crea en orden y necesita el ID del padre.
+const bySlug = new Map(listed.map((page) => [page.slug, page]));
+const pageErrors = [];
+const wpPages = [];
+const placed = new Set();
+const failed = new Set();
+const place = (page, path = []) => {
+    if (placed.has(page.slug) || failed.has(page.slug)) return;
+    if (path.includes(page.slug)) {
+        pageErrors.push({ file: page.file, message: `Padre: las páginas forman un ciclo (${[...path, page.slug].join(' → ')}).` });
+        path.forEach((slug) => failed.add(slug));
+        return;
+    }
+    const parent = parentOf(page);
+    if (parent) {
+        const spec = all.find((other) => other.slug === parent);
+        if (!bySlug.has(parent)) {
+            pageErrors.push({
+                file: page.file,
+                message: spec && isStatic(spec)
+                    ? `Padre "${parent}": está ${spec.labels.Estado ?? 'sin estado'}; aplícala primero o inclúyela en --states.`
+                    : `Padre "${parent}": no es una página estática de specs/.`,
+            });
+            failed.add(page.slug);
+            return;
+        }
+        place(bySlug.get(parent), [...path, page.slug]);
+        if (!placed.has(parent)) {
+            failed.add(page.slug);
+            return;
+        }
+    }
+    placed.add(page.slug);
+    wpPages.push(page);
+};
+listed.forEach((page) => place(page));
+if (pageErrors.length) {
+    console.log(JSON.stringify({ ok: false, error: 'Los specs tienen errores que impiden generar inc/acf/paginas.php.', errors: pageErrors }, null, 2));
+    process.exit(4);
+}
+
 const pagesPhp = [
     '<?php',
     "defined('ABSPATH') || exit;",
@@ -110,7 +152,7 @@ const pagesPhp = [
         const template = (row?.template || page.labels.Plantilla || '').replace(/`/g, '');
         const front = template === 'front-page.php';
         const slug = front ? 'inicio' : page.slug;
-        return `    ${phpString(page.slug)} => ['titulo' => ${phpString(row?.title ?? page.slug)}, 'slug' => ${phpString(slug)}, 'frente' => ${front}, 'plantilla' => ${phpString(front ? '' : template)}],`;
+        return `    ${phpString(page.slug)} => ['titulo' => ${phpString(row?.title ?? page.slug)}, 'slug' => ${phpString(slug)}, 'frente' => ${front}, 'plantilla' => ${phpString(front ? '' : template)}, 'padre' => ${phpString(front ? '' : parentOf(page))}],`;
     }),
     '];',
     '',

@@ -176,29 +176,48 @@ function {{PREFIX}}_acf_pages(): array
     $ids   = [];
     $report = [];
 
+    // paginas.php trae cada padre antes que sus hijas, así su ID ya está en $ids.
     foreach ($pages as $key => $page) {
         $slug  = (string) ($page['slug'] ?? $key);
         $front = !empty($page['frente']);
         $front_id = get_option('show_on_front') === 'page' ? (int) get_option('page_on_front') : 0;
         $front_ok = $front_id && get_post_status($front_id) === 'publish';
 
-        $id = 0;
+        $parent_key = $front ? '' : (string) ($page['padre'] ?? '');
+        $parent_id  = $parent_key === '' ? 0 : (int) ($ids[$parent_key] ?? 0);
+        if ($parent_key !== '' && !$parent_id) {
+            $report[$key] = ['estado' => 'omitido (falta la página padre ' . $parent_key . ')'];
+            continue;
+        }
+
+        $id    = 0;
+        $state = 'existente';
         if ($front && $front_ok) {
             $id = $front_id;
         } else {
-            $existing = get_page_by_path($slug);
+            $existing = get_page_by_path($parent_id ? get_page_uri($parent_id) . '/' . $slug : $slug);
             if ($existing && $existing->post_status !== 'trash') {
                 $id = (int) $existing->ID;
+            } elseif ($parent_id) {
+                // Una versión anterior del motor la creó en el primer nivel: se cuelga del padre sin tocar su contenido.
+                $loose = get_page_by_path($slug);
+                if ($loose && $loose->post_status !== 'trash' && !$loose->post_parent && (int) $loose->ID !== $parent_id) {
+                    $moved = wp_update_post(['ID' => (int) $loose->ID, 'post_parent' => $parent_id], true);
+                    if (!is_wp_error($moved)) {
+                        $id    = (int) $loose->ID;
+                        $state = 'existente (ahora cuelga de ' . $parent_key . ')';
+                    }
+                }
             }
         }
 
-        $state = 'existente';
         if (!$id) {
             $id = wp_insert_post([
                 'post_type'   => 'page',
                 'post_status' => 'publish',
                 'post_title'  => (string) ($page['titulo'] ?? $slug),
                 'post_name'   => $slug,
+                'post_parent' => $parent_id,
             ], true);
             if (is_wp_error($id)) {
                 $report[$key] = ['estado' => 'error: ' . $id->get_error_message()];

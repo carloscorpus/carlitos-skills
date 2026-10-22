@@ -9,6 +9,7 @@
 - **Skills usadas:** ninguna
 - **Grupo ACF:** {{GRUPO_ACF}}
 - **Ubicación:** {{UBICACION}}
+- **Padre:** {{PADRE}}
 - **Notas de página:**
   - `h1`, título SEO y meta descripción
   - cualquier cosa que afecte a toda la página (una nota por línea)

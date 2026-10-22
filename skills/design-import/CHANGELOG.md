@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.5.0] - 2026-10-22
+
+### Agregado
+- Etiqueta `Padre` en el resumen de la página (`ninguno` por defecto; los specs sin ella siguen pasando): el slug de otra página estática de la que cuelga. `init.mjs --page … --parent <slug>` la escribe y `check.mjs` rechaza un padre que no existe o no es estático, la página de inicio con padre y los ciclos. `wp-acf` 1.3.0 la crea como página hija.
+
 ## [1.4.1] - 2026-10-22
 
 ### Agregado

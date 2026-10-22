@@ -193,12 +193,43 @@ try {
     test('generate: paginas.php lista las páginas estáticas con el estado pedido', () => {
         const { dir } = generated();
         const php = readFileSync(join(dir, 'inc/acf/paginas.php'), 'utf8');
-        assert.match(php, /'home' => \['titulo' => 'Inicio', 'slug' => 'inicio', 'frente' => true, 'plantilla' => ''\]/);
+        assert.match(php, /'home' => \['titulo' => 'Inicio', 'slug' => 'inicio', 'frente' => true, 'plantilla' => '', 'padre' => ''\]/);
         assert.ok(!php.includes("'productos'"), 'un listado no es una página de WordPress');
         assert.ok(!php.includes("'nosotros'"), 'está pendiente');
         const more = theme();
         run('generate.mjs', ['--target', more, '--states', 'aplicado,pendiente']);
-        assert.match(readFileSync(join(more, 'inc/acf/paginas.php'), 'utf8'), /'nosotros' => \['titulo' => 'Nosotros', 'slug' => 'nosotros', 'frente' => false, 'plantilla' => 'pages\/template-nosotros\.php'\]/);
+        assert.match(readFileSync(join(more, 'inc/acf/paginas.php'), 'utf8'), /'nosotros' => \['titulo' => 'Nosotros', 'slug' => 'nosotros', 'frente' => false, 'plantilla' => 'pages\/template-nosotros\.php', 'padre' => ''\]/);
+    });
+
+    // equipo.md: una copia de nosotros.md (pendiente) que cuelga de `padre`.
+    const child = (parent) => (dir) => {
+        const text = readFileSync(join(dir, 'specs/nosotros.md'), 'utf8').replace(/\r\n/g, '\n');
+        writeFileSync(join(dir, 'specs/equipo.md'), text.replaceAll('nosotros', 'equipo').replaceAll('Nosotros', 'Equipo')
+            .replace('- **Notas de página:**', `- **Padre:** ${parent}\n- **Notas de página:**`));
+        change('specs/_index.md', '<!-- design-import:paginas:fin -->', '| Equipo | [equipo.md](equipo.md) | `pages/template-equipo.php` | pendiente |\n<!-- design-import:paginas:fin -->')(dir);
+    };
+    const pending = ['--states', 'aplicado,pendiente'];
+
+    test('generate: una página hija lleva su padre y va después de él en paginas.php', () => {
+        const dir = theme(child('nosotros'));
+        const r = run('generate.mjs', ['--target', dir, ...pending]);
+        assert.equal(r.code, 0, r.stdout);
+        const php = readFileSync(join(dir, 'inc/acf/paginas.php'), 'utf8');
+        assert.match(php, /'equipo' => \[.*'slug' => 'equipo', .*'padre' => 'nosotros'\]/);
+        assert.match(php, /'nosotros' => \[.*'padre' => ''\]/);
+        assert.match(php, /'home' => \[.*'frente' => true, 'plantilla' => '', 'padre' => ''\]/);
+        assert.ok(php.indexOf("'nosotros' =>") < php.indexOf("'equipo' =>"), 'el padre va antes que la hija');
+    });
+
+    test('generate: errores del padre', () => {
+        const bad = (edit, states = pending) => run('generate.mjs', ['--target', theme(edit), '--dry-run', ...states]);
+        const stateless = bad(child('home'), ['--states', 'pendiente']);
+        assert.equal(stateless.code, 4, stateless.stdout);
+        assert.match(messages(stateless), /Padre "home": está aplicado; aplícala primero o inclúyela en --states/);
+        assert.match(messages(bad(child('productos'))), /Padre "productos": no es una página estática/);
+        const cycle = bad(all(child('nosotros'), change('specs/nosotros.md', '- **Notas de página:**', '- **Padre:** equipo\n- **Notas de página:**')));
+        assert.equal(cycle.json.errors.length, 1, cycle.stdout);
+        assert.match(messages(cycle), /ciclo \(.+ → .+ → .+\)/);
     });
 
     test('generate: errores del spec que impiden generar', () => {

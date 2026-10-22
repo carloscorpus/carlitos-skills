@@ -44,6 +44,8 @@ Every `página de opciones: <Name>` in a `Ubicación` produces `ui_options_page_
 
 The WordPress pages the engine creates: every static page (`Tipo: estática`) with the state asked for. The page whose template is `front-page.php` is `inicio` and becomes the front page; the others use their slug and `pages/template-<slug>.php`. Lists, details and the options spec are not pages. The file is regenerated whole each time, never a conflict.
 
+A page with `Padre: <slug>` gets `'padre' => '<slug>'` and is listed after its parent. The engine creates it under the parent (`/servicios/diseno-web/`); if a page with that slug already sits at the top level (made by an engine before 1.3.0), it is moved under the parent without touching its content, and the report says `ahora cuelga de <slug>`. A parent that is not generated with the same states (`--states`) or a cycle is exit code `4`.
+
 ## Conflicts
 
 A file in `acf-json/` that already exists and is different (usually saved from the ACF admin, which rewrites it) is a conflict: ask the user, then `--overwrite <file>` or `--skip <file>`. `orphans` lists JSON files that no spec produces; they are never deleted.

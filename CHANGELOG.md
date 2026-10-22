@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.18.0] - 2026-10-22
+
+### Agregado
+- Páginas hijas: `design-import` 1.5.0 anota el `Padre` de cada página en el spec y `wp-acf` 1.3.0 la crea debajo de él (`/servicios/diseno-web/`).
+
 ## [1.17.0] - 2026-10-22
 
 ### Agregado

@@ -16,6 +16,7 @@
 - **Skills usadas:** wp-form (contacto), wp-helper
 - **Grupo ACF:** Inicio
 - **Ubicación:** página de inicio (front page)
+- **Padre:** ninguno
 - **Notas de página:**
   - h1 en el hero
   - título SEO "Inicio | Empresa"
@@ -26,6 +27,8 @@
 `Notas de página`: a list, one note per indented line under the label (`h1`, SEO title and description, `noindex`, animations, anything that affects the whole page). No acceptance criteria here: those are in `_shared.md`. `check.mjs` warns about a long single-line paragraph. `Resumen`: what the page is about and what the visitor does there, in one or two sentences. `Skills usadas`: `ninguna` or the skills the sections delegate to.
 
 `Tipo`: `estática`, `listado`, `detalle` or `global` (only the `opciones` spec, for what repeats on every page). `Contenido`: `ninguno` for a static page; for a list or detail, the name of a row of the "Contenido dinámico" table in `_shared.md` (`check.mjs` verifies it). `Grupo ACF`: the name of the page's field group. `Ubicación`: its location rule, in plain words. `init.mjs --page` fills all four with defaults you adjust. A 1.0 spec without them still validates, with a warning.
+
+`Padre` (optional, `ninguno` when missing): the slug of another static spec this page hangs from, when the design nests it (a "Diseño web" page under "Servicios", a breadcrumb `Servicios › Diseño web`, a URL like `/servicios/diseno-web/`). wp-acf creates it as a child page, so its address becomes `/servicios/diseno-web/`. Only static pages that are not the home; `check.mjs` rejects a missing parent, a parent that is not static and cycles. `init.mjs --page … --parent servicios` writes it.
 
 ## Section block
 

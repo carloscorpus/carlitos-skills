@@ -117,6 +117,7 @@ else {
 const pageFiles = readdirSync(specsDir).filter((name) => name.endsWith('.md') && !name.startsWith('_'));
 const allFields = new Map();
 const allGroups = new Map();
+const pageTree = new Map(); // slug -> { name, type, front, parent }
 let sectionCount = 0;
 let fieldCount = 0;
 
@@ -151,6 +152,13 @@ for (const name of pageFiles) {
             error(name, `El contenido "${content}" no está en la tabla "Contenido dinámico" de _shared.md.`);
         }
     }
+    // Padre (opcional): se revisa al final, cuando ya se leyeron todas las páginas.
+    pageTree.set(page, {
+        name,
+        type: noAccent(pageLabels.Tipo ?? 'estática'),
+        front: unwrap(pageLabels.Plantilla ?? '') === 'front-page.php',
+        parent: unwrap(pageLabels.Padre ?? '') || 'ninguno',
+    });
     const pageState = pageLabels.Estado;
     if (pageState && !STATES.includes(pageState)) error(name, `Estado de página inválido "${pageState}".`);
     const row = indexRows.find((r) => r.file === name);
@@ -242,6 +250,23 @@ for (const name of pageFiles) {
 
     if (pageState === 'aplicado' && blocks.some((b) => !['aplicado', 'descartado'].includes(labels(b).Estado))) {
         error(name, 'La página está aplicada pero tiene secciones que no están aplicadas ni descartadas.');
+    }
+}
+
+// Padre: otra página estática (wp-acf la crea como hija, /padre/hija/), sin ciclos.
+for (const [page, { name, type, front, parent }] of pageTree) {
+    if (parent === 'ninguno') continue;
+    const up = pageTree.get(parent);
+    if (type !== 'estática' || front) error(name, 'Solo una página estática que no es la de inicio puede tener "Padre".');
+    else if (parent === page) error(name, 'Una página no puede ser su propio padre.');
+    else if (!up) error(name, `Padre "${parent}": no hay un spec ${parent}.md (usa el slug de otra página o "ninguno").`);
+    else if (up.type !== 'estática') error(name, `Padre "${parent}": la página padre tiene que ser estática.`);
+    else {
+        const seen = new Set([page]);
+        for (let at = parent; at !== 'ninguno' && pageTree.has(at); at = pageTree.get(at).parent) {
+            if (seen.has(at)) { error(name, `Padre "${parent}": las páginas forman un ciclo (${[...seen, at].join(' → ')}).`); break; }
+            seen.add(at);
+        }
     }
 }
 
