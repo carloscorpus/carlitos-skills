@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.14.1] - 2026-10-21
+
+### Corregido
+- `design-import` 1.3.1: `check.mjs` ya no da falsos errores cuando el texto fijo de una plantilla está en una variable PHP o en un atributo `alt`. Detalle en `skills/design-import/CHANGELOG.md`.
+
 ## [1.14.0] - 2026-10-21
 
 ### Cambiado

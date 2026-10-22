@@ -67,6 +67,24 @@ function phpTexts(path) {
         .filter((line) => line.length > 1);
 }
 
+// Textos entre comillas dentro de los bloques PHP: la plantilla puede guardar el texto fijo en una
+// variable o arreglo al inicio ($titulo = '...'). Se quitan los marcadores de resaltado (| y *).
+function phpLiterals(path) {
+    const literals = [];
+    // Atributos con texto del diseño: el alt de una imagen, un title, un aria-label.
+    for (const [, , value] of read(path).matchAll(/\b(alt|title|aria-label|placeholder)="([^"<>]*)"/g)) {
+        const text = value.replace(/\s+/g, ' ').trim();
+        if (text.length > 1) literals.push(text);
+    }
+    for (const [block] of read(path).matchAll(/<\?(?:php|=)[\s\S]*?(?:\?>|$)/g)) {
+        for (const [, single, double] of block.matchAll(/'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"/g)) {
+            const text = (single ?? double).replace(/\\(['"\\])/g, '$1').replace(/[|*]/g, '').replace(/\s+/g, ' ').trim();
+            if (text.length > 1) literals.push(text);
+        }
+    }
+    return literals;
+}
+
 function parseTable(block) {
     const rows = [];
     for (const line of block.split('\n')) {
@@ -247,7 +265,7 @@ for (const name of pageFiles) {
             for (const p of paths) if (!found.includes(p)) error(where, `El destino "${p}" no existe en el tema.`);
 
             const texts = found.flatMap((p) => phpTexts(join(target, p)));
-            const flat = texts.join(' ');
+            const flat = [...texts, ...found.flatMap((p) => phpLiterals(join(target, p)))].join(' ');
             for (const { field, value } of sectionTexts) {
                 if (!flat.includes(value)) error(where, `${field}: el valor actual "${value.slice(0, 40)}" no aparece en el destino.`);
             }
