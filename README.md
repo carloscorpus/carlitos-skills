@@ -18,7 +18,8 @@
 | [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.3   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
 | [`wp-accordion`](skills/wp-accordion/SKILL.md)   | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Acordeones y FAQ con el `<details>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento solo con CSS, responsive y auditoría. |
 | [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.1.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
-| [`design-import`](skills/design-import/SKILL.md) | 1.3.1   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también lo que se repite en todo el sitio, blog, catálogo y Woo, solo documentados o maquetados) y aplica solo lo que apruebas. |
+| [`design-import`](skills/design-import/SKILL.md) | 1.4.0   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también lo que se repite en todo el sitio, blog, catálogo y Woo, solo documentados o maquetados) y aplica solo lo que apruebas. |
+| [`wp-acf`](skills/wp-acf/SKILL.md)               | 1.0.0   | Un tema WordPress con los specs de `design-import` aplicados y ACF Pro 6.2 o superior; `wp-helper` recomendado | Pasa los specs a ACF Pro administrable: campos, tipos de contenido, taxonomías y páginas de opciones como ACF JSON sincronizado con la base de datos, el contenido del diseño cargado como contenido real, menús, logo y las plantillas leyendo de ACF. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -177,6 +178,30 @@ template-parts/components/<nombre>.php
 - Comandos: `node skills/design-import/scripts/analyze.mjs --source <carpeta>`, `init.mjs [--page <slug> …]`, `check.mjs`.
 - Prueba: `node skills/design-import/tests/check.mjs`.
 - No incluye comparación visual automática (la revisión del resultado es tuya).
+
+## wp-acf
+
+Después de `design-import`: pide `pasa los specs a ACF`, `crea los campos ACF` o `hazlo administrable`. Toma las páginas con estado `aplicado` y deja todo editable en el admin de WordPress. No hace falta escribir PHP para registrar nada: lo que ACF puede describir es ACF JSON.
+
+1. **Motor** (`install.mjs`): copia `inc/acf/runner.php` (genérico, con el prefijo del tema), `inc/acf/sitio.php` y `inc/acf/seed/`, y lo conecta a `functions.php`.
+2. **JSON de golpe** (`generate.mjs`): un grupo por página (cada sección es un campo `group`), tipos de contenido y taxonomías de la tabla "Contenido dinámico", páginas de opciones y la lista de páginas de WordPress. Claves estables a partir del nombre.
+3. **Sitio**: menús, logo de Personalizar y las opciones del sitio (cabecera, pie, aviso).
+4. **Una página a la vez**, con un subagente por página si son más de tres: el texto, las imágenes y los enlaces salen de la plantilla hacia `inc/acf/seed/<página>.php` y la plantilla lee con `get_field`.
+5. **Verificar** (`check.mjs`): el JSON coincide con los specs y cada sección conectada lee su grupo y tiene su carga.
+
+```text
+acf-json/group_*.json, post_type_*.json, taxonomy_*.json, ui_options_page_*.json
+inc/acf/runner.php            motor: sincroniza, crea páginas, carga contenido, menús y logo
+inc/acf/paginas.php           páginas de WordPress (generado)
+inc/acf/sitio.php             menús y logo del proyecto
+inc/acf/seed/<página>.php     el contenido que salió de cada plantilla
+```
+
+- **Administrable:** el motor importa el JSON a la base como el botón "Sync" de ACF, al activar el tema y desde Herramientas > Cargar contenido inicial. Carga cada grupo una sola vez: lo que el cliente edite no se pisa.
+- **Sin límites para el editor:** la recomendación de largo y medida queda en las instrucciones del campo.
+- **Fuera de alcance:** consultas, filtros, buscador y paginación (`wp-contenido`), WooCommerce (`wp-woo`) y multilenguaje.
+- Comandos: `node skills/wp-acf/scripts/generate.mjs [--dry-run]`, `install.mjs`, `check.mjs`.
+- Prueba: `node skills/wp-acf/tests/check.mjs`. El PHP del motor no se ejecuta en la prueba.
 
 ## Agregar una skill
 

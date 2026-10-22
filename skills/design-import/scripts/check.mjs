@@ -11,10 +11,11 @@
 //
 // Sale con JSON en stdout. Códigos: 0 ok (puede haber avisos), 1 error de uso, 4 hay errores en los specs.
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { fail } from './lib/common.mjs';
+import { labels, noAccent, normalizeText, parseTable, phpLiterals, phpTexts, read, unwrap } from './lib/specs.mjs';
 
 let args;
 try {
@@ -30,11 +31,11 @@ const specsDir = join(target, args.specs);
 if (!existsSync(specsDir)) fail(1, `No existe ${args.specs}/: corre primero init.mjs.`);
 
 const STATES = ['pendiente', 'aprobado', 'descartado', 'aplicado'];
+const ACF_STATES = ['pendiente', 'conectado'];
 const PAGE_LABELS = ['Resumen', 'Fuente', 'Plantilla', 'Secciones (en orden)', 'Skills usadas', 'Notas de página', 'Estado'];
 const PAGE_TYPES = ['estática', 'listado', 'detalle', 'global'];
 const ORIGINS = ['post', 'cpt', 'woo'];
 const SCOPES = ['estática', 'blog', 'catálogo', 'woocommerce', 'otro'];
-const noAccent = (value) => value.toLowerCase().replace('estatica', 'estática').replace('catalogo', 'catálogo');
 const SECTION_LABELS = ['Origen', 'Destino', 'Skill', 'Comportamiento', 'Estado'];
 const FIELD_TYPES = new Set([
     'text', 'textarea', 'wysiwyg', 'number', 'range', 'email', 'url', 'password', 'image', 'file', 'gallery', 'oembed',
@@ -50,51 +51,6 @@ const warnings = [];
 const error = (file, message) => errors.push({ file, message });
 const warn = (file, message) => warnings.push({ file, message });
 
-const read = (path) => readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
-const labels = (text) => Object.fromEntries([...text.matchAll(/^- \*\*(.+?):\*\*[ \t]*(.*)$/gm)].map((m) => [m[1], m[2].trim()]));
-const unwrap = (value) => value.replace(/^`+|`+$/g, '').trim();
-const normalizeText = (value) => value.replace(/\\\|/g, '|').replace(/<br\s*\/?>/gi, ' ').replace(/\s+/g, ' ').trim();
-
-// Textos fijos de una plantilla PHP: lo que queda entre etiquetas sin los bloques PHP.
-function phpTexts(path) {
-    return read(path)
-        .replace(/<\?(?:php|=)[\s\S]*?\?>/g, ' ')
-        .replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, ' ')
-        .replace(/<!--[\s\S]*?-->/g, ' ')
-        .replace(/<[^>]*>/g, '\n')
-        .split('\n')
-        .map((line) => line.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim())
-        .filter((line) => line.length > 1);
-}
-
-// Textos entre comillas dentro de los bloques PHP: la plantilla puede guardar el texto fijo en una
-// variable o arreglo al inicio ($titulo = '...'). Se quitan los marcadores de resaltado (| y *).
-function phpLiterals(path) {
-    const literals = [];
-    // Atributos con texto del diseño: el alt de una imagen, un title, un aria-label.
-    for (const [, , value] of read(path).matchAll(/\b(alt|title|aria-label|placeholder)="([^"<>]*)"/g)) {
-        const text = value.replace(/\s+/g, ' ').trim();
-        if (text.length > 1) literals.push(text);
-    }
-    for (const [block] of read(path).matchAll(/<\?(?:php|=)[\s\S]*?(?:\?>|$)/g)) {
-        for (const [, single, double] of block.matchAll(/'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"/g)) {
-            const text = (single ?? double).replace(/\\(['"\\])/g, '$1').replace(/[|*]/g, '').replace(/\s+/g, ' ').trim();
-            if (text.length > 1) literals.push(text);
-        }
-    }
-    return literals;
-}
-
-function parseTable(block) {
-    const rows = [];
-    for (const line of block.split('\n')) {
-        if (!line.trim().startsWith('|')) continue;
-        const cells = line.trim().replace(/^\||\|$/g, '').split(/(?<!\\)\|/).map((cell) => cell.trim());
-        if (cells.every((cell) => /^:?-{3,}:?$/.test(cell))) continue;
-        rows.push(cells);
-    }
-    return rows.slice(1); // sin la cabecera
-}
 
 // ---------- _shared.md ----------
 
@@ -223,6 +179,9 @@ for (const name of pageFiles) {
         }
         const state = data.Estado;
         if (state && !STATES.includes(state)) error(where, `Estado inválido "${state}".`);
+        // ACF (opcional, lo escribe wp-acf): conectado = la plantilla lee el campo y el texto vive en la carga inicial.
+        const acfState = unwrap(data.ACF ?? '');
+        if (acfState && !ACF_STATES.includes(acfState)) error(where, `ACF inválido "${acfState}" (pendiente o conectado).`);
 
         const fieldsBlock = /\*\*Campos ACF\*\*([\s\S]*?)(?=\n\*\*Criterios de aceptación\*\*|$)/.exec(block)?.[1];
         const criteriaBlock = /\*\*Criterios de aceptación\*\*([\s\S]*)$/.exec(block)?.[1];
@@ -230,12 +189,16 @@ for (const name of pageFiles) {
         if (criteriaBlock === undefined) error(where, 'Falta "Criterios de aceptación".');
 
         const sectionTexts = [];
+        const rowNames = new Set(parseTable(fieldsBlock ?? '').map((cells) => unwrap(cells[0] ?? '')));
         for (const cells of fieldsBlock === undefined ? [] : parseTable(fieldsBlock)) {
             fieldCount++;
             const [rawName, type, description, current, required] = cells;
             const field = unwrap(rawName ?? '');
             if (!FIELD_NAME.test(field)) error(where, `Nombre de campo inválido "${field}": usa <página>_<sección>_<campo> en snake_case.`);
             else if (!field.startsWith(pagePrefix)) error(where, `El campo "${field}" debe empezar con "${pagePrefix}".`);
+            if (field.includes('.') && !rowNames.has(field.slice(0, field.lastIndexOf('.')))) {
+                error(where, `${field}: falta la fila del repetidor "${field.slice(0, field.lastIndexOf('.'))}" (tipo repeater) antes de sus subcampos.`);
+            }
             if (allFields.has(field)) error(where, `El campo "${field}" ya existe en ${allFields.get(field)}.`);
             else allFields.set(field, where);
             if (grouped && group && FIELD_NAME.test(field) && !field.startsWith(`${group}_`)) {
@@ -266,7 +229,7 @@ for (const name of pageFiles) {
 
             const texts = found.flatMap((p) => phpTexts(join(target, p)));
             const flat = [...texts, ...found.flatMap((p) => phpLiterals(join(target, p)))].join(' ');
-            for (const { field, value } of sectionTexts) {
+            for (const { field, value } of acfState === 'conectado' ? [] : sectionTexts) {
                 if (!flat.includes(value)) error(where, `${field}: el valor actual "${value.slice(0, 40)}" no aparece en el destino.`);
             }
             const extra = texts.filter((t) => !sectionTexts.some(({ value }) => value.includes(t) || t.includes(value)));

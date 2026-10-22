@@ -281,6 +281,22 @@ try {
         assert.equal(r.code, 0, r.stdout);
     });
 
+    test('check: una sección con ACF conectado no compara el valor actual con la plantilla', () => {
+        const comportamiento = '- **Comportamiento:** el botón lleva a la sección contacto\n';
+        const conectado = broken('acf-conectado', (dir) => {
+            edit('specs/home.md', comportamiento, comportamiento + '- **ACF:** conectado\n')(dir);
+            edit('template-parts/pages/home/hero.php', 'Hacemos crecer tu negocio', '<?= esc_html((string) get_field("x")) ?>')(dir);
+        });
+        assert.equal(conectado.code, 0, conectado.stdout);
+        const invalido = broken('acf-invalido', edit('specs/home.md', comportamiento, comportamiento + '- **ACF:** hecho\n'));
+        assert.match(messages(invalido), /ACF inválido/);
+    });
+
+    test('check: un subcampo necesita la fila de su repetidor', () => {
+        const r = broken('sin-repetidor', edit('specs/home.md', '| `home_hero_imagen` | image |', '| `home_hero_items.titulo` | text | Título del ítem | A | sí |\n| `home_hero_imagen` | image |'));
+        assert.match(messages(r), /falta la fila del repetidor "home_hero_items"/);
+    });
+
     test('check: destino inexistente y estados incoherentes', () => {
         const r = broken('destino', (dir) => {
             edit('specs/home.md', '`template-parts/pages/home/hero.php`', '`template-parts/pages/home/nada.php`')(dir);

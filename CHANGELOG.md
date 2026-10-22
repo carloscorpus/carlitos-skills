@@ -2,6 +2,14 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.15.0] - 2026-10-21
+
+### Agregado
+- `wp-acf` 1.0.0: pasa los specs de `design-import` a ACF Pro administrable. Genera el ACF JSON (grupos, tipos de contenido, taxonomías y páginas de opciones), lo sincroniza con la base de datos y carga el contenido del diseño, los menús y el logo; deja las plantillas leyendo de ACF. Detalle en `skills/wp-acf/CHANGELOG.md`.
+
+### Cambiado
+- `design-import` 1.4.0: etiqueta opcional `ACF: pendiente | conectado` por sección (con `conectado`, `check.mjs` no compara el valor actual con la plantilla) y exige la fila del repetidor antes de sus subcampos. El lector de specs pasa a `shared/specs.mjs`.
+
 ## [1.14.1] - 2026-10-21
 
 ### Corregido
