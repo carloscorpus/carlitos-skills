@@ -272,6 +272,15 @@ try {
         assert.ok(r.json.warnings.some((w) => /Otro título/.test(w.message)));
     });
 
+    test('check: el valor actual también puede estar en una variable de la plantilla', () => {
+        const r = broken('variable', (dir) => {
+            const path = join(dir, 'template-parts/pages/home/hero.php');
+            const text = readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
+            writeFileSync(path, text.replace('<h1 class="text-4xl">Hacemos crecer tu negocio</h1>', "<?php $titulo = 'Hacemos |crecer| tu negocio'; ?>\n    <h1 class=\"text-4xl\"><?= esc_html($titulo) ?></h1>"));
+        });
+        assert.equal(r.code, 0, r.stdout);
+    });
+
     test('check: destino inexistente y estados incoherentes', () => {
         const r = broken('destino', (dir) => {
             edit('specs/home.md', '`template-parts/pages/home/hero.php`', '`template-parts/pages/home/nada.php`')(dir);

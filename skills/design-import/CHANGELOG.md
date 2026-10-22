@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.1] - 2026-10-21
+
+### Corregido
+- `check.mjs`: el "valor actual" también se busca en los textos entre comillas de los bloques PHP (una variable o arreglo al inicio de la plantilla) y en los atributos `alt`, `title`, `aria-label` y `placeholder`. Antes solo miraba el texto entre etiquetas y daba falsos errores en las plantillas que guardan el texto fijo en variables (56 en la portada de un tema real). Los marcadores de resaltado `|` y `*` se ignoran al comparar.
+
 ## [1.3.0] - 2026-10-21
 
 ### Cambiado
