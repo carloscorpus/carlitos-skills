@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.0] - 2026-10-22
+
+### Agregado
+- Páginas hijas: la etiqueta `Padre` del spec (design-import 1.5.0) llega a `inc/acf/paginas.php` como `'padre'`, cada padre va antes que sus hijas y el motor crea la hija debajo de él (`/servicios/diseno-web/`). Una página que una versión anterior del motor dejó en el primer nivel se cuelga del padre sin tocar su contenido. `generate.mjs` sale con `4` si el padre no se genera con los mismos estados o hay un ciclo.
+- Motor 1.3.0: reinstala `inc/acf/runner.php` (`install.mjs`) en los temas que ya lo tienen.
+
 ## [1.2.0] - 2026-10-22
 
 ### Agregado

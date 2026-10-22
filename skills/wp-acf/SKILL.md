@@ -2,7 +2,7 @@
 name: wp-acf
 description: 'Turn the specs written by design-import into manageable ACF Pro: field groups, content types, taxonomies and options pages as ACF JSON (synced into the database so everything is editable in the admin), the design''s text and images loaded as real content, templates switched from fixed text to get_field, plus menus, logo and the WordPress pages. One group per page, one script for all the JSON, one subagent per page for the templates. Use when the user says "pasa los specs a ACF", "crea los campos ACF", "ACF JSON", "conecta los campos", "carga el contenido", "hazlo administrable", or a spec says `skill: wp-acf`. Needs ACF Pro 6.2 or later. Queries, filters, search and WooCommerce are other skills.'
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # wp-acf
@@ -22,7 +22,7 @@ Everything ACF can describe is ACF JSON in the theme's `acf-json/` (field groups
 
 2. **Install the engine.** From the theme root: `node <skill>/scripts/install.mjs --dry-run`, show `conflicts` and ask file by file, then run it for real with `--overwrite` / `--skip` (`<skill>` = this skill's folder). It copies `inc/acf/runner.php` (generic, never edited per project), `inc/acf/sitio.php` and `inc/acf/seed/`, adds the `require_once` to `functions.php` and a short block to `CLAUDE.md`. Exit codes: `0` ok, `1` invalid input, `2` unresolved conflicts, `3` leftover placeholders.
 
-3. **Generate the JSON, all at once.** `node <skill>/scripts/generate.mjs --dry-run` shows what it would write; then without `--dry-run`. It writes `acf-json/` (groups, post types, taxonomies, options pages) and `inc/acf/paginas.php` (the WordPress pages to create). Keys come from the names, so regenerating never changes them. A file that exists and differs (for example saved from the ACF admin) is a conflict: ask, then `--overwrite` or `--skip`. Exit code `4` means the specs have errors (an unsupported type, a missing repeater row, an unknown location): fix the spec, never the JSON. Read [references/json-acf.md](references/json-acf.md) and [references/mapeo-tipos.md](references/mapeo-tipos.md) for what is generated.
+3. **Generate the JSON, all at once.** `node <skill>/scripts/generate.mjs --dry-run` shows what it would write; then without `--dry-run`. It writes `acf-json/` (groups, post types, taxonomies, options pages) and `inc/acf/paginas.php` (the WordPress pages to create). Keys come from the names, so regenerating never changes them. A file that exists and differs (for example saved from the ACF admin) is a conflict: ask, then `--overwrite` or `--skip`. Exit code `4` means the specs have errors (an unsupported type, a missing repeater row, an unknown location, a `Padre` that is not generated or a cycle): fix the spec, never the JSON. Read [references/json-acf.md](references/json-acf.md) and [references/mapeo-tipos.md](references/mapeo-tipos.md) for what is generated.
 
 4. **Site-wide, in the main thread.** Write `inc/acf/sitio.php` from the "Menús" table of `_shared.md` and the design (menus with their items and the logo file), and adjust `register_nav_menus` in `inc/setup.php` so the locations of the spec replace the scaffold's `primary` ([references/menus-y-logo.md](references/menus-y-logo.md)). Then connect the `opciones` spec: header, footer and the top notice read `get_field('opciones_<area>', 'option')` and `wp_nav_menu`, and `inc/acf/seed/opciones.php` carries their current text. These files are shared, so no subagent edits them.
 

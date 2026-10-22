@@ -7,11 +7,13 @@
 //       CLAUDE.md del tema (entre <!-- design-import:start --> y <!-- design-import:end -->).
 //   node init.mjs --page <slug> --title <título> --source <archivo del diseño> --template <ruta de la plantilla>
 //                 [--type estática|listado|detalle|global] [--content <contenido>] [--group <nombre>] [--location <texto>]
+//                 [--parent <slug>]
 //                 [--target <dir>] [--dry-run] [--overwrite specs/<slug>.md]
 //       Crea specs/<slug>.md desde la plantilla de página y agrega su fila (pendiente) a _index.md.
 //       --type (por defecto estática); listado y detalle exigen --content, en snake_case, igual al de la tabla
 //       "Contenido dinámico" de _shared.md. --group es el nombre del grupo de campos (por defecto el título);
-//       --location, la regla de ubicación de ACF (por defecto según el tipo y la plantilla).
+//       --location, la regla de ubicación de ACF (por defecto según el tipo y la plantilla). --parent, el slug de la
+//       página estática de la que cuelga (wp-acf la crea como hija: /servicios/diseno-web/); por defecto ninguno.
 //       global es el spec de lo que se repite en todo el sitio (cabecera, pie, contacto, redes): el slug es
 //       siempre "opciones" y no lleva --content.
 //       Córrelo uno por uno desde el hilo principal: si varios subagentes editan _index.md a la vez se pisan.
@@ -48,6 +50,7 @@ try {
             content: { type: 'string' },
             group: { type: 'string' },
             location: { type: 'string' },
+            parent: { type: 'string' },
             'dry-run': { type: 'boolean', default: false },
             overwrite: { type: 'string' },
             skip: { type: 'string' },
@@ -95,6 +98,12 @@ if (args.page !== undefined) {
         fail(1, `--content es obligatorio en un ${type} y va en snake_case: el nombre de la tabla "Contenido dinámico" de _shared.md.`);
     }
     const template = args.template.trim();
+    const parent = args.parent?.trim() || 'ninguno';
+    if (parent !== 'ninguno') {
+        if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(parent)) fail(1, `--parent "${parent}" no es un slug de página válido.`);
+        if (parent === page) fail(1, 'Una página no puede ser su propio padre.');
+        if (type !== 'estática' || template === 'front-page.php') fail(1, '--parent solo va en páginas estáticas que no son la de inicio.');
+    }
     const location = args.location?.trim()
         || (type === 'global' ? 'página de opciones: Ajustes del sitio'
             : type === 'detalle' ? `tipo de contenido = ${content}`
@@ -111,6 +120,7 @@ if (args.page !== undefined) {
         CONTENIDO: content,
         GRUPO_ACF: args.group?.trim() || args.title.trim(),
         UBICACION: location,
+        PADRE: parent,
     };
     const files = renderTemplates(templatesDir, pageValues, target, (f) => f.rel === 'specs/pagina.md')
         .map((f) => ({ ...f, rel: `specs/${page}.md`, dest: join(target, 'specs', `${page}.md`) }));

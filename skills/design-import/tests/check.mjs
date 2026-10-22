@@ -180,10 +180,16 @@ try {
         assert.equal(bad(['--type', 'tienda']), 1, 'tipo desconocido');
         assert.equal(bad(['--content', 'producto']), 1, 'una estática no lleva contenido');
         assert.equal(bad(['--type', 'detalle', '--content', 'Producto Nuevo']), 1, 'contenido en snake_case');
-        rmSync(join(theme, 'specs/productos.md'));
-        rmSync(join(theme, 'specs/producto.md'));
+        assert.match(readFileSync(join(theme, 'specs/sobre-nosotros.md'), 'utf8'), /\*\*Padre:\*\* ninguno/);
+        assert.equal(bad(['--type', 'listado', '--content', 'producto', '--parent', 'sobre-nosotros']), 1, 'un listado no lleva padre');
+        assert.equal(bad(['--parent', 'Sobre Nosotros']), 1, 'el padre es un slug');
+        assert.equal(bad(['--parent', 'otra']), 1, 'no es su propio padre');
+        const child = run('init.mjs', [...base, '--page', 'equipo', '--title', 'Equipo', '--template', 'pages/template-equipo.php', '--parent', 'sobre-nosotros']);
+        assert.equal(child.code, 0, child.stdout);
+        assert.match(readFileSync(join(theme, 'specs/equipo.md'), 'utf8'), /\*\*Padre:\*\* sobre-nosotros/);
+        for (const slug of ['productos', 'producto', 'equipo']) rmSync(join(theme, `specs/${slug}.md`));
         const indexPath = join(theme, 'specs/_index.md');
-        writeFileSync(indexPath, readFileSync(indexPath, 'utf8').split('\n').filter((line) => !/\((productos|producto)\.md\)/.test(line)).join('\n'));
+        writeFileSync(indexPath, readFileSync(indexPath, 'utf8').split('\n').filter((line) => !/\((productos|producto|equipo)\.md\)/.test(line)).join('\n'));
     });
 
     test('init --page: el spec global es siempre "opciones"', () => {
@@ -333,6 +339,25 @@ try {
         assert.match(messages(broken('accion', edit('specs/_shared.md', '| WhatsApp con "Hola, me interesa {producto}"; número en un campo global |', '|  |'))), /falta "Acción"/);
         assert.match(messages(broken('alcance', edit('specs/_shared.md', '| productos.html | catálogo | producto |', '| productos.html | catálogo | ninguno |'))), /necesita un Contenido/);
         assert.match(messages(broken('alcance-2', edit('specs/_shared.md', '| productos.html | catálogo | producto |', '| productos.html | tienda | producto |'))), /"Qué es" debe ser/);
+    });
+
+    // Una página estática pendiente (sin secciones) que cuelga de otra.
+    const addPage = (slug, parent) => (dir) => writeFileSync(join(dir, 'specs', `${slug}.md`), [
+        `# Página: ${slug}`, '',
+        '- **Resumen:** r', '- **Fuente:** `x.html`', `- **Plantilla:** \`pages/template-${slug}.php\``, '- **Tipo:** estática',
+        '- **Contenido:** ninguno', '- **Secciones (en orden):** ninguna', '- **Skills usadas:** ninguna', `- **Grupo ACF:** ${slug}`,
+        `- **Ubicación:** plantilla pages/template-${slug}.php`, `- **Padre:** ${parent}`, '- **Notas de página:** ninguna', '- **Estado:** pendiente', '',
+    ].join('\n'));
+    const both = (...edits) => (dir) => edits.forEach((fn) => fn(dir));
+
+    test('check: Padre de una página estática', () => {
+        const ok = broken('padre-ok', both(addPage('servicios', 'ninguno'), addPage('diseno-web', 'servicios')));
+        assert.ok(!/Padre|padre/.test(messages(ok)), messages(ok));
+        assert.match(messages(broken('padre-falta', addPage('diseno-web', 'servicios'))), /no hay un spec servicios\.md/);
+        assert.match(messages(broken('padre-dinamico', addPage('diseno-web', 'productos'))), /tiene que ser estática/);
+        assert.match(messages(broken('padre-mismo', addPage('diseno-web', 'diseno-web'))), /su propio padre/);
+        assert.match(messages(broken('padre-inicio', edit('specs/home.md', '- **Estado:** aplicado\n', '- **Padre:** productos\n- **Estado:** aplicado\n'))), /no es la de inicio/);
+        assert.match(messages(broken('padre-ciclo', both(addPage('a', 'b'), addPage('b', 'a')))), /ciclo \(a → b → a\)/);
     });
 
     test('check: spec global y menús', () => {
