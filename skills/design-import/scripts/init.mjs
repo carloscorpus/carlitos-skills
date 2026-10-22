@@ -121,8 +121,17 @@ if (args.page !== undefined) {
         GRUPO_ACF: args.group?.trim() || args.title.trim(),
         UBICACION: location,
         PADRE: parent,
+        // Un listado trae cómo se filtra y la tabla de filtros para completar desde el diseño (references/formato-spec.md).
+        LISTADO: type !== 'listado' ? '' : [
+            '', '- **Al filtrar:** sin recargar', '- **Paginación:** números', '- **Por página:** 12', '- **Filtros en móvil:** igual',
+        ].join('\n'),
+        FILTROS: type !== 'listado' ? '' : [
+            '', '**Filtros**', '', '| Filtro | Tipo | Fuente | Varios | Conteo | Vista |', '|---|---|---|---|---|---|', '',
+        ].join('\n'),
     };
     const files = renderTemplates(templatesDir, pageValues, target, (f) => f.rel === 'specs/pagina.md')
+        // Los bloques del listado van con \n: el spec queda con un solo tipo de salto (Windows trae la plantilla con \r\n).
+        .map((f) => ({ ...f, content: f.content.replace(/\r?\n/g, f.content.includes('\r\n') ? '\r\n' : '\n') }))
         .map((f) => ({ ...f, rel: `specs/${page}.md`, dest: join(target, 'specs', `${page}.md`) }));
     assertNoLeftovers(files);
 

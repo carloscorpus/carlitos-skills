@@ -2,6 +2,12 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.19.0] - 2026-10-22
+
+### Agregado
+- `design-import` 1.6.0: tabla **Filtros** en los specs de listado (tipo, fuente, varios valores, conteo y vista de cada filtro), validada por `check.mjs`. Prepara la skill `wp-query`.
+- `shared/specs.mjs`: `parseFilters()` lee esa tabla para todas las skills.
+
 ## [1.18.0] - 2026-10-22
 
 ### Agregado

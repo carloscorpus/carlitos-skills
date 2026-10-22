@@ -166,9 +166,12 @@ try {
         const base = ['--target', theme, '--source', 'productos.html'];
         const list = run('init.mjs', [...base, '--page', 'productos', '--title', 'Productos', '--template', 'archive-producto.php', '--type', 'listado', '--content', 'producto']);
         assert.equal(list.code, 0, list.stdout);
-        const spec = readFileSync(join(theme, 'specs/productos.md'), 'utf8');
+        const spec = readFileSync(join(theme, 'specs/productos.md'), 'utf8').replace(/\r\n/g, '\n'); // Windows: \r\n
         assert.match(spec, /\*\*Tipo:\*\* listado/);
         assert.match(spec, /\*\*Contenido:\*\* producto/);
+        assert.match(spec, /\*\*Al filtrar:\*\* sin recargar\n- \*\*Paginación:\*\* números/);
+        assert.match(spec, /- \*\*Estado:\*\* pendiente\n\n\*\*Filtros\*\*\n\n\| Filtro \| Tipo \| Fuente \| Varios \| Conteo \| Vista \|/);
+        assert.ok(!readFileSync(join(theme, 'specs/sobre-nosotros.md'), 'utf8').includes('**Filtros**'), 'una estática no lleva filtros');
         assert.match(spec, /\*\*Grupo ACF:\*\* Productos/);
         assert.match(spec, /\*\*Ubicación:\*\* página de opciones: archivo de producto/);
         const detail = run('init.mjs', [...base, '--page', 'producto', '--title', 'Producto', '--template', 'single-producto.php', '--type', 'detalle', '--content', 'producto']);
@@ -358,6 +361,30 @@ try {
         assert.match(messages(broken('padre-mismo', addPage('diseno-web', 'diseno-web'))), /su propio padre/);
         assert.match(messages(broken('padre-inicio', edit('specs/home.md', '- **Estado:** aplicado\n', '- **Padre:** productos\n- **Estado:** aplicado\n'))), /no es la de inicio/);
         assert.match(messages(broken('padre-ciclo', both(addPage('a', 'b'), addPage('b', 'a')))), /ciclo \(a → b → a\)/);
+    });
+
+    test('check: tabla Filtros de un listado', () => {
+        const spec = 'specs/productos.md';
+        const bad = (name, from, to) => messages(broken(`filtros-${name}`, edit(spec, from, to)));
+        assert.match(bad('taxonomia', '`categoria_producto` | sí (o)', '`marca` | sí (o)'), /la taxonomía "marca" no está en la fila "producto"/);
+        assert.match(bad('campo', '| rango | `producto_ficha_precio` |', '| rango | `producto_ficha_peso` |'), /"producto_ficha_peso" no está en el spec de detalle/);
+        assert.match(bad('tipo-campo', '| `precio` | rango |', '| `precio` | opciones |'), /es number; un filtro de opciones necesita select/);
+        assert.match(bad('reservado', '| `q` | búsqueda |', '| `s` | búsqueda |'), /"s" choca con una variable de WordPress/);
+        assert.match(bad('taxonomia-nombre', '| `categoria` | taxonomía |', '| `categoria_producto` | taxonomía |'), /choca con una variable/);
+        assert.match(bad('tipo', '| `precio` | rango |', '| `precio` | slider |'), /Tipo "slider" inválido/);
+        assert.match(bad('varios', '| `producto_ficha_precio` | no | — |', '| `producto_ficha_precio` | sí (o) | — |'), /no admite varios valores/);
+        assert.match(bad('varios-texto', '| sí (o) | dinámico |', '| quizás | dinámico |'), /"Varios" debe ser/);
+        assert.match(bad('conteo', '| sí (o) | dinámico |', '| sí (o) | siempre |'), /"Conteo" debe ser/);
+        assert.match(bad('orden', 'reciente, az,', 'reciente, popular,'), /Orden "popular" desconocido/);
+        assert.match(bad('repetido', '| `q` | búsqueda |', '| `categoria` | búsqueda |'), /Filtro repetido/);
+        assert.match(bad('vista', '| — | dos casillas |', '| — |  |'), /Falta "Vista"/);
+        assert.match(bad('paginacion', '**Paginación:** números', '**Paginación:** páginas'), /"Paginación" inválido/);
+        assert.match(bad('por-pagina', '**Por página:** 12', '**Por página:** doce'), /"Por página" inválido/);
+        const home = messages(broken('filtros-home', edit('specs/home.md', '- **Estado:** aplicado\n', '- **Estado:** aplicado\n\n**Filtros**\n\n| Filtro | Tipo | Fuente | Varios | Conteo | Vista |\n|---|---|---|---|---|---|\n| `x` | búsqueda | texto | — | — | campo |\n')));
+        assert.match(home, /solo va en un listado/);
+        const old = broken('filtros-sin-tabla', edit(spec, '\n**Filtros**\n', '\n**Otra cosa**\n'));
+        assert.equal(old.code, 0, 'un listado sin tabla solo avisa');
+        assert.ok(old.json.warnings.some((w) => /Falta la tabla "Filtros" \(el diseño muestra: categoría, orden\)/.test(w.message)));
     });
 
     test('check: spec global y menús', () => {

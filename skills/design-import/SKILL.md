@@ -2,7 +2,7 @@
 name: design-import
 description: 'Turn a folder exported by Claude Design (static HTML + CSS + JS with bad practices) into a clean WordPress theme front end: tokens, components, page sections and page templates, following the wp-vite-theme structure or the structure it detects in another project. Writes one reviewable spec per page (sections, ACF Pro field groups and tables, acceptance criteria) and applies only what the user approves. Blog, catalog and WooCommerce designs are asked about once and documented (content types, taxonomies, filters, templates), not wired. What repeats on every page (logo, menus, footer data) is documented once as site-wide settings. Use when the user adds a design folder (/add-dir) and says "importa el diseño", "reordena el diseño de Claude Design", "pasa este diseño al tema", "design import", "limpia el HTML/CSS del diseño", or a spec says `skill: design-import`.'
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # design-import
@@ -46,7 +46,7 @@ Detail lives in `references/` and is read only by the step that points to it.
    1. Tokens of `_shared.md` into the main CSS (`@theme`), once.
    2. Components into `template-parts/components/<name>.php`, receiving data by `$args`.
    3. Sections into `template-parts/pages/<page>/<section>.php`, and the page template (`front-page.php` or `pages/template-<slug>.php`) that only calls `get_header()`, `<main id="main-content">`, the `get_template_part()` calls and `get_footer()`.
-   Lists and details (blog, catalog, WooCommerce) use the templates of the "Contenido dinámico" row instead (`archive-<contenido>.php`, `single-<contenido>.php`, or the `woocommerce/` overrides): the item is a component with `$args`, the list prints the design's sample items, filters and pagination are markup only, and the item button follows the row's "Acción". See [references/contenido-dinamico.md](references/contenido-dinamico.md).
+   Lists and details (blog, catalog, WooCommerce) use the templates of the "Contenido dinámico" row instead (`archive-<contenido>.php`, `single-<contenido>.php`, or the `woocommerce/` overrides): the item is a component with `$args`, the list prints the design's sample items, filters and pagination are markup only, and the item button follows the row's "Acción". A list spec also fills its "Filtros" table (each filter's name in the URL, type, source, multiple values, counts and view, from the design; ask what the design does not show, such as "o" or "y" between values) and the controls use those names, with `data-query` on the parts wp-query swaps. See [references/contenido-dinamico.md](references/contenido-dinamico.md).
    4. Images, fonts and JS: assets under `src/` as the destination reference says; JS rewritten as modules (no inline handlers).
    5. Fix the bad practices the findings listed for that page ([references/malas-practicas.md](references/malas-practicas.md)). Keep what the user sees identical.
    6. Sections with a `Skill:` go to that skill (wp-form, wp-modal, wp-accordion, wp-helper for images, links and two-color text) with the spec as input. The HTML of the design is their visual reference where they ask for a Figma frame.

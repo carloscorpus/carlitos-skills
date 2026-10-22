@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.6.0] - 2026-10-22
+
+### Agregado
+- Tabla **Filtros** en el spec de cada listado: el nombre de cada filtro en la URL, su tipo (`taxonomía`, `rango`, `opciones`, `fecha`, `búsqueda`, `orden`), de dónde sale (la taxonomía del contenido o un campo ACF del detalle), si admite varios valores (`sí (o)` / `sí (y)`), su conteo (`ninguno`, `fijo`, `dinámico`) y cómo se ve en el diseño. Más las etiquetas `Al filtrar`, `Paginación`, `Por página` y `Filtros en móvil`. Es lo que lee wp-query para conectar filtros combinados.
+- `init.mjs --type listado` agrega la tabla vacía y las etiquetas con sus valores por defecto.
+- `check.mjs` valida la tabla: la taxonomía existe en su fila de "Contenido dinámico", el campo existe en el detalle con un tipo compatible, los nombres no chocan con variables de WordPress, y "Varios" y "Conteo" solo van en taxonomías y opciones. Un listado sin tabla solo avisa.
+- El maquetado de filtros usa los nombres de la tabla y marca con `data-query` las partes que se actualizan (`filtros`, `resultados`, `paginacion`, `total`).
+
+### Corregido
+- `init.mjs` deja el spec con un solo tipo de salto de línea aunque la plantilla venga con `\r\n` (Windows).
+
 ## [1.5.0] - 2026-10-22
 
 ### Agregado
