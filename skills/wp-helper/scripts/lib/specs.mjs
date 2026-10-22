@@ -14,6 +14,15 @@ export const read = (path) => readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
 export const labels = (text) => Object.fromEntries([...text.matchAll(/^- \*\*(.+?):\*\*[ \t]*(.*)$/gm)].map((m) => [m[1], m[2].trim()]));
 export const unwrap = (value) => value.replace(/^`+|`+$/g, '').trim();
 export const normalizeText = (value) => value.replace(/\\\|/g, '|').replace(/<br\s*\/?>/gi, ' ').replace(/\s+/g, ' ').trim();
+export const slugify = (text) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+// "… Opciones: Madera, Metal." al final de la descripción de un campo -> { madera: 'Madera', metal: 'Metal' }
+// (las claves son las que guarda ACF). null si la descripción no trae opciones.
+export function fieldChoices(description) {
+    const list = /Opciones:\s*(.+?)\.?$/i.exec(description)?.[1];
+    if (!list) return null;
+    return Object.fromEntries(list.split(',').map((label) => label.trim()).filter(Boolean).map((label) => [slugify(label).replaceAll('-', '_') || label, label]));
+}
 export const noAccent = (value) => value.toLowerCase().replace('estatica', 'estática').replace('catalogo', 'catálogo');
 
 // Filas de una tabla Markdown, sin la cabecera ni la línea de guiones.

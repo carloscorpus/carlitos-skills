@@ -330,6 +330,20 @@ try {
         assert.match(messages(noOption), /lleva 'option' => true/);
     });
 
+    test('check: un valor actual con * o | se compara sin esos marcadores, igual que la carga', () => {
+        const texto = 'Los campos con * son obligatorios.';
+        const { r } = checked(all(
+            change('specs/home.md', '| Hacemos crecer tu negocio |', `| ${texto} |`),
+            change('inc/acf/seed/home.php', "'titulo' => 'Hacemos crecer tu negocio'", `'titulo' => '${texto}'`),
+        ));
+        assert.equal(r.code, 0, r.stdout);
+        const resaltado = checked(all(
+            change('specs/home.md', '| Hacemos crecer tu negocio |', '| Hacemos crecer \\|tu negocio\\| |'),
+            change('inc/acf/seed/home.php', "'titulo' => 'Hacemos crecer tu negocio'", "'titulo' => 'Hacemos crecer |tu negocio|'"),
+        )).r;
+        assert.equal(resaltado.code, 0, resaltado.stdout);
+    });
+
     test('check: una carga con la dirección absoluta del sitio es un error; rutas relativas y _page pasan', () => {
         const local = checked(change('inc/acf/seed/home.php', "['_page' => 'contacto']", "'http://copam.local/contacto/'")).r;
         assert.match(messages(local), /Enlace absoluto de desarrollo "http:\/\/copam\.local\/contacto\/"/);

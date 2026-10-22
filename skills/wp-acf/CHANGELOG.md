@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.1] - 2026-10-22
+
+### Corregido
+- `check.mjs`: un "valor actual" con `*` o `|` (por ejemplo "Los campos con * son obligatorios.") ya no da el error falso "no está en la carga". La carga se leía sin esos marcadores y el spec se comparaba con ellos; ahora se quitan de los dos lados.
+
+### Cambiado
+- `slugify` y las claves de las opciones de un campo (`fieldChoices`) pasan a `shared/specs.mjs`, para que `wp-query` arme las mismas claves que guarda ACF. El JSON generado no cambia.
+- El motor no cambia; solo sube su número de versión (reinstalarlo con `install.mjs --overwrite inc/acf/runner.php` es opcional).
+
 ## [1.3.0] - 2026-10-22
 
 ### Agregado

@@ -171,8 +171,10 @@ for (const page of pages) {
             continue;
         }
         if (!new RegExp(`['"]${escapeRe(section.group)}['"]\\s*=>`).test(seedText)) error(where, `La carga ${seedRel} no trae el grupo ${section.group}.`);
+        // phpLiterals quita `|` y `*` de los textos del seed: el valor del spec se compara igual ("Los campos con * son…").
+        const seedPlain = normalizeText(seedLiterals);
         for (const field of texts) {
-            if (!normalizeText(seedLiterals).includes(field.current)) error(where, `${field.name}: el valor actual "${field.current.slice(0, 40)}" no está en ${seedRel}.`);
+            if (!seedPlain.includes(normalizeText(field.current.replace(/[|*]/g, '')))) error(where, `${field.name}: el valor actual "${field.current.slice(0, 40)}" no está en ${seedRel}.`);
         }
     }
 

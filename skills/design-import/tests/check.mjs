@@ -301,6 +301,17 @@ try {
         assert.match(messages(invalido), /ACF inválido/);
     });
 
+    test('check: etiqueta Query solo en listados y detalles', () => {
+        const catalogo = '- **Comportamiento:** rejilla de tarjetas';
+        const ok = broken('query-ok', edit('specs/productos.md', catalogo, '- **Query:** conectado\n' + catalogo));
+        assert.equal(ok.code, 0, ok.stdout);
+        const invalido = broken('query-invalido', edit('specs/productos.md', catalogo, '- **Query:** hecho\n' + catalogo));
+        assert.match(messages(invalido), /Query inválido/);
+        const comportamiento = '- **Comportamiento:** el botón lleva a la sección contacto\n';
+        const home = broken('query-home', edit('specs/home.md', comportamiento, comportamiento + '- **Query:** conectado\n'));
+        assert.match(messages(home), /Query solo va/);
+    });
+
     test('check: un subcampo necesita la fila de su repetidor', () => {
         const r = broken('sin-repetidor', edit('specs/home.md', '| `home_hero_imagen` | image |', '| `home_hero_items.titulo` | text | Título del ítem | A | sí |\n| `home_hero_imagen` | image |'));
         assert.match(messages(r), /falta la fila del repetidor "home_hero_items"/);

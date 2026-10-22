@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.6.1] - 2026-10-22
+
+### Agregado
+- Etiqueta opcional `Query: pendiente | conectado` en las secciones de un listado o detalle (la escribe `wp-query`). `check.mjs` rechaza otro valor y la etiqueta en otros tipos de página.
+
 ## [1.6.0] - 2026-10-22
 
 ### Agregado
