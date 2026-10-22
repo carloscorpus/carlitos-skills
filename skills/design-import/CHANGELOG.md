@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.4.0] - 2026-10-21
+
+### Agregado
+- Etiqueta opcional `ACF: pendiente | conectado` en cada sección (la escribe `wp-acf`). Con `conectado`, `check.mjs` no compara el "valor actual" con la plantilla, porque el texto ya salió del PHP y vive en la carga inicial de ACF. Los specs anteriores siguen pasando.
+
+### Corregido
+- `check.mjs` exige la fila del repetidor antes de sus subcampos (`home_hero_slides` antes de `home_hero_slides.imagen`); sin ella `wp-acf` no puede armar el campo.
+
+### Cambiado
+- El lector de specs (etiquetas, tablas, índice, contenido dinámico, páginas) vive en `shared/specs.mjs` y se copia a `scripts/lib/specs.mjs`; `check.mjs` lo usa y comparte con `wp-acf`.
+
 ## [1.3.1] - 2026-10-21
 
 ### Corregido

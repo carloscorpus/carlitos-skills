@@ -58,6 +58,7 @@
 - `Origen` points to the file and lines of the design; `Destino` to the file(s) in the theme (comma-separated if there are several, relative to the theme root).
 - `Grupo`: the `group` field of the section (`<page>_<section>`, unique in the theme) or `ninguno` when the section has no fields. Every field of the table starts with it.
 - `Skill`: `ninguna`, `wp-form`, `wp-modal`, `wp-accordion`, `wp-helper`. A section with a skill has no markup of yours: `Comportamiento` says what the skill must do (recipients, trigger, motion).
+- `ACF` (optional, written by `wp-acf`, not by you): `pendiente` or `conectado`. `conectado` means the section template reads its fields from ACF and the text now lives in the initial load (`inc/acf/seed/`), so `check.mjs` stops comparing "valor actual" with the template for that section.
 - `Estado` of each section: `pendiente`, `aprobado`, `descartado`, `aplicado`. The page's `Estado` and its row in `_index.md` must match.
 - "Campos ACF" lists every text, image, link and repeated group of the section. A static section (a divider) has a header-only table. Value `—` for images and links.
 - Criteria are verifiable by a command or by looking at the page. The common set is written once in "Criterios comunes" of `_shared.md`; the section starts with the line "Cumple los criterios comunes de `_shared.md`" and adds only its own. Do not copy the common set: `check.mjs` warns when three or more are repeated.
