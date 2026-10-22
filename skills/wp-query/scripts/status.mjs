@@ -14,7 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { fail, skillVersion, toList } from './lib/common.mjs';
+import { detectJsEntry, fail, skillVersion, toList } from './lib/common.mjs';
 import { buildDefinitions, definitionPhp } from './lib/query-build.mjs';
 import { hasSpecs, loadSpecs, noAccent, read, unwrap } from './lib/specs.mjs';
 import { detectTheme } from './lib/tema.mjs';
@@ -46,11 +46,21 @@ const engine = {
     version: /Versión del motor:\s*(\d+\.\d+\.\d+)/.exec(engineText)?.[1] ?? null,
     requireLine: readFileSync(join(target, 'functions.php'), 'utf8').includes('inc/query/motor.php'),
 };
-engine.upToDate = engine.installed && engine.version === skill;
+// El JS del motor (filtrar sin recargar) y su import en el JS principal de Vite.
+const jsPath = join(target, 'src/js/modules/query.js');
+const jsText = existsSync(jsPath) ? readFileSync(jsPath, 'utf8') : '';
+const jsEntry = detectJsEntry(target).entry;
+engine.js = {
+    installed: jsText !== '',
+    version: /Versión del motor:\s*(\d+\.\d+\.\d+)/.exec(jsText)?.[1] ?? null,
+    entry: jsEntry,
+    imported: jsEntry ? readFileSync(join(target, jsEntry), 'utf8').includes('modules/query.js') : null,
+};
+engine.upToDate = engine.installed && engine.version === skill && engine.js.version === skill;
 
 const next = [];
-if (!engine.installed || !engine.requireLine) next.push('Instalar el motor: install.mjs');
-else if (!engine.upToDate) next.push(`Actualizar el motor (instalado ${engine.version ?? 'sin versión'}, skill ${skill}): install.mjs --overwrite inc/query/motor.php`);
+if (!engine.installed || !engine.requireLine || !engine.js.installed || engine.js.imported === false) next.push('Instalar el motor: install.mjs');
+else if (!engine.upToDate) next.push(`Actualizar el motor (instalado ${engine.version ?? 'sin versión'}, JS ${engine.js.version ?? 'sin versión'}, skill ${skill}): install.mjs --overwrite inc/query/motor.php,src/js/modules/query.js`);
 
 let listados = [];
 let definitions = [];

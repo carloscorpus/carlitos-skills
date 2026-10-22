@@ -111,5 +111,21 @@ check('conteo dinámico mantiene los demás', $args['meta_query'][0]['key'] ?? n
 check('URL con varios valores separados por coma', demo_query_url_args($producto, $activos), ['categoria' => 'sillas', 'material' => 'madera']);
 check('URL de rango', demo_query_url_args($producto, $request($producto, ['precio' => '10-20'])), ['precio_min' => '10', 'precio_max' => '20']);
 
+// ---------- Zonas de la respuesta parcial ----------
+
+$html = '<html><body><header><div class="x">menú</div></header>'
+    . '<form method="get" data-query="filtros" class="f"><div><div>a</div></div><input name="q"></form>'
+    . "<section class='grid' data-query='resultados'><div><article>1</article></div><div><article>2</article></div></section>"
+    . '<div data-query="paginacion"><nav aria-label="Paginación"><a href="/p/2/" data-query-mas>Más</a></nav></div>'
+    . '<p data-query="total">2 resultados</p><p data-query="total">otra</p></body></html>';
+$zones = demo_query_zones($html);
+check('zonas encontradas', array_keys($zones), ['filtros', 'resultados', 'paginacion', 'total']);
+check('zona con etiquetas iguales anidadas', $zones['filtros'], '<form method="get" data-query="filtros" class="f"><div><div>a</div></div><input name="q"></form>');
+check('zona con comillas simples', $zones['resultados'], "<section class='grid' data-query='resultados'><div><article>1</article></div><div><article>2</article></div></section>");
+check('zona div con divs dentro', $zones['paginacion'], '<div data-query="paginacion"><nav aria-label="Paginación"><a href="/p/2/" data-query-mas>Más</a></nav></div>');
+check('una zona repetida se toma la primera', $zones['total'], '<p data-query="total">2 resultados</p>');
+check('data-query-mas no es una zona', isset($zones['mas']), false);
+check('sin zonas', demo_query_zones('<div>nada</div>'), []);
+
 echo json_encode(['passed' => $passed, 'failures' => $failures], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
 exit($failures ? 1 : 0);
