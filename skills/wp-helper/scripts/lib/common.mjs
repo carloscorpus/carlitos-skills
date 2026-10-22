@@ -159,7 +159,7 @@ export function claudeBlock(path, id, body) {
     const text = original.replace(/\r\n/g, '\n');
     const start = `<!-- ${id}:start -->`;
     const end = `<!-- ${id}:end -->`;
-    const block = `${start}\n${body.trim()}\n${end}`;
+    const block = `${start}\n${body.replace(/\r\n/g, '\n').trim()}\n${end}`; // la plantilla puede venir con CRLF (git en Windows)
     const existing = new RegExp(`${start}[\\s\\S]*?${end}`);
 
     const next = existing.test(text) ? text.replace(existing, () => block) : text.replace(/\n*$/, '\n\n') + block + '\n';

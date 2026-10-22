@@ -2,6 +2,12 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.16.0] - 2026-10-22
+
+### Corregido
+- `wp-acf` 1.1.0: `_page` guarda la ruta relativa del enlace, no la URL absoluta de local o producción, y `check.mjs` marca las direcciones de desarrollo en las cargas. Detalle en `skills/wp-acf/CHANGELOG.md`.
+- `shared/common.mjs`: `claudeBlock` ya no mezcla saltos de línea cuando la plantilla del bloque viene con CRLF (git en Windows); repetir `install.mjs` volvía a marcar el bloque como actualizado. La copia se sincronizó en todas las skills.
+
 ## [1.15.0] - 2026-10-21
 
 ### Agregado

@@ -299,6 +299,14 @@ try {
         assert.match(messages(noOption), /lleva 'option' => true/);
     });
 
+    test('check: una carga con la dirección absoluta del sitio es un error; rutas relativas y _page pasan', () => {
+        const local = checked(change('inc/acf/seed/home.php', "['_page' => 'contacto']", "'http://copam.local/contacto/'")).r;
+        assert.match(messages(local), /Enlace absoluto de desarrollo "http:\/\/copam\.local\/contacto\/"/);
+        const relative = checked(change('inc/acf/seed/home.php', "['_page' => 'contacto']", "'/contacto/'")).r;
+        assert.equal(relative.json.ok, true);
+        assert.equal(checked().r.json.ok, true);
+    });
+
     test('check: sin el motor instalado falla; una sección sin conectar solo avisa', () => {
         const noEngine = checked((dir) => rmSync(join(dir, 'inc/acf/runner.php'))).r;
         assert.match(messages(noEngine), /El motor no está instalado/);

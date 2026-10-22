@@ -188,6 +188,15 @@ for (const page of pages) {
     }
 }
 
+// Ninguna carga guarda la dirección del propio sitio: en la base de datos solo rutas relativas ('/tarifario/') o '_page'.
+const seedDir = join(target, 'inc/acf/seed');
+const localUrl = /https?:\/\/(?:localhost|127\.0\.0\.1|[\w.-]*\.(?:local|test|localhost))(?::\d+)?[^'"\s]*/gi;
+for (const name of existsSync(seedDir) ? readdirSync(seedDir).filter((f) => f.endsWith('.php')) : []) {
+    for (const [url] of readFileSync(join(seedDir, name), 'utf8').matchAll(localUrl)) {
+        error(`inc/acf/seed/${name}`, `Enlace absoluto de desarrollo "${url}": usa una ruta relativa ('/tarifario/') o ['_page' => 'slug'].`);
+    }
+}
+
 console.log(JSON.stringify({
     ok: errors.length === 0,
     states,
