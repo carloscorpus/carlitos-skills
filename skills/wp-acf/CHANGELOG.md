@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.1.0] - 2026-10-22
+
+### Corregido
+- `['_page' => 'slug']` de una carga ya no guarda la URL absoluta (`http://copam.local/…`) en la base de datos: guarda la ruta relativa (`/slug/`, `/` para la portada). Así el contenido no depende de si el sitio está en local o en producción.
+
+### Agregado
+- `check.mjs` da error si una carga de `inc/acf/seed/` trae una dirección de desarrollo (`localhost`, `127.0.0.1`, `*.local`, `*.test`) y pide una ruta relativa o `_page`.
+
+### Nota
+- Lo ya cargado con URL absoluta no se corrige solo (el motor nunca pisa lo cargado): cambia esas URLs una vez, por ejemplo con `wp search-replace 'http://copam.local' '' --all-tables`.
+
 ## [1.0.0] - 2026-10-21
 
 ### Agregado

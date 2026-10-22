@@ -26,7 +26,8 @@ return [
 - Keys inside a group are the **subfield names** (`titulo_linea_1`, not `home_hero_titulo_linea_1`). A repeater is a list of rows keyed by subfield name.
 - Text values are the exact text the template had, including the highlight markers of `wp-helper` (`|…|`, `*…*`): they are stored as written and `<prefix>_highlight()` prints them.
 - `['_file' => 'assets/…', 'alt' => '…']` becomes an attachment: the engine uploads the theme file to the Media Library once (marked, so it is never duplicated), sets the alt text if empty and stores its ID. Use it for `image`, `file` and `gallery` rows. A file the WordPress upload rules reject (SVG without a plugin) is skipped and reported.
-- `['_page' => 'tarifario']` becomes that page's permalink (the page spec slug; `home` is the front page). Use it as the `url` of a `link`. An external link is a plain `'url' => 'https://…'`.
+- `['_page' => 'tarifario']` becomes that page's **relative path** (`/tarifario/`; the page spec slug; `home` is the front page, `/`). Use it as the `url` of a `link`. It never stores a domain, so the value does not depend on local or production. A path that is not a WordPress page is a plain relative string (`'url' => '/tarifario/'`); an external link is a plain `'url' => 'https://…'`.
+- Never write an absolute URL of the site itself (`http://copam.local/…`, `localhost`, the production domain): `check.mjs` reports it.
 - `link` values are `['title' => …, 'url' => …, 'target' => '_blank']` (`target` optional).
 - `true_false`: `1` or `0`. `number`: a number. `select`: the stored value (the slug of the option).
 

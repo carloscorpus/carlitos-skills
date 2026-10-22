@@ -92,7 +92,8 @@ function {{PREFIX}}_acf_attachment(string $relative): int
 }
 
 // Reemplaza los marcadores de una carga: ['_file' => 'assets/img/x.webp', 'alt' => '...'] por el ID del adjunto y
-// ['_page' => 'tarifario'] por el enlace de esa página.
+// ['_page' => 'tarifario'] por la ruta relativa de esa página ('/tarifario/'), sin dominio: así la base de datos no
+// depende de si el sitio está en local o en producción.
 function {{PREFIX}}_acf_resolve($value, array $pages)
 {
     if (!is_array($value)) {
@@ -110,7 +111,7 @@ function {{PREFIX}}_acf_resolve($value, array $pages)
     if (isset($value['_page'])) {
         $slug = (string) $value['_page'];
         $link = isset($pages[$slug]) ? get_permalink($pages[$slug]) : '';
-        return $link ?: home_url('/' . trim($slug, '/') . '/');
+        return wp_make_link_relative($link ?: home_url('/' . trim($slug, '/') . '/'));
     }
 
     $resolved = [];
