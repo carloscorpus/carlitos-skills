@@ -2,7 +2,7 @@
 name: wp-acf
 description: 'Turn the specs written by design-import into manageable ACF Pro: field groups, content types, taxonomies and options pages as ACF JSON (synced into the database so everything is editable in the admin), the design''s text and images loaded as real content, templates switched from fixed text to get_field, plus menus, logo and the WordPress pages. One group per page, one script for all the JSON, one subagent per page for the templates. Use when the user says "pasa los specs a ACF", "crea los campos ACF", "ACF JSON", "conecta los campos", "carga el contenido", "hazlo administrable", or a spec says `skill: wp-acf`. Needs ACF Pro 6.2 or later. Queries, filters, search and WooCommerce are other skills.'
 metadata:
-  version: "1.3.0"
+  version: "1.3.1"
 ---
 
 # wp-acf

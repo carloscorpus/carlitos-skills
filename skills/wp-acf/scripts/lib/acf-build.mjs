@@ -3,7 +3,9 @@
 // generate.mjs (escribe) y check.mjs (compara). Nada aquí lee ni escribe archivos.
 
 import { createHash } from 'node:crypto';
-import { unwrap } from './specs.mjs';
+import { fieldChoices, slugify, unwrap } from './specs.mjs';
+
+export { slugify };
 
 // Clave estable: depende solo del nombre, así regenerar no cambia las claves ni pierde contenido.
 export const keyOf = (kind, name) => `${kind}_${createHash('sha1').update(`wp-acf:${kind}:${name}`).digest('hex').slice(0, 13)}`;
@@ -39,7 +41,6 @@ export function labelsEs(key) {
     return { singular: cap(`${first}${tail}`), plural: cap(`${pluralWord(first)}${tail}`) };
 }
 
-export const slugify = (text) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
 // ---------- Campos ----------
@@ -51,11 +52,7 @@ export const SUPPORTED_TYPES = new Set([
 
 const noBindings = { allow_in_bindings: 0 };
 
-function choicesOf(row) {
-    const list = /Opciones:\s*(.+?)\.?$/i.exec(row.description)?.[1];
-    if (!list) return null;
-    return Object.fromEntries(list.split(',').map((label) => label.trim()).filter(Boolean).map((label) => [slugify(label).replaceAll('-', '_') || label, label]));
-}
+const choicesOf = (row) => fieldChoices(row.description);
 
 function typeProps(row, errors) {
     switch (row.type) {

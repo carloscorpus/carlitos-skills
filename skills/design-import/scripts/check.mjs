@@ -226,6 +226,10 @@ for (const name of pageFiles) {
         // ACF (opcional, lo escribe wp-acf): conectado = la plantilla lee el campo y el texto vive en la carga inicial.
         const acfState = unwrap(data.ACF ?? '');
         if (acfState && !ACF_STATES.includes(acfState)) error(where, `ACF inválido "${acfState}" (pendiente o conectado).`);
+        // Query (opcional, lo escribe wp-query): conectado = la sección muestra la consulta real de su listado o detalle.
+        const queryState = unwrap(data.Query ?? '');
+        if (queryState && !ACF_STATES.includes(queryState)) error(where, `Query inválido "${queryState}" (pendiente o conectado).`);
+        if (queryState && !['listado', 'detalle'].includes(pageType)) error(where, 'Query solo va en las secciones de un listado o un detalle.');
 
         const fieldsBlock = /\*\*Campos ACF\*\*([\s\S]*?)(?=\n\*\*Criterios de aceptación\*\*|$)/.exec(block)?.[1];
         const criteriaBlock = /\*\*Criterios de aceptación\*\*([\s\S]*)$/.exec(block)?.[1];
