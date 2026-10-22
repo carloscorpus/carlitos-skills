@@ -2,6 +2,26 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.20.0] - 2026-10-22
+
+### Agregado
+- `wp-query` 1.1.0: skill nueva que hace funcionar los listados de posts y tipos de contenido propios desde la tabla **Filtros** de `design-import`. Va después de `wp-acf`.
+  - Filtros combinados: taxonomías, opciones de ACF, rangos, fechas, búsqueda y orden.
+  - Conteos fijos o dinámicos.
+  - Paginación de números, "cargar más" o infinita.
+  - Relacionados en el detalle.
+  - SEO: las páginas filtradas salen con `noindex` y su canonical apunta al listado sin filtros.
+  - Filtrar sin recargar, con la URL y el botón atrás funcionando. Sin JavaScript funciona igual, recargando.
+  - El motor trabaja sobre la consulta principal y el diseño pone el HTML.
+  - Detalle en `skills/wp-query/CHANGELOG.md`.
+
+### Cambiado
+- `design-import` 1.6.1: etiqueta `Query: pendiente | conectado` en las secciones de listados y detalles.
+- `wp-acf` 1.3.2: nombra a `wp-query` como el paso siguiente.
+
+### Corregido
+- `wp-acf` 1.3.1: `check.mjs` ya no da un error falso con un "valor actual" que trae `*` o `|`.
+
 ## [1.19.0] - 2026-10-22
 
 ### Agregado
