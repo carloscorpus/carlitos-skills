@@ -30,3 +30,13 @@
 | Token | Valor | Uso | Origen |
 |---|---|---|---|
 | `--color-brand` | `#ff6600` | botones y acentos | styles.css |
+
+## Criterios comunes
+
+### Todas las secciones
+
+- [ ] Un solo `h1` por página y los encabezados no saltan de nivel
+- [ ] Sin estilos inline, `!important` ni manejadores `onclick=` en el HTML
+- [ ] Controles correctos: acciones con `<button>`, navegación con `<a href>`, campos con `<label>`
+- [ ] Imágenes con `alt` (vacío si son decorativas) y proporción fija (`aspect-ratio` + `object-cover`)
+- [ ] `php -l` sin errores en cada archivo creado y `pnpm build` sin errores

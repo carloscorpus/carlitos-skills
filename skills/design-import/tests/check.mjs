@@ -217,6 +217,7 @@ try {
         assert.deepEqual(r.json.warnings, []);
     });
 
+    const common = ["Un solo `h1` por página y los encabezados no saltan de nivel","Sin estilos inline, `!important` ni manejadores `onclick=` en el HTML","Controles correctos: acciones con `<button>`, navegación con `<a href>`, campos con `<label>`","Imágenes con `alt` (vacío si son decorativas) y proporción fija (`aspect-ratio` + `object-cover`)","`php -l` sin errores en cada archivo creado y `pnpm build` sin errores"];
     const broken = (name, edit) => {
         const dir = join(tmp, name);
         cpSync(ok, dir, { recursive: true });
@@ -260,7 +261,7 @@ try {
     });
 
     test('check: aplicado con criterios sin marcar', () => {
-        const r = broken('criterios', edit('specs/home.md', '- [x] Tokens del `_shared.md`', '- [ ] Tokens del `_shared.md`'));
+        const r = broken('criterios', edit('specs/home.md', '- [x] La imagen de fondo', '- [ ] La imagen de fondo'));
         assert.match(messages(r), /sin marcar/);
     });
 
@@ -315,6 +316,27 @@ try {
         assert.match(messages(broken('global-prefijo', edit('specs/opciones.md', '`opciones_pie_copyright`', '`pie_copyright`'))), /debe empezar con "opciones_"/);
         assert.match(messages(broken('menu-nombre', edit('specs/_shared.md', '| principal |', '| Menú Principal |'))), /la ubicación va en minúsculas/);
         assert.match(messages(broken('menu-enlaces', edit('specs/_shared.md', '| Inicio, Nosotros |', '|  |'))), /falta dónde se muestra o los enlaces/);
+    });
+
+    test('check: los criterios comunes se declaran una vez', () => {
+        const base = common.map((c) => '- [x] ' + c).join('\n');
+        const repeated = broken('criterios-repetidos', edit('specs/home.md', '- [x] Cumple los criterios comunes de `_shared.md`', base));
+        assert.equal(repeated.code, 0, repeated.stdout);
+        assert.ok(repeated.json.warnings.some((w) => /Repite 5 criterios/.test(w.message)));
+        const orphan = broken('criterios-sin-shared', (d) => {
+            edit('specs/_shared.md', '## Criterios comunes', '## Otra cosa')(d);
+        });
+        assert.ok(orphan.json.warnings.some((w) => /no tiene esa sección/.test(w.message)));
+    });
+
+    test('check: las notas de página van en lista y avisan si son un párrafo largo', () => {
+        const long = broken('notas-largas', edit('specs/home.md', '- **Notas de página:**\n  - h1 en el hero\n  - título SEO "Inicio"\n', '- **Notas de página:** ' + 'una nota muy larga '.repeat(20) + '\n'));
+        assert.equal(long.code, 0, long.stdout);
+        assert.ok(long.json.warnings.some((w) => /párrafo largo/.test(w.message)));
+        const empty = broken('notas-vacias', edit('specs/home.md', '- **Notas de página:**\n  - h1 en el hero\n  - título SEO "Inicio"\n', '- **Notas de página:**\n'));
+        assert.match(messages(empty), /Falta "Notas de página"/);
+        const duplicated = broken('notas-criterios', edit('specs/home.md', '  - h1 en el hero', '  - Criterios de página: [ ] check.mjs sale con 0'));
+        assert.ok(duplicated.json.warnings.some((w) => /criterios de página ya están/.test(w.message)));
     });
 
     test('check: no se aprueban páginas con _shared.md pendiente', () => {

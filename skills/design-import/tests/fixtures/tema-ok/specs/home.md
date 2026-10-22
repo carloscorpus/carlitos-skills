@@ -9,7 +9,9 @@
 - **Skills usadas:** ninguna
 - **Grupo ACF:** Inicio
 - **Ubicación:** página de inicio (front page)
-- **Notas de página:** h1 en el hero
+- **Notas de página:**
+  - h1 en el hero
+  - título SEO "Inicio"
 - **Estado:** aplicado
 
 ## Sección: hero
@@ -31,9 +33,5 @@
 
 **Criterios de aceptación**
 
-- [x] Un solo `h1` por página
-- [x] Sin estilos inline ni `onclick`
-- [x] Imagen con `alt` y proporción fija
-- [x] Tokens del `_shared.md`
-- [x] Mismo aspecto que el original
-- [x] `php -l` y `pnpm build` sin errores
+- [x] Cumple los criterios comunes de `_shared.md`
+- [x] La imagen de fondo se recorta con `object-cover` sin deformarse

@@ -82,6 +82,7 @@ function parseTable(block) {
 
 let sharedState = null;
 const dynamicContent = new Map(); // contenido -> origen
+const commonCriteria = new Set(); // criterios de "Criterios comunes" de _shared.md
 const sharedPath = join(specsDir, '_shared.md');
 if (!existsSync(sharedPath)) error('_shared.md', 'Falta _shared.md.');
 else {
@@ -118,6 +119,7 @@ else {
         else if (noAccent(scope) !== 'estática' && (!content || content === 'ninguno')) error('_shared.md', `${where}: una página ${scope} necesita un Contenido de la tabla "Contenido dinámico".`);
         if (content && content !== 'ninguno' && !dynamicContent.has(content)) error('_shared.md', `${where}: el contenido "${content}" no está en "Contenido dinámico".`);
     }
+    for (const [, text] of (chunk('Criterios comunes') ?? '').matchAll(/^- \[[ xX]\] (.+)$/gm)) commonCriteria.add(text.trim());
 }
 
 // ---------- _index.md ----------
@@ -153,6 +155,12 @@ for (const name of pageFiles) {
     if (!indexRows.some((row) => row.file === name)) warn(name, 'No está en _index.md.');
 
     const pageLabels = labels(header);
+    // Las notas de página van mejor como lista (una nota por línea, con sangría bajo la etiqueta).
+    const notesList = /^- \*\*Notas de página:\*\*[ \t]*(.*)\n((?:[ \t]+- .*(?:\n|$))*)/m.exec(header);
+    const noteItems = (notesList?.[2] ?? '').split('\n').filter((line) => line.trim());
+    if (notesList && !notesList[1].trim() && noteItems.length) pageLabels['Notas de página'] = noteItems.map((line) => line.replace(/^\s*- /, '')).join(' ');
+    else if (notesList && notesList[1].trim().length > 280) warn(name, 'Las notas de página son un párrafo largo: pasa cada nota a una línea de lista bajo "Notas de página:".');
+    if (commonCriteria.size && /Criterios de página/.test(pageLabels['Notas de página'] ?? '')) warn(name, 'Los criterios de página ya están en _shared.md ("Criterios comunes"): quítalos de las notas.');
     for (const label of PAGE_LABELS) if (!pageLabels[label]) error(name, `Falta "${label}" en el resumen de la página.`);
     // Los specs de la 1.0 no traen Tipo, Contenido, Grupo ACF ni Ubicación: avisan, no fallan.
     const grouped = pageLabels['Grupo ACF'] !== undefined;
@@ -225,6 +233,12 @@ for (const name of pageFiles) {
 
         const criteria = [...(criteriaBlock ?? '').matchAll(/^- \[( |x|X)\] .+$/gm)];
         if (criteriaBlock !== undefined && !criteria.length) error(where, 'Los criterios de aceptación necesitan al menos un ítem "- [ ] …".');
+        if (commonCriteria.size) {
+            const repeated = criteria.filter((c) => commonCriteria.has(c[0].replace(/^- \[[ xX]\] /, '').trim()));
+            if (repeated.length >= 3) warn(where, `Repite ${repeated.length} criterios que ya están en "Criterios comunes" de _shared.md: deja una línea "Cumple los criterios comunes" y solo los propios de la sección.`);
+        } else if (/criterios comunes/i.test(criteriaBlock ?? '')) {
+            warn(where, 'La sección remite a "Criterios comunes" pero _shared.md no tiene esa sección.');
+        }
 
         if (state === 'aplicado') {
             if (criteria.some((c) => c[1] === ' ')) error(where, 'Hay criterios de aceptación sin marcar.');

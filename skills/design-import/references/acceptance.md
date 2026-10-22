@@ -1,31 +1,29 @@
 # Acceptance criteria
 
-Copy the base set into every section's "Criterios de aceptación" and add the ones specific to the section. Mark `- [x]` only after checking it.
+The criteria every section shares live **once**, in the "Criterios comunes" section of `specs/_shared.md` (the template brings them). Do not copy them into each section: a section declares them with one line and lists only its own. Mark `- [x]` only after checking it.
 
-## Base set (all sections)
+## In a section
 
-- [ ] Un solo `h1` por página y los encabezados no saltan de nivel
-- [ ] Sin estilos inline, `!important` ni manejadores `onclick=` en el HTML
-- [ ] Controles correctos: acciones con `<button>`, navegación con `<a href>`, campos con `<label>`
-- [ ] Imágenes con `alt` (vacío si son decorativas) y proporción fija (`aspect-ratio` + `object-cover`)
-- [ ] Colores, tipografías, radios y sombras salen de los tokens del `_shared.md`; los valores sueltos están listados en "Comportamiento"
-- [ ] Mismo aspecto que el original en escritorio y en móvil (espaciados, tamaños y colores iguales)
-- [ ] Toda la salida PHP escapada (`esc_html`, `esc_url`, `esc_attr`) y el archivo empieza con `defined('ABSPATH') || exit;`
-- [ ] `php -l` sin errores en cada archivo creado y `pnpm build` sin errores
+```markdown
+**Criterios de aceptación**
 
-## When it applies
+- [ ] Cumple los criterios comunes de `_shared.md`
+- [ ] El slider se mueve con flechas y teclado, y se pausa con `prefers-reduced-motion`
+- [ ] La primera imagen carga de inmediato; las demás con `lazy`
+```
 
-- Section with images: `width`/`height` o `aspect-ratio` para no mover el layout; `loading="lazy"` salvo las que están en la primera pantalla.
-- Section with links: destinos reales; los externos con `rel` seguro (helper de enlaces de `wp-helper`).
-- Section with behavior: el JS vive en `src/js/modules/`, se activa por `data-` o clase, funciona con teclado y respeta `prefers-reduced-motion`.
-- Section with a skill: pasa los criterios de esa skill (`wp-form`, `wp-modal`, `wp-accordion` y `wp-helper` tienen su `references/acceptance.md`).
-- Listado o detalle (blog, catálogo, WooCommerce): la tarjeta es un componente con `$args`; los filtros son marcado con `label` y no usan `wp-form`; la paginación es un `<nav aria-label="Paginación">`; el botón del elemento sigue la "Acción" de `_shared.md`; no hay `WP_Query` ni lógica de Woo.
-- Header, footer o bloque compartido por todas las páginas (spec `opciones`): el logo principal sale de Identidad del sitio, los menús son ubicaciones de menú, los textos fijos coinciden con "valor actual" y ninguna página repite el header ni el footer.
-- Repeated block: un solo componente con `$args`, usado en todos los lugares donde se repetía.
-- Component: documentado en `_shared.md` con sus argumentos y dónde se usa.
+The first line is always there: it is the check-off of the common set (base set plus the lines of "Según lo que tenga la sección" that apply). The rest are specific to the section: what only this section has (a behavior, a count, a field that must be hidden when empty). A section without anything specific keeps only the first line.
 
-## Page level (once, in the summary's notes)
+## What `_shared.md` holds
 
-- [ ] `check.mjs` sale con `0`
-- [ ] Los enlaces internos apuntan a las páginas del tema, no a los `.html` del diseño
-- [ ] `header.php` y `footer.php` no se repiten dentro de la plantilla de la página
+- **Todas las secciones:** one `h1` and ordered headings, no inline styles or `!important`, right controls, images with `alt`, tokens instead of loose values, same look as the original, escaped PHP, `php -l` and `pnpm build`.
+- **Según lo que tenga la sección:** images (size or ratio, lazy), links (real destinations, safe `rel`), JS behavior (modules, keyboard, reduced motion), skills (their own `references/acceptance.md`), repeated blocks (one component with `$args`).
+- **Cada página (una vez, al final):** `check.mjs` exits `0`, internal links point to the theme's pages, `header.php` and `footer.php` are not repeated in the page template.
+
+## What is specific, by kind of section
+
+- Listado o detalle (blog, catálogo, WooCommerce): the card is a component with `$args`; filters are `label` markup and do not use `wp-form`; pagination is a `<nav aria-label="Paginación">`; the item button follows the "Acción" of `_shared.md`; no `WP_Query` and no Woo logic.
+- Header, footer or block shared by every page (spec `opciones`): the main logo comes from Site Identity, menus are menu locations, fixed texts match "valor actual" and no page repeats the header or the footer.
+- Component: documented in `_shared.md` with its arguments and where it is used.
+
+`check.mjs` warns when a section repeats three or more common criteria instead of pointing to them. Specs from before 1.3.0 (with the full set in each section) still pass.
