@@ -1,8 +1,8 @@
 ---
 name: wp-acf
-description: 'Turn the specs written by design-import into manageable ACF Pro: field groups, content types, taxonomies and options pages as ACF JSON (synced into the database so everything is editable in the admin), the design''s text and images loaded as real content, templates switched from fixed text to get_field, plus menus, logo and the WordPress pages. One group per page, one script for all the JSON, one subagent per page for the templates. Use when the user says "pasa los specs a ACF", "crea los campos ACF", "ACF JSON", "conecta los campos", "carga el contenido", "hazlo administrable", or a spec says `skill: wp-acf`. Needs ACF Pro 6.2 or later. Queries, filters, search and WooCommerce are other skills.'
+description: 'Turn the specs written by design-import into manageable ACF Pro: field groups, content types, taxonomies and options pages as ACF JSON (synced into the database so everything is editable in the admin), the design''s text and images loaded as real content, templates switched from fixed text to get_field, plus menus, logo and the WordPress pages. One group per page, one script for all the JSON, one subagent per page for the templates. Use when the user says "pasa los specs a ACF", "crea los campos ACF", "ACF JSON", "conecta los campos", "carga el contenido", "hazlo administrable", or a spec says `skill: wp-acf`. Needs ACF Pro 6.2 or later. Lists, filters, search and pagination are wp-query (the next step); WooCommerce is another skill.'
 metadata:
-  version: "1.3.1"
+  version: "1.3.2"
 ---
 
 # wp-acf
@@ -14,7 +14,7 @@ Everything ACF can describe is ACF JSON in the theme's `acf-json/` (field groups
 ## What it does and does not do
 
 - **Does:** field groups (one per page; each section is a `group` field), content types and taxonomies of the "Contenido dinámico" table (origin `cpt`), options pages ("Ajustes del sitio" and the others named in a spec's `Ubicación`), the initial content (text, images, files, links, sample items of a content type), WordPress pages with their template, menus and the logo, and the change of each template from fixed text to `get_field`.
-- **Does not:** queries, filters, search, pagination or the archive/detail templates (`wp-contenido`), WooCommerce (`wp-woo`), multilanguage. The mouse cursor, the preloader and animations are JS, not fields. It never invents a field: what is not in a spec is not created.
+- **Does not:** queries, filters, search, pagination or the real loop of the archive/detail templates (`wp-query`), WooCommerce (another skill), multilanguage. The mouse cursor, the preloader and animations are JS, not fields. It never invents a field: what is not in a spec is not created.
 
 ## Flow
 
@@ -30,7 +30,7 @@ Everything ACF can describe is ACF JSON in the theme's `acf-json/` (field groups
 
 6. **Check.** `node <skill>/scripts/check.mjs` (add `--states aplicado,aprobado` to look further): the JSON matches the specs, every `conectado` section reads its group and has its seed, no fixed text is left in its template. Then `php -l` on every PHP file you wrote and `pnpm build`; when `php` is not available, say so instead of claiming it passed. Run `design-import`'s `check.mjs` too: a `conectado` section skips the "valor actual vs template" comparison.
 
-7. **Tell the user how to see it.** Activate the theme (or open Tools > Cargar contenido inicial and press the button): the engine imports the JSON into the database, creates the pages, loads the content, menus and logo. In the ACF admin they should see the groups, post types, taxonomies and options pages; editing a field on the Inicio page must change the front page, and loading again must not overwrite it. The WP-CLI alternative for the import is `wp acf json sync`.
+7. **Tell the user how to see it.** Activate the theme (or open Tools > Cargar contenido inicial and press the button): the engine imports the JSON into the database, creates the pages, loads the content, menus and logo. In the ACF admin they should see the groups, post types, taxonomies and options pages; editing a field on the Inicio page must change the front page, and loading again must not overwrite it. The WP-CLI alternative for the import is `wp acf json sync`. When the specs have lists (`Tipo: listado`), the next step is `wp-query`: it makes the lists, their filters and their pagination work.
 
 ## Rules
 

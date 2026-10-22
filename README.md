@@ -19,7 +19,8 @@
 | [`wp-accordion`](skills/wp-accordion/SKILL.md)   | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Acordeones y FAQ con el `<details>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento solo con CSS, responsive y auditoría. |
 | [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.1.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
 | [`design-import`](skills/design-import/SKILL.md) | 1.6.1   | Un tema WordPress y la carpeta de un diseño (`/add-dir`); sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también lo que se repite en todo el sitio, blog, catálogo y Woo, solo documentados o maquetados) y aplica solo lo que apruebas. |
-| [`wp-acf`](skills/wp-acf/SKILL.md)               | 1.3.1   | Un tema WordPress con los specs de `design-import` aplicados y ACF Pro 6.2 o superior; `wp-helper` recomendado | Pasa los specs a ACF Pro administrable: campos, tipos de contenido, taxonomías y páginas de opciones como ACF JSON sincronizado con la base de datos, el contenido del diseño cargado como contenido real, menús, logo y las plantillas leyendo de ACF. |
+| [`wp-acf`](skills/wp-acf/SKILL.md)               | 1.3.2   | Un tema WordPress con los specs de `design-import` aplicados y ACF Pro 6.2 o superior; `wp-helper` recomendado | Pasa los specs a ACF Pro administrable: campos, tipos de contenido, taxonomías y páginas de opciones como ACF JSON sincronizado con la base de datos, el contenido del diseño cargado como contenido real, menús, logo y las plantillas leyendo de ACF. |
+| [`wp-query`](skills/wp-query/SKILL.md)           | 1.1.0   | Un tema WordPress con Vite y los specs de `design-import` (tabla Filtros); los tipos de contenido y campos de `wp-acf` | Hace funcionar los listados de posts y tipos de contenido: el loop real, filtros combinados (taxonomías, opciones ACF, rangos, fechas, búsqueda y orden), conteos, paginación, relacionados, SEO de las páginas filtradas y filtrar sin recargar. El diseño pone el HTML. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -199,9 +200,31 @@ inc/acf/seed/<página>.php     el contenido que salió de cada plantilla
 
 - **Administrable:** el motor importa el JSON a la base como el botón "Sync" de ACF, al activar el tema y desde Herramientas > Cargar contenido inicial. Carga cada grupo una sola vez: lo que el cliente edite no se pisa.
 - **Sin límites para el editor:** la recomendación de largo y medida queda en las instrucciones del campo.
-- **Fuera de alcance:** consultas, filtros, buscador y paginación (`wp-contenido`), WooCommerce (`wp-woo`) y multilenguaje.
+- **Fuera de alcance:** consultas, filtros, buscador y paginación (`wp-query`, el paso siguiente), WooCommerce y multilenguaje.
 - Comandos: `node skills/wp-acf/scripts/generate.mjs [--dry-run]`, `install.mjs`, `check.mjs`.
 - Prueba: `node skills/wp-acf/tests/check.mjs`. El PHP del motor no se ejecuta en la prueba.
+
+## wp-query
+
+Después de `wp-acf`: pide `conecta los listados`, `haz funcionar los filtros` o `blog con filtros`. Lee la tabla **Filtros** de cada spec de listado (la escribe `design-import`) y toma los listados con estado `aplicado`. Sirve para posts y tipos de contenido propios; WooCommerce es otra skill.
+
+1. **Motor** (`install.mjs`): copia `inc/query/motor.php` y `src/js/modules/query.js` (genéricos, con el prefijo del tema), y los conecta a `functions.php` y al JS principal de Vite.
+2. **Definiciones** (`generate.mjs`): un `inc/query/<contenido>.php` por listado, desde su tabla Filtros, sus etiquetas (`Al filtrar`, `Paginación`, `Por página`, `Filtros en móvil`) y los campos de su spec de detalle.
+3. **Un listado a la vez**, con un subagente por listado: la plantilla pasa de los ejemplos fijos al loop real con la misma tarjeta, y el formulario de filtros pinta los datos del motor con el HTML del diseño.
+4. **Verificar** (`check.mjs`): el motor y su JS conectados, las definiciones iguales a los specs, las zonas `data-query`, el `name` de cada filtro, sin `query_posts` y con la salida escapada.
+
+```text
+inc/query/motor.php           motor: consulta principal, filtros, conteos, paginación, relacionados, SEO
+inc/query/<contenido>.php     definición de cada listado (generada)
+src/js/modules/query.js       filtrar sin recargar
+```
+
+- **Filtros combinados:** entre filtros distintos siempre "y"; dentro de uno, "o" o "y" según el spec. La URL queda legible (`?categoria=sillas,mesas&precio_min=100`) y solo acepta los filtros y valores conocidos.
+- **El diseño manda:** el motor entrega datos (opciones, conteos, marcada, desactivada); el aspecto lo pone la plantilla.
+- **Sin recargar, pero sin depender del JS:** sin JavaScript es un formulario normal y la paginación son enlaces.
+- **SEO:** las páginas filtradas no se indexan y su canonical apunta al listado sin filtros (WordPress, Yoast y Rank Math).
+- Comandos: `node skills/wp-query/scripts/status.mjs`, `install.mjs [--dry-run]`, `generate.mjs [--dry-run]`, `check.mjs`.
+- Prueba: `node skills/wp-query/tests/check.mjs`. Con `php` disponible también prueba el motor PHP.
 
 ## Agregar una skill
 

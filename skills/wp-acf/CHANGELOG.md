@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.2] - 2026-10-22
+
+### Cambiado
+- `SKILL.md` y el bloque de `CLAUDE.md` nombran a `wp-query` como el paso siguiente para los listados, sus filtros y su paginación (antes decían `wp-contenido`). El motor no cambia.
+
 ## [1.3.1] - 2026-10-22
 
 ### Corregido

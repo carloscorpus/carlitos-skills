@@ -4,4 +4,4 @@
 - Los datos del proyecto son `inc/acf/paginas.php` (lo genera la skill), `inc/acf/sitio.php` (menús y logo) y `inc/acf/seed/<página>.php` (el texto, las imágenes y los enlaces que salieron de cada plantilla).
 - Una plantilla conectada lee su grupo con `get_field('<página>_<sección>')` y los helpers de `wp-helper`; no deja el texto fijo ni textos de respaldo en el código. Las opciones del sitio se leen con `get_field('opciones_<área>', 'option')`.
 - El puntero del mouse, la precarga y las animaciones no son campos: se quedan como JS.
-- La lógica de contenido (consultas, filtros, buscador, paginación) y WooCommerce no son de esta skill.
+- La lógica de los listados (consultas, filtros, buscador, paginación) es de `wp-query`, y WooCommerce de otra skill.
