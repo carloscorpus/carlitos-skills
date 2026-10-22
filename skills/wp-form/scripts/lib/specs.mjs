@@ -2,7 +2,7 @@
 // edita el original y corre `node scripts/sync-shared.mjs`.
 
 // Lector de los specs de design-import (specs/_index.md, _shared.md y una página por archivo).
-// Sin dependencias. Lo usan design-import (check.mjs) y wp-acf (generate.mjs, check.mjs).
+// Sin dependencias. Lo usan design-import (check.mjs), wp-acf (generate.mjs, check.mjs) y wp-query.
 //
 // ORIGINAL: shared/specs.mjs. Cada skill lleva su copia en skills/<skill>/scripts/lib/specs.mjs.
 // Edita solo este archivo y corre `node scripts/sync-shared.mjs`.
@@ -70,8 +70,49 @@ export function parseMenus(sharedText) {
     });
 }
 
-// Una página: { file, slug, prefix, labels, sections }. Cada sección: { name, labels, group, state, fields }.
-// Cada campo: { name, type, description, current, required }.
+// ---------- Filtros de un listado ----------
+
+export const FILTER_TYPES = ['taxonomía', 'rango', 'opciones', 'búsqueda', 'orden', 'fecha'];
+export const ORDER_KEYWORDS = ['reciente', 'antiguo', 'az', 'za', 'relevancia'];
+const fold = (value) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+// Tabla "**Filtros**" del resumen de un listado (antes de la primera sección). null si no hay tabla.
+// Cada fila: { name, type, source, fields, orders, multiple, count, view }, con los valores normalizados:
+// type uno de FILTER_TYPES, multiple 'no' | 'o' | 'y', count 'ninguno' | 'fijo' | 'dinámico'. Un valor que no
+// se reconoce queda como vino (y null en multiple) para que check.mjs lo informe.
+export function parseFilters(header) {
+    const lines = header.split('\n');
+    const start = lines.findIndex((line) => line.trim() === '**Filtros**');
+    if (start === -1) return null;
+    const table = [];
+    for (const line of lines.slice(start + 1)) {
+        if (line.trim().startsWith('|')) table.push(line);
+        else if (table.length || line.trim()) break;
+    }
+    return parseTable(table.join('\n')).map((cells) => {
+        const [rawName, rawType, rawSource, rawMultiple, rawCount, rawView] = cells.map((cell) => cell ?? '');
+        const type = FILTER_TYPES.find((t) => fold(t) === fold(unwrap(rawType))) ?? unwrap(rawType);
+        const multiple = fold(rawMultiple);
+        const count = fold(rawCount);
+        const orders = type !== 'orden' ? [] : rawSource.split(',').map((part) => part.trim()).filter(Boolean).map((part) => {
+            const field = /^`([^`]+)`\s*(asc|desc)?$/i.exec(part);
+            return field ? { key: `${field[1]}:${(field[2] ?? 'asc').toLowerCase()}`, field: field[1], dir: (field[2] ?? 'asc').toLowerCase() } : { key: fold(unwrap(part)) };
+        });
+        return {
+            name: unwrap(rawName),
+            type,
+            source: unwrap(rawSource),
+            fields: [...rawSource.matchAll(/`([^`]+)`/g)].map((m) => m[1]),
+            orders,
+            multiple: ['', '—', '-', 'no'].includes(multiple) ? 'no' : /^si\s*\(\s*o\s*\)$/.test(multiple) ? 'o' : /^si\s*\(\s*y\s*\)$/.test(multiple) ? 'y' : null,
+            count: ['', '—', '-', 'ninguno'].includes(count) ? 'ninguno' : count === 'fijo' ? 'fijo' : count === 'dinamico' ? 'dinámico' : unwrap(rawCount),
+            view: unwrap(rawView),
+        };
+    });
+}
+
+// Una página: { file, slug, prefix, labels, filters, sections }. Cada sección: { name, labels, group, state, fields }.
+// Cada campo: { name, type, description, current, required }. `filters`: parseFilters del resumen (null sin tabla).
 export function parsePage(text, file) {
     const slug = file.replace(/\.md$/, '');
     const [header, ...blocks] = text.split(/^## Sección: /m);
@@ -93,7 +134,7 @@ export function parsePage(text, file) {
             fields,
         };
     });
-    return { file, slug, prefix: `${slug.replaceAll('-', '_')}_`, labels: labels(header), sections };
+    return { file, slug, prefix: `${slug.replaceAll('-', '_')}_`, labels: labels(header), filters: parseFilters(header), sections };
 }
 
 // ---------- Plantillas PHP ----------

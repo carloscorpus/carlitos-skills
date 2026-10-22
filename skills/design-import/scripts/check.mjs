@@ -15,7 +15,9 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { fail } from './lib/common.mjs';
-import { labels, noAccent, normalizeText, parseTable, phpLiterals, phpTexts, read, unwrap } from './lib/specs.mjs';
+import {
+    FILTER_TYPES, ORDER_KEYWORDS, labels, noAccent, normalizeText, parseDynamicContent, parseFilters, parseTable, phpLiterals, phpTexts, read, unwrap,
+} from './lib/specs.mjs';
 
 let args;
 try {
@@ -45,6 +47,26 @@ const FIELD_TYPES = new Set([
 ]);
 const TEXT_TYPES = new Set(['text', 'textarea', 'wysiwyg']);
 const FIELD_NAME = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)+(?:\.[a-z][a-z0-9]*(?:_[a-z0-9]+)*)*$/;
+// Filtros de un listado: tipos de campo ACF que acepta cada tipo de filtro y variables públicas de WordPress
+// que un filtro no puede usar como nombre (la búsqueda va en `q`, no en `s`).
+const FILTER_FIELD_TYPES = {
+    rango: ['number', 'range'],
+    opciones: ['select', 'checkbox', 'radio', 'button_group', 'true_false'],
+    fecha: ['date_picker', 'date_time_picker'],
+    orden: ['number', 'range', 'text', 'date_picker', 'date_time_picker'],
+};
+const WP_QUERY_VARS = new Set([
+    'm', 'p', 'posts', 'w', 'cat', 'withcomments', 'withoutcomments', 's', 'search', 'exact', 'sentence', 'calendar',
+    'page', 'paged', 'more', 'tb', 'pb', 'author', 'order', 'orderby', 'year', 'monthnum', 'day', 'hour', 'minute',
+    'second', 'name', 'category_name', 'tag', 'feed', 'author_name', 'pagename', 'page_id', 'error', 'attachment',
+    'attachment_id', 'subpost', 'subpost_id', 'preview', 'robots', 'favicon', 'taxonomy', 'term', 'cpage', 'post_type',
+    'embed', 'post_format', 'rest_route', 'sitemap', 'static', 'category', 'post_tag', 'type',
+]);
+const LIST_LABELS = {
+    'Al filtrar': ['sin recargar', 'botón aplicar'],
+    Paginación: ['números', 'cargar más', 'infinito', 'ninguna'],
+    'Filtros en móvil': ['igual', 'panel'],
+};
 
 const errors = [];
 const warnings = [];
@@ -55,12 +77,14 @@ const warn = (file, message) => warnings.push({ file, message });
 // ---------- _shared.md ----------
 
 let sharedState = null;
+const dynamicRows = new Map(); // contenido -> fila completa (taxonomías, filtros)
 const dynamicContent = new Map(); // contenido -> origen
 const commonCriteria = new Set(); // criterios de "Criterios comunes" de _shared.md
 const sharedPath = join(specsDir, '_shared.md');
 if (!existsSync(sharedPath)) error('_shared.md', 'Falta _shared.md.');
 else {
     const sharedText = read(sharedPath);
+    for (const row of parseDynamicContent(sharedText)) dynamicRows.set(row.name, row);
     sharedState = labels(sharedText).Estado ?? null;
     if (!['pendiente', 'aprobado', 'aplicado'].includes(sharedState)) {
         error('_shared.md', `Estado inválido "${sharedState}" (pendiente, aprobado o aplicado).`);
@@ -118,6 +142,8 @@ const pageFiles = readdirSync(specsDir).filter((name) => name.endsWith('.md') &&
 const allFields = new Map();
 const allGroups = new Map();
 const pageTree = new Map(); // slug -> { name, type, front, parent }
+const listings = []; // { name, content, filters } de cada listado
+const detailFields = new Map(); // contenido -> Map(campo -> tipo ACF) de su spec de detalle
 let sectionCount = 0;
 let fieldCount = 0;
 
@@ -159,6 +185,16 @@ for (const name of pageFiles) {
         front: unwrap(pageLabels.Plantilla ?? '') === 'front-page.php',
         parent: unwrap(pageLabels.Padre ?? '') || 'ninguno',
     });
+    const pageType = noAccent(pageLabels.Tipo ?? '');
+    const pageContent = unwrap(pageLabels.Contenido ?? '');
+    // Filtros (solo listados): se revisan al final, cuando ya se leyeron los campos del detalle.
+    if (pageType === 'listado') {
+        listings.push({ name, content: pageContent, filters: parseFilters(header) });
+        for (const [label, allowed] of Object.entries(LIST_LABELS)) {
+            if (pageLabels[label] && !allowed.includes(pageLabels[label])) error(name, `"${label}" inválido "${pageLabels[label]}": ${allowed.join(', ')}.`);
+        }
+        if (pageLabels['Por página'] && !/^[1-9]\d*$/.test(pageLabels['Por página'])) error(name, `"Por página" inválido "${pageLabels['Por página']}": un número mayor que 0.`);
+    } else if (parseFilters(header)) error(name, 'La tabla "Filtros" solo va en un listado.');
     const pageState = pageLabels.Estado;
     if (pageState && !STATES.includes(pageState)) error(name, `Estado de página inválido "${pageState}".`);
     const row = indexRows.find((r) => r.file === name);
@@ -213,6 +249,10 @@ for (const name of pageFiles) {
                 error(where, group === 'ninguno' ? `${field}: la sección dice "Grupo: ninguno" pero tiene campos.` : `El campo "${field}" debe empezar con el grupo "${group}_".`);
             }
             const fieldType = unwrap(type ?? '');
+            if (pageType === 'detalle') {
+                if (!detailFields.has(pageContent)) detailFields.set(pageContent, new Map());
+                detailFields.get(pageContent).set(field, fieldType);
+            }
             if (!FIELD_TYPES.has(fieldType)) error(where, `${field}: tipo "${fieldType}" no es un tipo de ACF conocido.`);
             if (!description) error(where, `${field}: falta la descripción.`);
             if (!['sí', 'si', 'no'].includes((required ?? '').toLowerCase())) error(where, `${field}: "Requerido" debe ser sí o no.`);
@@ -266,6 +306,58 @@ for (const [page, { name, type, front, parent }] of pageTree) {
         for (let at = parent; at !== 'ninguno' && pageTree.has(at); at = pageTree.get(at).parent) {
             if (seen.has(at)) { error(name, `Padre "${parent}": las páginas forman un ciclo (${[...seen, at].join(' → ')}).`); break; }
             seen.add(at);
+        }
+    }
+}
+
+// Filtros de cada listado: nombres en la URL, tipo y fuente (taxonomía de su contenido o campo de su detalle).
+for (const { name, content, filters } of listings) {
+    const row = dynamicRows.get(content);
+    if (!row) continue; // ya se informó que el contenido no existe
+    if (!filters?.length) {
+        if (row.filters && row.filters !== 'ninguno') warn(name, `${filters ? 'La tabla "Filtros" está vacía' : 'Falta la tabla "Filtros"'} (el diseño muestra: ${row.filters}): wp-query la necesita para conectar los filtros.`);
+        continue;
+    }
+    const fields = detailFields.get(content) ?? new Map();
+    const taxonomies = new Set([...row.taxonomies.map((t) => t.key), ...(row.origin === 'post' ? ['category', 'post_tag'] : [])]);
+    const reserved = new Set([...WP_QUERY_VARS, ...row.taxonomies.map((t) => t.key), ...dynamicRows.keys()]);
+    const seen = new Set();
+    const fieldOf = (where, field, types, kind) => {
+        if (!field) error(where, `Fuente: el campo ACF va entre comillas invertidas (\`${content}_<sección>_<campo>\`).`);
+        else if (!fields.has(field)) error(where, `Fuente: el campo "${field}" no está en el spec de detalle de "${content}".`);
+        else if (!types.includes(fields.get(field))) error(where, `Fuente: "${field}" es ${fields.get(field)}; un filtro de ${kind} necesita ${types.join(', ')}.`);
+    };
+    for (const type of ['búsqueda', 'orden']) {
+        if (filters.filter((f) => f.type === type).length > 1) error(name, `La tabla "Filtros" tiene más de un filtro de ${type}.`);
+    }
+    for (const f of filters) {
+        const where = `${name} › Filtros › ${f.name || '(sin nombre)'}`;
+        if (!/^[a-z][a-z0-9_]*$/.test(f.name)) error(where, 'El nombre del filtro va en minúsculas, sin tildes ni espacios: es el que se ve en la URL.');
+        else if (seen.has(f.name)) error(where, 'Filtro repetido.');
+        else if (reserved.has(f.name)) error(where, `"${f.name}" choca con una variable de WordPress o con una taxonomía o contenido: usa otro nombre (la búsqueda va en "q").`);
+        seen.add(f.name);
+        if (!FILTER_TYPES.includes(f.type)) { error(where, `Tipo "${f.type}" inválido: ${FILTER_TYPES.join(', ')}.`); continue; }
+        const choosable = ['taxonomía', 'opciones'].includes(f.type);
+        if (f.multiple === null) error(where, '"Varios" debe ser no, sí (o) o sí (y).');
+        else if (f.multiple !== 'no' && !choosable) error(where, `Un filtro de ${f.type} no admite varios valores: "Varios" va en no o —.`);
+        if (!['ninguno', 'fijo', 'dinámico'].includes(f.count)) error(where, `"Conteo" debe ser ninguno, fijo o dinámico.`);
+        else if (f.count !== 'ninguno' && !choosable) error(where, `Un filtro de ${f.type} no lleva conteo: "Conteo" va en ninguno o —.`);
+        if (!f.view) error(where, 'Falta "Vista" (cómo se ve en el diseño: checkbox, select, chips, deslizador…).');
+
+        if (f.type === 'taxonomía') {
+            const key = f.fields[0] ?? f.source;
+            if (!taxonomies.has(key)) error(where, `Fuente: la taxonomía "${key}" no está en la fila "${content}" de "Contenido dinámico".`);
+        } else if (f.type === 'rango' || f.type === 'opciones') {
+            fieldOf(where, f.fields[0], FILTER_FIELD_TYPES[f.type], f.type);
+            if (f.type === 'opciones' && fields.get(f.fields[0]) === 'true_false' && f.multiple !== 'no') error(where, 'Un campo sí/no (true_false) no admite varios valores.');
+        } else if (f.type === 'fecha') {
+            if ((f.fields[0] ?? f.source.split(/\s/)[0]) !== 'post_date') fieldOf(where, f.fields[0], FILTER_FIELD_TYPES.fecha, 'fecha');
+        } else if (f.type === 'orden') {
+            if (!f.orders.length) error(where, `Fuente: las opciones de orden separadas por comas (${ORDER_KEYWORDS.join(', ')} o \`campo\` asc/desc).`);
+            for (const order of f.orders) {
+                if (order.field) fieldOf(where, order.field, FILTER_FIELD_TYPES.orden, 'orden');
+                else if (!ORDER_KEYWORDS.includes(order.key)) error(where, `Orden "${order.key}" desconocido: ${ORDER_KEYWORDS.join(', ')} o \`campo\` asc/desc.`);
+            }
         }
     }
 }

@@ -23,7 +23,7 @@ For each non-static answer, ask the rest of the row: content type and its name (
 | Content type name and origin (`post`, `cpt`, `woo`), existing or new | Registering the content type or taxonomies |
 | Taxonomies, hierarchy, example terms | Creating the terms |
 | Fields per item (as an ACF group located on the content type) | Creating the fields |
-| Filters the design shows, as markup | Filtering (query vars, AJAX), search, sort, pagination logic |
+| Filters the design shows, as markup, and the list's "Filtros" table (type, source, multiple values, counts, view) | Filtering (query vars, updating without reload), search, sort, pagination logic: that is wp-query |
 | Templates to use | The query, the loop, `pre_get_posts` |
 | The item's button and where its data comes from | Building the real link or the cart behavior |
 
@@ -41,7 +41,8 @@ A blog follows the same shape with `Origen: post`: `home.php` (list), `single.ph
 ## Markup rules
 
 - The item is a component: `template-parts/components/<contenido>-card.php` with its data in `$args`. The list prints the design's sample items by calling it with fixed arrays, so connecting the query later is replacing the array with the loop.
-- Filters and sort are `<form method="get">` or links with real `name`/`href` values, labelled, keyboard-friendly. They do nothing yet. **Never `wp-form`**: it is for sending messages, not for filtering.
+- Filters and sort are one `<form method="get">` with real controls, labelled, keyboard-friendly. Each control's `name` is the filter's name in the "Filtros" table of the list spec (`categoria`, `precio_min`/`precio_max` for a range, `q`, `orden`); options with several values are checkboxes with the same `name` (`categoria[]`). They do nothing yet. **Never `wp-form`**: it is for sending messages, not for filtering. Write the table while laying out the filters: see "Filters (lists only)" in [formato-spec.md](formato-spec.md).
+- The parts that change when filtering carry `data-query`: the form `data-query="filtros"`, the grid `data-query="resultados"`, the pagination `data-query="paginacion"` and the "N resultados" text `data-query="total"`. wp-query swaps exactly those, so the layout is not rebuilt.
 - Pagination is a `<nav aria-label="Paginación">` with real links; the design's pages are fixed.
 - Empty state ("no hay resultados") is part of the list section when the design has one; otherwise ask whether it should exist.
 - Categories and tags shown in a card are plain text from the design; they become taxonomy terms later.

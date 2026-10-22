@@ -30,6 +30,48 @@
 
 `Padre` (optional, `ninguno` when missing): the slug of another static spec this page hangs from, when the design nests it (a "Diseño web" page under "Servicios", a breadcrumb `Servicios › Diseño web`, a URL like `/servicios/diseno-web/`). wp-acf creates it as a child page, so its address becomes `/servicios/diseno-web/`. Only static pages that are not the home; `check.mjs` rejects a missing parent, a parent that is not static and cycles. `init.mjs --page … --parent servicios` writes it.
 
+## Filters (lists only)
+
+A `listado` spec says how its list is filtered, so wp-query can wire it without asking again. `init.mjs --type listado` adds these labels (with defaults) and an empty table; fill them from the design:
+
+```markdown
+- **Al filtrar:** sin recargar
+- **Paginación:** números
+- **Por página:** 12
+- **Filtros en móvil:** panel
+- **Estado:** pendiente
+
+**Filtros**
+
+| Filtro | Tipo | Fuente | Varios | Conteo | Vista |
+|---|---|---|---|---|---|
+| `categoria` | taxonomía | `categoria_producto` | sí (o) | dinámico | checkbox |
+| `precio` | rango | `producto_ficha_precio` | no | — | deslizador |
+| `material` | opciones | `producto_ficha_material` | sí (y) | fijo | chips |
+| `fecha` | fecha | `post_date` | — | — | select de año |
+| `q` | búsqueda | título y contenido | — | — | campo |
+| `orden` | orden | reciente, az, `producto_ficha_precio` asc, `producto_ficha_precio` desc | — | — | select |
+```
+
+- `Al filtrar`: `sin recargar` (results change as soon as a filter changes) or `botón aplicar` (only when the visitor presses the button). `Paginación`: `números`, `cargar más`, `infinito` or `ninguna`. `Por página`: a number. `Filtros en móvil`: `igual` or `panel` (a drawer; the section says `Skill: wp-modal`).
+- `Filtro`: the name in the URL (`?categoria=sillas,mesas&precio=100-300`), lowercase. Not a WordPress query var (`s`, `p`, `page`, `cat`, `tag`, `year`, `order`, `orderby`…), nor a taxonomy or content name: the search is `q`.
+- `Tipo` and `Fuente`:
+
+| Tipo | Fuente | Notes |
+|---|---|---|
+| `taxonomía` | a taxonomy of the content's row in "Contenido dinámico" (`category`, `post_tag` for the blog) | Hierarchical terms show nested when the design does. |
+| `rango` | a `number` or `range` field of the detail spec | Min–max: slider or two inputs. |
+| `opciones` | a `select`, `checkbox`, `radio`, `button_group` or `true_false` field of the detail spec | The options are the field's `Opciones: a, b, c`. |
+| `fecha` | `post_date` or a `date_picker` field | Year, month or a range, as the design shows. |
+| `búsqueda` | free text (what it searches) | One per list. |
+| `orden` | the options, comma separated: `reciente`, `antiguo`, `az`, `za`, `relevancia` or `` `campo` asc/desc `` | One per list. |
+
+- `Varios`: `no`, `sí (o)` (any of the chosen values) or `sí (y)` (all of them). Only `taxonomía` and `opciones`; a `true_false` field is always `no`. Different filters always combine with "and".
+- `Conteo`: `ninguno`, `fijo` (the total of each option) or `dinámico` (how many results each option would give with the other filters applied). Only `taxonomía` and `opciones`; follow the design (`Sillas (12)`).
+- `Vista`: how the design shows it (checkbox, radio, select, chips, slider, two inputs, field). Required.
+
+`check.mjs` validates all of it against `_shared.md` and the detail spec. A list without the table only warns (specs written before 1.6.0).
+
 ## Section block
 
 ```markdown
