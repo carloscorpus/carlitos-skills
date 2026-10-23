@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.20.1] - 2026-10-23
+
+### Corregido
+- `wp-form` 1.4.0: el `<form>` sale con `method="post"`, así que sin JavaScript los datos ya no quedan en la URL; cada envío se corta a los 25 s en vez de quedar en "Enviando..." para siempre; la vista lleva un `<noscript>` con otro canal de contacto. Detalle en `skills/wp-form/CHANGELOG.md`.
+
 ## [1.20.0] - 2026-10-22
 
 ### Agregado

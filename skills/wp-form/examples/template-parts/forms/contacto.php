@@ -12,8 +12,13 @@ defined('ABSPATH') || exit;
 $form_id = 'contacto';
 $input_class = 'w-full min-h-11 bg-white py-2 px-3 border border-[#E0E0E0] rounded-lg text-base focus:outline focus:outline-anaranjado aria-invalid:border-anaranjado';
 $privacy_url = get_privacy_policy_url();
+// Canal alternativo si el navegador no tiene JavaScript: el que indique el cliente (correo o teléfono).
+$fallback_email = 'hola@ejemplo.com';
 ?>
 <form class="relative space-y-8" <?php {{PREFIX}}_form_attrs($form_id); ?>>
+    <noscript>
+        <p class="text-sm">Para enviar este formulario necesitas activar JavaScript. También puedes escribirnos a <a class="underline" href="mailto:<?php echo esc_attr(antispambot($fallback_email)); ?>"><?php echo esc_html(antispambot($fallback_email)); ?></a>.</p>
+    </noscript>
     <p class="text-sm">Los campos con <span aria-hidden="true">*</span> son obligatorios.</p>
 
     <div class="space-y-6">
