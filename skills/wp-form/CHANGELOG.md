@@ -2,6 +2,18 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.4.0] - 2026-10-23
+
+### Corregido
+- `<prefix>_form_attrs()` imprime `method="post"`. Antes, si el JavaScript no había cargado (red lenta, otro script con error, un bloqueador), el navegador enviaba el form por GET y los datos (DNI, dirección, mensaje) quedaban en la URL, el historial, los logs del servidor y la analítica.
+- El motor JS corta cada pedido a los 25 s (`AbortSignal.timeout`). Antes, si el servidor se colgaba, el botón quedaba en "Enviando..." para siempre. Ahora vuelve, los datos se mantienen y el estado avisa que el envío pudo no llegar (`wp-form:error` con `code: 'timeout'`).
+
+### Agregado
+- La vista lleva un `<noscript>` con otro canal (correo o teléfono) para quien no tiene JavaScript. El paso 2 pregunta cuál; el ejemplo y el contrato de la vista lo incluyen.
+- Dos criterios de aceptación: `method="post"` sin JavaScript y el corte por tiempo.
+
+El motor sube a 1.4.0: `install.mjs --check` avisa a los temas con el anterior. Las vistas ya hechas no se tocan solas: hay que agregarles el `<noscript>` a mano.
+
 ## [1.3.2] - 2026-10-21
 
 ### Cambiado

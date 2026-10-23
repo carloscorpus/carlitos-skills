@@ -170,6 +170,7 @@ function {{PREFIX}}_field_rule(array $field)
 }
 
 // Atributos del <form>: identificación, endpoint y reglas para Zod.
+// method="post": si el JS no llegó a cargar, el navegador no pone los datos en la URL.
 function {{PREFIX}}_form_attrs($form_id)
 {
     $form = {{PREFIX}}_get_form($form_id);
@@ -181,7 +182,7 @@ function {{PREFIX}}_form_attrs($form_id)
     $rules = array_map('{{PREFIX}}_field_rule', $form['fields']);
 
     printf(
-        'id="%s" data-form="%s" data-ajax-url="%s" data-rules="%s" novalidate',
+        'id="%s" method="post" data-form="%s" data-ajax-url="%s" data-rules="%s" novalidate',
         esc_attr(sanitize_html_class($form_id)),
         esc_attr($form_id),
         esc_url(admin_url('admin-ajax.php')),

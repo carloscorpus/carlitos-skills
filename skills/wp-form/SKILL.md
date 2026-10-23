@@ -2,7 +2,7 @@
 name: wp-form
 description: 'Build a secure, accessible form in a WordPress theme with Vite and pnpm (contact, quote, newsletter, lead): Zod in the front and the same rules in PHP, nonce, anti-spam, double-submit protection, wp_mail and optional saved submissions. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.'
 metadata:
-  version: "1.3.2"
+  version: "1.4.0"
 ---
 
 # wp-form
@@ -35,6 +35,7 @@ Detail lives in `references/` and is read only by the step that points to it.
    - **Saved submissions in the admin:** no | all, with status sent or failed | only failed. Maps to `store`: `none` | `all` | `failed`.
    - **CRM or other integration:** none | which one and its endpoint/docs.
    - **Cloudflare or a proxy in front of the site:** yes | no. If yes, step 8 applies; without it, every visitor shares one IP and the rate limit becomes site-wide.
+   - **Channel without JavaScript:** the email or phone shown in the form's `<noscript>` (see the view contract). Never invent one.
    - **Privacy policy page:** check `get_privacy_policy_url()` in WP. If empty, ask for the page; the consent checkbox needs that link.
    - **Fields:** only if neither spec nor Figma list them: name, type, required, limits.
    Do not ask about cache: the token is always fetched fresh, so it works with and without page cache.

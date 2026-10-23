@@ -18,6 +18,10 @@ const HONEYPOT = '{{PREFIX}}_hp';
 
 const MSG_INVALID = 'Revisa los campos marcados.';
 const MSG_GENERIC = 'No pudimos enviar tu mensaje. Intenta de nuevo en unos minutos.';
+const MSG_TIMEOUT = 'El envío tardó demasiado y no sabemos si llegó. Intenta de nuevo en unos minutos.';
+
+// Si el servidor no responde en este tiempo, se corta la espera y el botón vuelve a estar activo.
+const TIMEOUT_MS = 25000;
 
 // Mismas expresiones que inc/forms.php. Espacio = solo " " (no \s, que difiere entre JS y PHP).
 const NAME_RE = /^[\p{L}\p{M} .'-]+$/u;
@@ -132,7 +136,12 @@ export function fieldSchema(rule) {
 }
 
 async function post(url, body) {
-    const response = await fetch(url, { method: 'POST', body, credentials: 'same-origin' });
+    const response = await fetch(url, {
+        method: 'POST',
+        body,
+        credentials: 'same-origin',
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
     const json = await response.json().catch(() => null);
 
     return {
@@ -335,10 +344,11 @@ function initForm(form) {
             if (res.data.code === 'expired') renewToken();
             setStatus(res.data.message || MSG_GENERIC, 'error');
             notify(form, 'wp-form:error', { status: res.status, code: res.data.code });
-        } catch {
-            setStatus(MSG_GENERIC, 'error');
+        } catch (error) {
+            const timedOut = error?.name === 'TimeoutError';
+            setStatus(timedOut ? MSG_TIMEOUT : MSG_GENERIC, 'error');
             renewToken();
-            notify(form, 'wp-form:error', { status: 0, code: 'network' });
+            notify(form, 'wp-form:error', { status: 0, code: timedOut ? 'timeout' : 'network' });
         } finally {
             if (!redirecting) setBusy(false);
         }
