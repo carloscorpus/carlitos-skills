@@ -239,4 +239,4 @@ src/js/modules/query.js       filtrar sin recargar
 
 ## Licencia
 
-La licencia de este repositorio está pendiente de definir. Hasta que se publique un archivo `LICENSE`, no se concede permiso explícito para redistribuirlo.
+La licencia de este repositorio está pendiente de definir aun. Hasta que se publique un archivo `LICENSE`, no se concede permiso explícito para redistribuirlo.
