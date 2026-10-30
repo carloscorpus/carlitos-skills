@@ -18,7 +18,7 @@ Use the header your proxy sets (`CF-Connecting-IP` for Cloudflare). Only do this
 
 ## CRM / integrations (step 9)
 
-Only if asked. Hook `<prefix>_form_submitted` (`$form_id, $data, $sent, $form`) in the same `inc/forms/<id>.php`, after the definition. Use `wp_remote_post` with a short timeout (5 s) and log failures with `<prefix>_form_log`. Data arrives already validated and sanitized. Never show integration errors to the user.
+Only if asked. Hook `<prefix>_form_submitted` (`$form_id, $data, $sent, $form`) in the same `inc/forms/<id>.php`, after the definition. Use `wp_remote_post` with a short timeout (5 s) and log failures with `<prefix>_form_log`. Data arrives already validated and sanitized; a `checkboxes` field is a list of option values (`['web', 'seo']`), use `<prefix>_form_value_text($form['fields'][$key], $value)` for its labels. Never show integration errors to the user.
 
 ## Email (step 10)
 

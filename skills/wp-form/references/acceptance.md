@@ -10,6 +10,7 @@ Copy these into the form's spec; the verifier checks each one. Used in step 11 o
 - [ ] Without JS rules (curl straight to `admin-ajax.php`), invalid data returns 422 with the same field messages; a missing or wrong nonce returns 403.
 - [ ] Valid submit: the email arrives in Mailpit with the right recipients, subject and Reply-To; the form resets and shows the success text (or redirects to the thank-you page).
 - [ ] If sending fails, the typed data stays in the form.
+- [ ] Several options (`checkboxes`, if the form has them): checking none of a required group shows "Elige al menos una opción."; more than `max` or fewer than `min` shows its message; the email lists the chosen labels separated by commas; a value that is not an option sent by curl returns 422.
 - [ ] The `<form>` has `method="post"` in the page source. With JavaScript disabled the `<noscript>` shows the other channel, and submitting never puts the data in the URL.
 - [ ] With the network throttled to "Offline" after the token arrives (or a server that does not answer), the button comes back within 25 s and the status shows the retry message.
 - [ ] Double click on submit sends one email.
@@ -17,7 +18,7 @@ Copy these into the form's spec; the verifier checks each one. Used in step 11 o
 - [ ] Sending under 3 s after the token is issued returns "Espera unos segundos…"; reusing a token after a successful submission returns "expired".
 - [ ] Rate limit: with a **different message each time** (identical content is treated as a double submit), the 11th submission in an hour from one IP is refused by default (a form may configure a different `rate_limit`).
 - [ ] Behind Cloudflare or a proxy: the `<prefix>_form_client_ip` filter is in place, so two different visitors do not share the limit.
-- [ ] Keyboard only: every field reachable with Tab; labels, the radio group's legend, errors and the status are announced by a screen reader.
+- [ ] Keyboard only: every field reachable with Tab; labels, the legend of each radio or checkbox group, errors and the status are announced by a screen reader.
 - [ ] Page source has no nonce (it is fetched on view); the form works with the page cached.
 - [ ] Saved submissions (if `store` ≠ `none`): appear under "Envíos" with status Enviado / Correo no enviado; an Editor cannot see the menu; Tools → Export Personal Data finds them by email.
 - [ ] `php -l` passes; `pnpm build` passes; Zod is the latest stable version and loads only on pages with a form.

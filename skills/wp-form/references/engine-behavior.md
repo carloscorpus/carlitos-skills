@@ -5,7 +5,7 @@ Read when you need to know what the engine already does (so you do not re-implem
 ## Built into the engine (do not re-implement or remove)
 
 - **Shared rules.** Rules travel in `data-rules`; `form.js` builds the Zod schema, `forms.php` validates with the same checks in the same order (required → max → format → min) and the same messages. Lengths count real characters (`mb_strlen` / code points), trimming removes the same whitespace on both sides (including Unicode spaces), spaces in patterns are plain spaces, and the email check in JS is a copy of WordPress `is_email()`.
-- **Sanitizing all fields** by type after validation (`sanitize_text_field`, `sanitize_textarea_field`, `sanitize_email`, phone normalized, select/radio whitelist). Undefined POST fields are ignored. Invalid UTF-8 and arrays are rejected.
+- **Sanitizing all fields** by type after validation (`sanitize_text_field`, `sanitize_textarea_field`, `sanitize_email`, phone normalized, select/radio/checkboxes whitelist). Undefined POST fields are ignored. Invalid UTF-8 is rejected, and so is a list in any field that is not `checkboxes`. A `checkboxes` field only accepts a list of option values: repeated values count once and the result keeps the order of `options`.
 - **No HTML in text.** `<` and `>` are rejected in every text field, front and back. Output is escaped in the admin; the email is plain text.
 - **Nonce + time token, fetched fresh** by AJAX when the form scrolls into view (or on first focus). Nothing secret lives in the cached HTML, so page cache never breaks the form.
 - **Anti-spam, basic layers** (they stop simple bots, not a determined attacker):

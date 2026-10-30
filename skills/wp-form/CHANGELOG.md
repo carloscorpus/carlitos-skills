@@ -2,6 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.5.0] - 2026-10-30
+
+### Agregado
+- Tipo de campo `checkboxes`: varias opciones ("elige uno o más"). Se define con `options` como un select o un radio; `required` pide al menos una, y `min` / `max` cuentan opciones marcadas (`max` 0 = sin límite). Las mismas reglas, en el mismo orden y con los mismos mensajes en Zod y en PHP: obligatorio → opción válida → máximo → mínimo.
+- La vista lo arma como los radios: `<fieldset>` + `<legend>`, una casilla por opción con `<prefix>_field_attrs($id, 'clave', $valor)` (imprime `name="clave[]"`) y un solo contenedor de error. El helper no pone `required` en cada casilla (pediría marcarlas todas).
+- El correo y los envíos guardados muestran las etiquetas elegidas separadas por comas (`<prefix>_form_value_text()`, que también usan los integradores). Un valor que no es una opción, una lista anidada o una opción repetida no pasan: lo repetido cuenta una vez y se guarda en el orden de las opciones.
+- Casos nuevos en `tests/cases.json` (72 en total), un campo de ejemplo "Temas de interés" en `examples/` y un criterio de aceptación.
+
+El motor sube a 1.5.0 (`inc/forms.php`, `inc/forms-entries.php` y `form.js`): `install.mjs --check` avisa a los temas con el anterior. Los forms ya hechos siguen igual; el tipo nuevo solo se usa si se define. Si el tema guarda envíos y va a usar `checkboxes`, actualiza también `inc/forms-entries.php` (sale como conflicto en `--dry-run`): el anterior guardaría la lista como "Array".
+
 ## [1.4.0] - 2026-10-23
 
 ### Corregido
