@@ -14,6 +14,7 @@ defined('ABSPATH') || exit;
  *
  * Para campos de texto o textarea de ACF. Devuelve HTML ya escapado (se imprime sin esc_html).
  * El marcador solo vale si no toca letras ni números por fuera: "a|b|c" y "a=b=c" quedan intactos.
+ * Los saltos de línea del textarea salen como <br>; cada parte de color va dentro de una misma línea.
  */
 
 // Estilos válidos de inc/helpers/text-styles.php: nombre => ['marker' => '|', 'class' => 'text-x'].
@@ -41,7 +42,7 @@ function {{PREFIX}}_text_styles(): array
 function {{PREFIX}}_highlight($text, ?string $only = null): string
 {
     // Se escapa una sola vez; después solo se envuelve lo ya escapado.
-    $html = esc_html((string) $text);
+    $html = esc_html(str_replace(["\r\n", "\r"], "\n", (string) $text));
     if ($html === '') {
         return '';
     }
@@ -59,5 +60,6 @@ function {{PREFIX}}_highlight($text, ?string $only = null): string
         ) ?? $html;
     }
 
-    return $html;
+    // El "Enter" del editor se ve en la web.
+    return nl2br($html);
 }

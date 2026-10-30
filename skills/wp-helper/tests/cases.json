@@ -491,6 +491,26 @@
           "expect": "||"
         },
         {
+          "name": "salto de línea del textarea",
+          "input": "Hola\nmundo",
+          "expect": "Hola<br />\nmundo"
+        },
+        {
+          "name": "salto con color en la segunda línea",
+          "input": "Terminal Portuario\ndel |Callao|",
+          "expect": "Terminal Portuario<br />\ndel <span class=\"text-anaranjado\">Callao</span>"
+        },
+        {
+          "name": "salto de Windows (CRLF) cuenta como uno",
+          "input": "a\r\nb",
+          "expect": "a<br />\nb"
+        },
+        {
+          "name": "un marcador no cruza de línea",
+          "input": "|a\nb|",
+          "expect": "|a<br />\nb|"
+        },
+        {
           "name": "null",
           "input": null,
           "expect": ""

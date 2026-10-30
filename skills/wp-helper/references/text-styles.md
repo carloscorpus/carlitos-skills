@@ -8,17 +8,23 @@ A marker is one character that encloses the part with the other color: `Negro |n
 
 The output is already escaped HTML (`<span class="…">`). It is for ACF `text` and `textarea` fields, not for WYSIWYG fields (those already carry HTML).
 
+## Line breaks
+
+A line break typed in a `textarea` (Enter) comes out as `<br>`, so the editor writes a title or paragraph of several lines in one field instead of one field per line: `Terminal Portuario` + Enter + `del |Callao|`. Use `<prefix>_highlight()` for every `textarea`, with or without colors. Leave the ACF field with `new_lines` empty: if ACF added the `<br />`, the helper would escape it and the code would show on the page.
+
 ## Markers
 
 Allowed: `*  |  ~  ^  =` (one character, same at both ends). Up to 5 styles per project, never two with the same marker.
 
 Not allowed: `& < > " '` (`esc_html` changes them), and `-  _  #  @  +  %  !` (they appear in normal text: hyphens, snake_case, hashtags, emails, prices).
 
-A marker only works when it does not touch a letter or number on the outside, so `a|b|c` and `a=b=c` stay intact. The text inside cannot start or end with a space (`| a |` is not marked), and it stays on one line. An unclosed marker is left as written.
+A marker only works when it does not touch a letter or number on the outside, so `a|b|c` and `a=b=c` stay intact. The text inside cannot start or end with a space (`| a |` is not marked), and it stays on one line: a marker never crosses a line break. An unclosed marker is left as written.
 
 ## Adding a style
 
 Ask the user: **name** (`naranja`), **marker** (one of the free ones from `install.mjs --list`) and **class** (from the design or the project's Tailwind tokens; never invent a color).
+
+When the color is already in the design's code (another skill such as `wp-acf` or `design-import` finds a part with its own color class), do not ask: the class exactly as in the code, the name from the class without `text-` (`text-anaranjado` → `anaranjado`) and the first free marker of `install.mjs --list`.
 
 ```
 node <skill>/scripts/install.mjs --add-style --name naranja --marker "|" --class text-anaranjado

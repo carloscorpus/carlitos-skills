@@ -2,6 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.2.0] - 2026-10-30
+
+### Cambiado
+- `<prefix>_highlight()` respeta los saltos de línea: el Enter que el editor escribe en un textarea sale como `<br>` en la web (un salto de Windows cuenta como uno). Así un título o párrafo de varias líneas es un solo campo, no un campo por línea. Una parte de color sigue dentro de una misma línea. Un texto de una sola línea sale igual que antes.
+- `references/text-styles.md` y el bloque de `CLAUDE.md`: todo campo textarea se imprime con `<prefix>_highlight()`, con o sin colores; el campo de ACF queda sin formato de saltos (`new_lines` vacío).
+- Motor de texto 1.2.0: los temas que ya lo tienen lo actualizan con `install.mjs --dry-run` y luego `--overwrite inc/helpers/text.php`.
+
 ## [1.1.0] - 2026-10-18
 
 ### Agregado

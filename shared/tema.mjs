@@ -35,9 +35,13 @@ export function detectTheme(target) {
         viteConfig: has('vite.config.ts') || has('vite.config.js'),
     };
 
-    const source = incFiles(target).map((path) => text(path)).join('\n');
+    const files = incFiles(target).map((path) => text(path));
+    const source = files.join('\n');
     const helperFor = (suffix) => new RegExp(`function\\s+(\\w+?)_${suffix}\\s*\\(`).exec(source)?.[1] ?? null;
     const helpers = { images: helperFor('image'), links: helperFor('link'), text: helperFor('highlight') };
+    // wp-helper 1.2.0: el helper de texto convierte los saltos de línea de un textarea en <br>.
+    const textFile = files.find((code) => /function\s+\w+?_highlight\s*\(/.test(code));
+    const textLineBreaks = textFile ? /nl2br\s*\(/.test(textFile) : null;
     const prefix = helpers.images ?? helpers.links ?? helpers.text;
 
     const claude = text(join(target, 'CLAUDE.md'));
@@ -49,6 +53,7 @@ export function detectTheme(target) {
         viteSigns: vite,
         prefix,
         helpers,
+        textLineBreaks,
         claudeMd: has('CLAUDE.md'),
         blocks,
     };

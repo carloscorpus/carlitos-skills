@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.7.0] - 2026-10-30
+
+### Cambiado
+- Un título o párrafo que el diseño parte con `<br>` es un solo campo `textarea`, no un campo por línea (`…_linea_1`, `…_linea_2`). En "valor actual" el salto se escribe `<br>`; una parte de otro color lleva su marcador de `wp-helper` dentro de su línea. Un `<br>` que el diseño solo muestra en escritorio también es un salto en celular. Un color que aún no está en `wp-helper` se agrega sin preguntar. Ver `references/campos-acf.md`.
+
+### Agregado
+- `check.mjs` avisa cuando una sección tiene campos `…_linea_1`, `…_linea_2`: deberían ser un solo textarea. La regla vive en `shared/specs.mjs` (`lineSplits`), la misma que usa `wp-acf`.
+
 ## [1.6.1] - 2026-10-22
 
 ### Agregado

@@ -344,6 +344,60 @@ try {
         assert.equal(resaltado.code, 0, resaltado.stdout);
     });
 
+    // El título del hero en dos líneas: un textarea con <br> en el spec y "\n" en la carga.
+    const multiline = all(
+        change('specs/home.md', '| `home_hero_titulo` | text | Título principal de la portada. Recomendado: ~30 caracteres | Hacemos crecer tu negocio |',
+            '| `home_hero_titulo` | textarea | Título principal de la portada. Recomendado: ~30 caracteres | Hacemos crecer<br>tu \\|negocio\\| |'),
+        change('inc/acf/seed/home.php', "'titulo' => 'Hacemos crecer tu negocio'", `'titulo' => "Hacemos crecer\\ntu |negocio|"`),
+        change('template-parts/pages/home/hero.php', "<?= esc_html($hero['titulo'] ?? '') ?>", "<?= copam_theme_highlight($hero['titulo'] ?? '') ?>"),
+    );
+
+    test('generate: un textarea con <br> en el spec avisa al editor que use Enter', () => {
+        const dir = theme(multiline);
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        const titulo = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel).fields[0].sub_fields[0];
+        assert.equal(titulo.type, 'textarea');
+        assert.equal(titulo.new_lines, '', 'los saltos los pone wp-helper, no ACF');
+        assert.equal(titulo.instructions, 'Título principal de la portada. Recomendado: ~30 caracteres. Usa Enter para pasar a otra línea.');
+    });
+
+    test('check: un textarea de varias líneas con "\\n" en la carga pasa; impreso con esc_html avisa', () => {
+        // El spec cambia antes de generar el JSON.
+        const fresh = (edit) => {
+            const dir = theme(edit);
+            assert.equal(run('generate.mjs', ['--target', dir]).code, 0);
+            return run('check.mjs', ['--target', dir]);
+        };
+        const ok = fresh(multiline);
+        assert.equal(ok.code, 0, ok.stdout);
+        assert.ok(!ok.json.warnings.some((w) => /home_hero_titulo/.test(w.message)), JSON.stringify(ok.json.warnings));
+        const plain = fresh(all(multiline, change('template-parts/pages/home/hero.php', "copam_theme_highlight($hero['titulo'] ?? '')", "esc_html($hero['titulo'] ?? '')")));
+        assert.ok(plain.json.warnings.some((w) => /home_hero_titulo: es un textarea; imprímelo con <prefix>_highlight\(\)/.test(w.message)), JSON.stringify(plain.json.warnings));
+    });
+
+    const splitTitle = change('specs/home.md', '| `home_hero_titulo` | text | Título principal de la portada. Recomendado: ~30 caracteres | Hacemos crecer tu negocio | sí |',
+        '| `home_hero_titulo_linea_1` | text | Primera línea del título | Hacemos crecer | sí |\n| `home_hero_titulo_linea_2` | text | Segunda línea del título | tu negocio | sí |');
+
+    test('check y status: un texto partido en un campo por línea avisa para unirlo', () => {
+        const r = checked(splitTitle).r;
+        assert.ok(r.json.warnings.some((w) => /home_hero_titulo_linea_1, home_hero_titulo_linea_2: es un solo texto en varias líneas/.test(w.message)), JSON.stringify(r.json.warnings));
+        const status = run('status.mjs', ['--target', theme(splitTitle)]);
+        assert.deepEqual(status.json.lineas, [{ page: 'home', section: 'hero', base: 'home_hero_titulo', fields: ['home_hero_titulo_linea_1', 'home_hero_titulo_linea_2'] }]);
+        assert.ok(status.json.next.some((n) => /Unir en un textarea los campos por línea.*home_hero_titulo_linea_1 \+ home_hero_titulo_linea_2/.test(n)), status.stdout);
+        assert.deepEqual(run('status.mjs', ['--target', theme()]).json.lineas, []);
+    });
+
+    test('status: un helper de texto sin saltos de línea pide actualizar wp-helper', () => {
+        const helper = (body) => (dir) => writeFileSync(join(dir, 'inc/text.php'), `<?php\nfunction copam_theme_highlight($t) { ${body} }\n`);
+        const old = run('status.mjs', ['--target', theme(helper('return esc_html($t);'))]);
+        assert.equal(old.json.textLineBreaks, false);
+        assert.ok(old.json.next.some((n) => /Actualizar el helper de texto de wp-helper/.test(n)), old.stdout);
+        const current = run('status.mjs', ['--target', theme(helper('return nl2br(esc_html($t));'))]);
+        assert.equal(current.json.textLineBreaks, true);
+        assert.ok(!current.json.next.some((n) => /helper de texto/.test(n)), current.stdout);
+    });
+
     test('check: una carga con la dirección absoluta del sitio es un error; rutas relativas y _page pasan', () => {
         const local = checked(change('inc/acf/seed/home.php', "['_page' => 'contacto']", "'http://copam.local/contacto/'")).r;
         assert.match(messages(local), /Enlace absoluto de desarrollo "http:\/\/copam\.local\/contacto\/"/);

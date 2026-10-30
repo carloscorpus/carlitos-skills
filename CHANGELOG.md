@@ -2,6 +2,15 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.21.0] - 2026-10-30
+
+### Cambiado
+- Textos de varias líneas: un título o párrafo que el diseño parte con `<br>` es un solo campo textarea, no un campo por línea. El cliente pasa de línea con Enter y la web muestra el salto, con las partes de otro color.
+  - `wp-helper` 1.2.0: `<prefix>_highlight()` convierte los saltos de línea en `<br>`.
+  - `design-import` 1.7.0: los specs nuevos escriben el salto como `<br>` en "valor actual"; `check.mjs` avisa si ve `…_linea_1`, `…_linea_2`.
+  - `wp-acf` 1.4.0: detecta los specs viejos con un campo por línea (`status.mjs`, `check.mjs`) y los une sin preguntar, con sus colores (un salto que solo se veía en escritorio queda también en celular; un color nuevo se agrega solo al helper); avisa si el helper de texto del tema no respeta los saltos o si un textarea se imprime con `esc_html()`.
+- `shared/specs.mjs`: `lineSplits()`, `breaks` en cada campo y lectura de `\n` en textos PHP entre comillas dobles. `shared/tema.mjs`: `textLineBreaks`.
+
 ## [1.20.1] - 2026-10-23
 
 ### Corregido

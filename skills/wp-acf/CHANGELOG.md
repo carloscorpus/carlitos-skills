@@ -2,6 +2,19 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.4.0] - 2026-10-30
+
+### Cambiado
+- Un título o párrafo de varias líneas es un solo campo `textarea`, no un campo por línea. Si el cliente escribe con Enter, la web muestra el salto: la plantilla lo imprime con `<prefix>_highlight()` de `wp-helper` 1.2.0, que también pone los colores. El campo de ACF queda sin formato de saltos (`new_lines` vacío) a propósito.
+- `generate.mjs`: un textarea con `<br>` en "valor actual" suma a sus instrucciones "Usa Enter para pasar a otra línea."
+- `references/plantillas.md`, `carga-contenido.md` (el salto va como `"…\n…"` en la carga), `mapeo-tipos.md`, el brief de subagentes y el bloque de `CLAUDE.md`.
+
+### Agregado
+- `status.mjs` lista en `lineas` los textos partidos en un campo por línea (`…_linea_1`, `…_linea_2`) y `next` pide unirlos en un textarea antes de generar, sin preguntar: el código de la plantilla ya muestra los saltos y los colores. Un salto que el diseño solo mostraba en escritorio queda en todas las pantallas; un color sin estilo en `wp-helper` se agrega solo (la clase del diseño, el nombre sin `text-` y el primer marcador libre). Al final se le dice al usuario qué se unió. `check.mjs` avisa lo mismo.
+- `status.mjs` dice si el helper de texto del tema ya respeta los saltos (`textLineBreaks`) y pide actualizar `wp-helper` cuando hay textareas y no lo hace.
+- `check.mjs` avisa cuando un textarea de una sección conectada se imprime con `esc_html()` (pierde los saltos), y lee bien un texto de la carga con `\n` entre comillas dobles.
+- Motor 1.4.0: no cambia; solo sube su número de versión (reinstalarlo es opcional).
+
 ## [1.3.2] - 2026-10-22
 
 ### Cambiado

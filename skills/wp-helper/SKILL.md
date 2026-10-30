@@ -2,7 +2,7 @@
 name: wp-helper
 description: 'Install the reusable PHP helpers of a WordPress theme, prefixed per project: safe images from ACF Pro fields (empty or deleted never breaks the view), safe accessible links (target, rel, protocols, new-tab notice) and text with parts in another color (configurable markers, no clashes). Asks which helper to include, or creates a local one. Use when a spec says `skill: wp-helper`, or the user asks for "helper", "imágenes ACF", "enlaces", "target blank", "botón", "texto de dos colores", "resaltar texto", or after wp-vite-theme.'
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # wp-helper
@@ -50,7 +50,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 
 6. **A new local helper.** Write `inc/helpers/<name>.php` following the theme's `CLAUDE.md` (prefix, `defined('ABSPATH') || exit;`, escaped output), add its `require_once` to `functions.php`, and say that it is local to the project. Do not copy it into the skill unless the user asks.
 
-7. **Use them in the views.** Only in the code you are writing: replace direct reads of ACF image fields with `<prefix>_image()`, print ACF links with `<prefix>_link()` (or `<a<?= <prefix>_link_attrs($field) ?>>` when the design puts icons inside) and print marked texts with `<prefix>_highlight()`. Do not rewrite existing views unless the user asks. Read [references/images.md](references/images.md) for the options and [references/acceptance.md](references/acceptance.md) for the acceptance criteria.
+7. **Use them in the views.** Only in the code you are writing: replace direct reads of ACF image fields with `<prefix>_image()`, print ACF links with `<prefix>_link()` (or `<a<?= <prefix>_link_attrs($field) ?>>` when the design puts icons inside) and print marked texts and every ACF `textarea` with `<prefix>_highlight()` (it keeps the line breaks the editor typed). Do not rewrite existing views unless the user asks. Read [references/images.md](references/images.md) for the options and [references/acceptance.md](references/acceptance.md) for the acceptance criteria.
 
 ## Reference
 

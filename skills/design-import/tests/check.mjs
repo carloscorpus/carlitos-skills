@@ -259,6 +259,19 @@ try {
         assert.match(messages(r), /falta la descripción/);
     });
 
+    test('check: un texto partido en un campo por línea avisa; <br> en "valor actual" no', () => {
+        const titulo = '| `home_hero_titulo` | text | Título principal de la portada. Se muestra en grande. Recomendado: ~50 caracteres | Hacemos crecer tu negocio | sí |';
+        const split = broken('lineas', edit('specs/home.md', titulo, [
+            '| `home_hero_titulo_linea_1` | text | Primera línea del título | Hacemos crecer | sí |',
+            '| `home_hero_titulo_linea_2` | text | Segunda línea del título | tu negocio | sí |',
+        ].join('\n')));
+        assert.equal(split.code, 0, split.stdout);
+        assert.ok(split.json.warnings.some((w) => /home_hero_titulo_linea_1, home_hero_titulo_linea_2: es un solo texto/.test(w.message)));
+        const joined = broken('lineas-br', edit('specs/home.md', titulo, titulo.replace('| text |', '| textarea |').replace('Hacemos crecer tu negocio', 'Hacemos crecer<br>tu negocio')));
+        assert.equal(joined.code, 0, joined.stdout);
+        assert.deepEqual(joined.json.warnings, []);
+    });
+
     test('check: falta una parte de la sección y los criterios', () => {
         const r = broken('partes', (dir) => {
             edit('specs/home.md', '- **Comportamiento:** el botón lleva a la sección contacto\n', '')(dir);
