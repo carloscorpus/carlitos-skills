@@ -66,15 +66,9 @@ function {{PREFIX}}_form_store_entry(array $form, array $data, $sent)
 {
     $rows = [];
     foreach ($form['fields'] as $key => $field) {
-        $value = $data[$key] ?? '';
-        if (is_bool($value)) {
-            $value = $value ? 'Sí' : 'No';
-        } elseif (in_array($field['type'], ['select', 'radio'], true) && $value !== '') {
-            $value = (string) ($field['options'][$value] ?? $value);
-        }
         $rows[] = [
             'label'     => $field['label'] !== '' ? $field['label'] : $key,
-            'value'     => (string) $value,
+            'value'     => {{PREFIX}}_form_value_text($field, $data[$key] ?? ''),
             'multiline' => $field['type'] === 'textarea',
         ];
     }

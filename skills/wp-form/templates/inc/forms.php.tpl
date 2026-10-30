@@ -100,6 +100,8 @@ function {{PREFIX}}_normalize_field(array $field)
         'select'   => ['invalid' => 'Elige una opción válida.'],
         'radio'    => ['invalid' => 'Elige una opción válida.'],
         'checkbox' => [],
+        // Varias opciones: min y max cuentan opciones marcadas; max 0 = sin límite.
+        'checkboxes' => ['min' => 0, 'max' => 0, 'invalid' => 'Elige una opción válida.'],
         'consent'  => ['required' => true],
     ];
 
@@ -126,7 +128,12 @@ function {{PREFIX}}_normalize_field(array $field)
         : (in_array($type, ['select', 'radio'], true) ? 'Elige una opción.' : 'Este campo es obligatorio.');
 
     // Mensajes finales: los mismos en PHP y en JS.
-    $field['messages'] = wp_parse_args((array) $field['messages'], [
+    $field['messages'] = wp_parse_args((array) $field['messages'], $type === 'checkboxes' ? [
+        'required' => 'Elige al menos una opción.',
+        'invalid'  => $field['invalid'],
+        'min'      => sprintf((int) $field['min'] === 1 ? 'Elige al menos %d opción.' : 'Elige al menos %d opciones.', (int) $field['min']),
+        'max'      => sprintf((int) $field['max'] === 1 ? 'Elige como máximo %d opción.' : 'Elige como máximo %d opciones.', (int) $field['max']),
+    ] : [
         'required' => $required,
         'invalid'  => $field['invalid'] ?? 'Valor no válido.',
         'min'      => sprintf('Debe tener al menos %d caracteres.', (int) ($field['min'] ?? 0)),
@@ -162,8 +169,12 @@ function {{PREFIX}}_field_rule(array $field)
         $rule['min_digits'] = (int) $field['min_digits'];
         $rule['max_digits'] = (int) $field['max_digits'];
     }
-    if (in_array($field['type'], ['select', 'radio'], true)) {
+    if (in_array($field['type'], ['select', 'radio', 'checkboxes'], true)) {
         $rule['options'] = array_map('strval', array_keys((array) $field['options']));
+    }
+    if ($field['type'] === 'checkboxes') {
+        $rule['min'] = (int) $field['min'];
+        $rule['max'] = (int) $field['max'];
     }
 
     return $rule;
@@ -191,7 +202,7 @@ function {{PREFIX}}_form_attrs($form_id)
 }
 
 // Atributos de un input/textarea/select. Las clases las pone la vista (vienen de Figma).
-// Para radios, pasa el valor de la opción en $option.
+// Para radios y checkboxes de varias opciones, pasa el valor de la opción en $option.
 function {{PREFIX}}_field_attrs($form_id, $key, $option = null)
 {
     $form = {{PREFIX}}_get_form($form_id);
@@ -207,6 +218,13 @@ function {{PREFIX}}_field_attrs($form_id, $key, $option = null)
     switch ($field['type']) {
         case 'radio':
             $attrs['type'] = 'radio';
+            $attrs['id'] = $id . '-' . sanitize_html_class((string) $option);
+            $attrs['value'] = (string) $option;
+            break;
+        case 'checkboxes':
+            // name[]: el navegador manda todas las marcadas como lista.
+            $attrs['type'] = 'checkbox';
+            $attrs['name'] = $key . '[]';
             $attrs['id'] = $id . '-' . sanitize_html_class((string) $option);
             $attrs['value'] = (string) $option;
             break;
@@ -237,14 +255,16 @@ function {{PREFIX}}_field_attrs($form_id, $key, $option = null)
     foreach ($attrs as $name => $value) {
         $out[] = sprintf('%s="%s"', $name, esc_attr((string) $value));
     }
-    if ($field['required']) {
+    // En un grupo de checkboxes, "required" en cada casilla pediría marcarlas todas: el
+    // obligatorio se marca en el legend y lo valida el módulo.
+    if ($field['required'] && $field['type'] !== 'checkboxes') {
         $out[] = 'required';
     }
 
     echo implode(' ', $out);
 }
 
-// Opciones de un select o radio, desde la definición: [valor => etiqueta].
+// Opciones de un select, radio o checkboxes, desde la definición: [valor => etiqueta].
 function {{PREFIX}}_field_options($form_id, $key)
 {
     $form = {{PREFIX}}_get_form($form_id);
@@ -293,6 +313,10 @@ function {{PREFIX}}_validate_field(array $field, $raw)
 {
     $m = $field['messages'];
     $type = $field['type'];
+
+    if ($type === 'checkboxes') {
+        return {{PREFIX}}_validate_choices($field, $raw);
+    }
 
     if (is_array($raw)) {
         return ['', $m['invalid']];
@@ -370,6 +394,63 @@ function {{PREFIX}}_validate_field(array $field, $raw)
         default:
             return [sanitize_text_field($value), null];
     }
+}
+
+// Varias opciones (checkboxes): llega como lista de valores; vacío = ninguna marcada.
+// Devuelve [valores en el orden de las opciones, mensaje_error|null]. Mismo orden que el JS:
+// obligatorio → opción válida → máximo → mínimo.
+function {{PREFIX}}_validate_choices(array $field, $raw)
+{
+    $m = $field['messages'];
+    if ($raw === '' || $raw === null) {
+        $raw = [];
+    }
+    if (!is_array($raw)) {
+        return [[], $m['invalid']];
+    }
+
+    $values = [];
+    foreach ($raw as $item) {
+        if (!is_string($item)) {
+            return [[], $m['invalid']];
+        }
+        $values[] = $item;
+    }
+    $values = array_values(array_unique($values));
+
+    if (!$values) {
+        return [[], $field['required'] ? $m['required'] : null];
+    }
+
+    $allowed = array_map('strval', array_keys((array) $field['options']));
+    if (array_diff($values, $allowed)) {
+        return [[], $m['invalid']];
+    }
+    if ((int) $field['max'] > 0 && count($values) > (int) $field['max']) {
+        return [[], $m['max']];
+    }
+    if (count($values) < (int) $field['min']) {
+        return [[], $m['min']];
+    }
+
+    // El orden de las opciones, no el de llegada: el correo sale siempre igual.
+    return [array_values(array_intersect($allowed, $values)), null];
+}
+
+// Valor de un campo como texto, para el correo y los envíos guardados.
+function {{PREFIX}}_form_value_text(array $field, $value)
+{
+    if (is_bool($value)) {
+        return $value ? 'Sí' : 'No';
+    }
+    if (is_array($value)) {
+        return implode(', ', array_map(static fn($item): string => (string) ($field['options'][$item] ?? $item), $value));
+    }
+    if (in_array($field['type'], ['select', 'radio'], true) && $value !== '') {
+        return (string) ($field['options'][$value] ?? $value);
+    }
+
+    return (string) $value;
 }
 
 // Valida todos los campos definidos. Los campos no definidos se ignoran.
@@ -459,13 +540,7 @@ function {{PREFIX}}_form_mail(array $form, array $data)
     $lines = [];
     foreach ($form['fields'] as $key => $field) {
         $label = $field['label'] !== '' ? $field['label'] : $key;
-        $value = $data[$key];
-
-        if (is_bool($value)) {
-            $value = $value ? 'Sí' : 'No';
-        } elseif (in_array($field['type'], ['select', 'radio'], true) && $value !== '') {
-            $value = (string) ($field['options'][$value] ?? $value);
-        }
+        $value = {{PREFIX}}_form_value_text($field, $data[$key]);
 
         $lines[] = $field['type'] === 'textarea'
             ? $label . ":\n" . $value

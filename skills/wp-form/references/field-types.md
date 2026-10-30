@@ -13,7 +13,10 @@ Used in step 5 of SKILL.md, when writing `inc/forms/<id>.php`.
 | `digits` | Only numbers (DNI, RUC, code) | digits only; set `min` = `max` for fixed length | removes non-digits |
 | `textarea` | Message | no `<` `>` or control chars, newlines allowed; `max` 1000 | — |
 | `select` / `radio` | One option | value must be one of `options` (whitelist) | — |
-| `checkbox` | Yes/no | boolean | — |
+| `checkbox` | Yes/no (one box) | boolean | — |
+| `checkboxes` | Several options ("elige uno o más") | every value must be one of `options` (whitelist); `required` = at least one; `min` / `max` count checked options (`max` 0 = no limit); stored as a list in the order of `options` | — |
 | `consent` | Privacy consent | always required | — |
+
+For `checkboxes`, `min` and `max` are numbers of options, not characters, and the default messages say so ("Elige al menos 2 opciones.", "Elige como máximo 3 opciones."). The email and the saved submission show the labels joined with commas.
 
 Every field accepts `label` (used in the email and admin), `required`, `min`, `max`, `autocomplete` and `messages` (`required`, `invalid`, `min`, `max`) to override the default Spanish messages. Form keys: `title`, `subject`, `to`, `reply_to` (field whose value goes in Reply-To, usually `email`), `store`, `redirect`, `success`, `rate_limit` (submissions per IP per hour, default 10).

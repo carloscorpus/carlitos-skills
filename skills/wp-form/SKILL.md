@@ -2,7 +2,7 @@
 name: wp-form
 description: 'Build a secure, accessible form in a WordPress theme with Vite and pnpm (contact, quote, newsletter, lead): Zod in the front and the same rules in PHP, nonce, anti-spam, double-submit protection, wp_mail and optional saved submissions. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.'
 metadata:
-  version: "1.4.0"
+  version: "1.5.0"
 ---
 
 # wp-form
@@ -60,7 +60,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 
 5. **Write the definition** `inc/forms/<id>.php` from `examples/inc/forms/contacto.php`, replacing `{{PREFIX}}` with the theme prefix. Read [references/field-types.md](references/field-types.md) for the field types, their default rules, the reserved keys and the form-level keys.
 
-6. **Write the view** `template-parts/forms/<id>.php` from `examples/template-parts/forms/contacto.php`. Read [references/view-contract.md](references/view-contract.md) first: the helpers that print the attributes, radios, required marks, consent, honeypot, submit button, status text and minimum sizes. Never hand-write the attributes the helpers print.
+6. **Write the view** `template-parts/forms/<id>.php` from `examples/template-parts/forms/contacto.php`. Read [references/view-contract.md](references/view-contract.md) first: the helpers that print the attributes, radios, several-option checkboxes, required marks, consent, honeypot, submit button, status text and minimum sizes. Never hand-write the attributes the helpers print.
 
 7. **Place it** where the spec says: `get_template_part('template-parts/forms/<id>');`.
 

@@ -55,6 +55,17 @@ add_filter('{{PREFIX}}_forms', function ($forms) {
                     'telefono' => 'Teléfono',
                 ],
             ],
+            'topics' => [
+                'type'    => 'checkboxes',            // Varias opciones: elige una o más.
+                'label'   => 'Temas de interés',
+                'max'     => 3,                       // Opcional: tope de opciones (0 = sin límite). También existe 'min'.
+                'options' => [
+                    'eficiencia'  => 'Eficiencia energética',
+                    'renovables'  => 'Energías renovables',
+                    'tarifas'     => 'Tarifas',
+                    'facturacion' => 'Facturación',
+                ],
+            ],
             'message' => [
                 'type'     => 'textarea',
                 'label'    => 'Mensaje',

@@ -6,7 +6,7 @@ defined('ABSPATH') || exit;
  * Las clases son de ejemplo: en cada proyecto salen de Figma y de los tokens del @theme.
  * Lo que no cambia es el contrato: los helpers de atributos, data-error-for, el honeypot,
  * data-form-status, el botón con data-submit-label, la leyenda de obligatorios y
- * fieldset + legend para los radios.
+ * fieldset + legend para los radios y los checkboxes de varias opciones.
  * Uso: get_template_part('template-parts/forms/contacto');
  */
 $form_id = 'contacto';
@@ -65,6 +65,20 @@ $fallback_email = 'hola@ejemplo.com';
                 <?php endforeach; ?>
             </div>
             <p class="text-sm text-anaranjado" <?php {{PREFIX}}_error_attrs($form_id, 'contact_by'); ?>></p>
+        </fieldset>
+
+        <?php // Varias opciones: como los radios, fieldset + legend y un solo contenedor de error. ?>
+        <fieldset class="flex flex-col gap-3">
+            <legend class="mb-3">Temas de interés <span class="text-sm">(elige hasta 3)</span></legend>
+            <div class="grid gap-2 sm:grid-cols-2">
+                <?php foreach ({{PREFIX}}_field_options($form_id, 'topics') as $value => $label) : ?>
+                    <label class="flex min-h-11 items-center gap-2">
+                        <input class="size-5" <?php {{PREFIX}}_field_attrs($form_id, 'topics', $value); ?>>
+                        <?php echo esc_html($label); ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            <p class="text-sm text-anaranjado" <?php {{PREFIX}}_error_attrs($form_id, 'topics'); ?>></p>
         </fieldset>
 
         <div class="flex flex-col gap-3">

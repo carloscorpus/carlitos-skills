@@ -78,6 +78,12 @@ const notify = (form, name, detail) => form.dispatchEvent(new CustomEvent(name, 
 
 const isToggle = (rule) => rule.type === 'checkbox' || rule.type === 'consent';
 
+// Campos de elección (se validan al cambiar, no al salir del campo).
+const isChoice = (rule) => isToggle(rule) || ['radio', 'select', 'checkboxes'].includes(rule.type);
+
+// Un grupo de checkboxes usa name="clave[]"; las reglas usan la clave sin [].
+const keyOf = (name) => name.replace(/\[\]$/, '');
+
 // Cuenta caracteres reales (igual que mb_strlen en PHP).
 const length = (value) => [...value].length;
 
@@ -88,6 +94,17 @@ export function fieldSchema(rule) {
 
     if (isToggle(rule)) {
         return z.boolean().refine((v) => v || !rule.required, { error: m.required });
+    }
+
+    // Varias opciones: obligatorio → opción válida → máximo → mínimo (max 0 = sin límite).
+    if (rule.type === 'checkboxes') {
+        const unique = (v) => [...new Set(v)];
+        return z
+            .array(z.string())
+            .refine((v) => v.length > 0 || !rule.required, { error: m.required, abort: true })
+            .refine((v) => v.every((item) => rule.options.includes(item)), { error: m.invalid, abort: true })
+            .refine((v) => !rule.max || unique(v).length <= rule.max, { error: m.max, abort: true })
+            .refine((v) => v.length === 0 || unique(v).length >= rule.min, { error: m.min });
     }
 
     let schema = z
@@ -210,11 +227,12 @@ function initForm(form) {
 
     /* Campos y errores */
 
-    const inputsOf = (key) => [...form.querySelectorAll(`[name="${CSS.escape(key)}"]`)];
+    const inputsOf = (key) => [...form.querySelectorAll(`[name="${CSS.escape(key)}"], [name="${CSS.escape(`${key}[]`)}"]`)];
 
     const valueOf = (key) => {
         const inputs = inputsOf(key);
         if (isToggle(rules[key])) return Boolean(inputs[0]?.checked);
+        if (rules[key].type === 'checkboxes') return inputs.filter((input) => input.checked).map((input) => input.value);
         if (rules[key].type === 'radio') return inputs.find((input) => input.checked)?.value ?? '';
         return inputs[0]?.value ?? '';
     };
@@ -258,7 +276,7 @@ function initForm(form) {
     };
 
     const onTyping = (event) => {
-        const { name } = event.target;
+        const name = keyOf(event.target.name ?? '');
         const rule = rules[name];
         if (!rule) return;
 
@@ -274,15 +292,13 @@ function initForm(form) {
     form.addEventListener('compositionend', onTyping);
 
     form.addEventListener('focusout', (event) => {
-        const { name } = event.target;
-        if (rules[name] && !isToggle(rules[name]) && rules[name].type !== 'radio') validateField(name);
+        const name = keyOf(event.target.name ?? '');
+        if (rules[name] && !isToggle(rules[name]) && !['radio', 'checkboxes'].includes(rules[name].type)) validateField(name);
     });
 
     form.addEventListener('change', (event) => {
-        const { name } = event.target;
-        if (rules[name] && (isToggle(rules[name]) || rules[name].type === 'radio' || rules[name].type === 'select')) {
-            validateField(name);
-        }
+        const name = keyOf(event.target.name ?? '');
+        if (rules[name] && isChoice(rules[name])) validateField(name);
     });
 
     /* Envío */
@@ -320,7 +336,8 @@ function initForm(form) {
             body.append(HONEYPOT, form.elements.namedItem(HONEYPOT)?.value ?? '');
             keys.forEach((key) => {
                 const value = result.data[key];
-                body.append(key, typeof value === 'boolean' ? (value ? '1' : '') : value);
+                if (Array.isArray(value)) value.forEach((item) => body.append(`${key}[]`, item));
+                else body.append(key, typeof value === 'boolean' ? (value ? '1' : '') : value);
             });
 
             const res = await post(url, body);

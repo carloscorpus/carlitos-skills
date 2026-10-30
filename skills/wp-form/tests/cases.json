@@ -9,6 +9,8 @@
     "service": { "type": "select", "required": true, "options": { "a": "Opción A", "b": "Opción B" } },
     "contact": { "type": "radio", "required": true, "options": { "email": "Correo", "phone": "Teléfono" } },
     "newsletter": { "type": "checkbox" },
+    "topics": { "type": "checkboxes", "required": true, "max": 2, "options": { "a": "Tema A", "b": "Tema B", "c": "Tema C" } },
+    "extras": { "type": "checkboxes", "min": 2, "options": { "x": "Extra X", "y": "Extra Y", "z": "Extra Z" } },
     "consent": { "type": "consent" }
   },
   "cases": [
@@ -80,6 +82,19 @@
     { "field": "newsletter", "value": false, "expect": null },
     { "field": "newsletter", "value": true, "expect": null },
     { "field": "consent", "value": false, "expect": "required" },
-    { "field": "consent", "value": true, "expect": null }
+    { "field": "consent", "value": true, "expect": null },
+
+    { "field": "topics", "value": ["a"], "expect": null },
+    { "field": "topics", "value": ["b", "a"], "expect": null },
+    { "field": "topics", "value": ["a", "a", "b"], "expect": null },
+    { "field": "topics", "value": [], "expect": "required" },
+    { "field": "topics", "value": ["a", "d"], "expect": "invalid" },
+    { "field": "topics", "value": ["a", "b", "c"], "expect": "max" },
+
+    { "field": "extras", "value": [], "expect": null },
+    { "field": "extras", "value": ["x", "z"], "expect": null },
+    { "field": "extras", "value": ["x"], "expect": "min" },
+    { "field": "extras", "value": ["x", "x"], "expect": "min" },
+    { "field": "extras", "value": ["w", "x"], "expect": "invalid" }
   ]
 }

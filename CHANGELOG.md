@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.22.0] - 2026-10-30
+
+### Agregado
+- `wp-form` 1.5.0: campo de varias opciones (`checkboxes`, "elige uno o más"), con al menos una si es obligatorio y mínimo o máximo de opciones opcionales. Mismas reglas en el navegador y en el servidor; el correo y los envíos guardados muestran las opciones elegidas. Detalle en `skills/wp-form/CHANGELOG.md`.
+
 ## [1.21.0] - 2026-10-30
 
 ### Cambiado
