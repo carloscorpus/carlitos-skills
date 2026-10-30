@@ -23,7 +23,19 @@ export function fieldChoices(description) {
     if (!list) return null;
     return Object.fromEntries(list.split(',').map((label) => label.trim()).filter(Boolean).map((label) => [slugify(label).replaceAll('-', '_') || label, label]));
 }
-export const noAccent = (value) => value.toLowerCase().replace('estatica', 'estática').replace('catalogo', 'catálogo');
+// Un texto partido en un campo por línea (`home_hero_titulo_linea_1`, `_linea_2`…) -> [{ base, fields }].
+// Debería ser un solo textarea con los saltos escritos como <br> en "valor actual".
+export function lineSplits(names) {
+    const bases = new Map();
+    for (const name of names) {
+        const base = /^(.+)_linea_?\d+$/.exec(name)?.[1];
+        if (!base) continue;
+        if (!bases.has(base)) bases.set(base, []);
+        bases.get(base).push(name);
+    }
+    return [...bases].filter(([, fields]) => fields.length > 1).map(([base, fields]) => ({ base, fields }));
+}
+export const noAccent =(value) => value.toLowerCase().replace('estatica', 'estática').replace('catalogo', 'catálogo');
 
 // Filas de una tabla Markdown, sin la cabecera ni la línea de guiones.
 export function parseTable(block) {
@@ -121,7 +133,8 @@ export function parseFilters(header) {
 }
 
 // Una página: { file, slug, prefix, labels, filters, sections }. Cada sección: { name, labels, group, state, fields }.
-// Cada campo: { name, type, description, current, required }. `filters`: parseFilters del resumen (null sin tabla).
+// Cada campo: { name, type, description, current, breaks, required }; `breaks`: el valor actual trae <br>
+// (un texto en varias líneas). `filters`: parseFilters del resumen (null sin tabla).
 export function parsePage(text, file) {
     const slug = file.replace(/\.md$/, '');
     const [header, ...blocks] = text.split(/^## Sección: /m);
@@ -133,6 +146,7 @@ export function parsePage(text, file) {
             type: unwrap(cells[1] ?? ''),
             description: normalizeText(cells[2] ?? ''),
             current: normalizeText(unwrap(cells[3] ?? '')),
+            breaks: /<br\s*\/?>/i.test(cells[3] ?? ''),
             required: ['sí', 'si'].includes((cells[4] ?? '').toLowerCase()),
         }));
         return {
@@ -171,7 +185,9 @@ export function phpLiterals(path) {
     }
     for (const [block] of read(path).matchAll(/<\?(?:php|=)[\s\S]*?(?:\?>|$)/g)) {
         for (const [, single, double] of block.matchAll(/'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"/g)) {
-            const text = (single ?? double).replace(/\\(['"\\])/g, '$1').replace(/[|*]/g, '').replace(/\s+/g, ' ').trim();
+            // Entre comillas dobles, "\n" es un salto de línea (texto de un textarea) y "\$" un signo de dólar.
+            const raw = double === undefined ? single : double.replace(/\\[nrt]/g, ' ').replace(/\\\$/g, '$');
+            const text = raw.replace(/\\(['"\\])/g, '$1').replace(/[|*]/g, '').replace(/\s+/g, ' ').trim();
             if (text.length > 1) literals.push(text);
         }
     }

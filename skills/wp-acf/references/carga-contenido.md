@@ -12,7 +12,7 @@ return [
     'page'   => 'home',                        // the page spec slug; or 'option' => true for an options page
     'fields' => [
         'home_hero' => [                       // one entry per section group, the spec's `Grupo`
-            'titulo_linea_1' => 'Terminal Portuario',
+            'titulo'         => "Terminal Portuario\ndel |Callao|",   // textarea en dos líneas
             'descripcion'    => '|COPAM S.A.| opera el *Terminal Portuario*',
             'boton'          => ['title' => 'Tarifario vigente', 'url' => ['_page' => 'tarifario']],
             'slides'         => [
@@ -23,8 +23,9 @@ return [
 ];
 ```
 
-- Keys inside a group are the **subfield names** (`titulo_linea_1`, not `home_hero_titulo_linea_1`). A repeater is a list of rows keyed by subfield name.
+- Keys inside a group are the **subfield names** (`titulo`, not `home_hero_titulo`). A repeater is a list of rows keyed by subfield name.
 - Text values are the exact text the template had, including the highlight markers of `wp-helper` (`|…|`, `*…*`): they are stored as written and `<prefix>_highlight()` prints them.
+- A `<br>` in the spec's "valor actual" is a real line break in the seed: write that value in double quotes with `\n` (`"Terminal Portuario\ndel |Callao|"`) and escape a dollar sign as `\$`. Every other text stays in single quotes.
 - `['_file' => 'assets/…', 'alt' => '…']` becomes an attachment: the engine uploads the theme file to the Media Library once (marked, so it is never duplicated), sets the alt text if empty and stores its ID. Use it for `image`, `file` and `gallery` rows. A file the WordPress upload rules reject (SVG without a plugin) is skipped and reported.
 - `['_page' => 'tarifario']` becomes that page's **relative path** (`/tarifario/`; the page spec slug; `home` is the front page, `/`). Use it as the `url` of a `link`. It never stores a domain, so the value does not depend on local or production. A path that is not a WordPress page is a plain relative string (`'url' => '/tarifario/'`); an external link is a plain `'url' => 'https://…'`.
 - Never write an absolute URL of the site itself (`http://copam.local/…`, `localhost`, the production domain): `check.mjs` reports it.

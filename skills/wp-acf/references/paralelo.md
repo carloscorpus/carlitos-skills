@@ -19,7 +19,7 @@ Step 5 of the flow (connecting each page's templates) can run in parallel once t
 
 > Connect the page `<slug>` of the theme to ACF.
 > Read `<skill>/references/plantillas.md`, `carga-contenido.md` and `mapeo-tipos.md`, `specs/<slug>.md` and the templates named in each section's `Destino`. The JSON for this page is already generated: the groups are in `acf-json/` and the section group names are in the spec (`Grupo`).
-> For each section with `Estado: aplicado`: move every text, image, file and link of its template into `inc/acf/seed/<slug>.php` (`'page' => '<slug>'`, one entry per section group, subfield names as keys, `_file` and `_page` markers), replace them in the template with `get_field('<group>')` and the `wp-helper` helpers, keep the markup and classes exactly as they were, and set `**ACF:** conectado` in the section of the spec.
+> For each section with `Estado: aplicado`: move every text, image, file and link of its template into `inc/acf/seed/<slug>.php` (`'page' => '<slug>'`, one entry per section group, subfield names as keys, `_file` and `_page` markers), replace them in the template with `get_field('<group>')` and the `wp-helper` helpers (every `textarea` through `<prefix>_highlight()`, so its line breaks show), keep the markup and classes exactly as they were, and set `**ACF:** conectado` in the section of the spec.
 > Do not invent fields: if content in the template has no row in the section's table, report it. Do not edit shared files. Run `node <skill>/scripts/check.mjs --page <slug>` and `php -l` on every file you wrote (say so if `php` is not available).
 > Answer with: the sections connected, the check result, content without a field, and anything you could not decide.
 

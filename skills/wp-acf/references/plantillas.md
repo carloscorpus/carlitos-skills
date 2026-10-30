@@ -9,7 +9,7 @@ defined('ABSPATH') || exit;
 $hero = get_field('home_hero') ?: [];
 ?>
 <section …>
-    <h1><?= esc_html($hero['titulo_linea_1'] ?? '') ?></h1>
+    <h1><?= <prefix>_highlight($hero['titulo'] ?? '') ?></h1>
     <p><?= <prefix>_highlight($hero['descripcion'] ?? '') ?></p>
     <?php foreach ((array) ($hero['slides'] ?? []) as $slide) : ?>
         <?= <prefix>_image($slide['imagen'] ?? null, ['class' => 'size-full object-cover', 'alt' => $slide['alt'] ?? '']) ?>
@@ -23,7 +23,8 @@ $hero = get_field('home_hero') ?: [];
 - One `get_field('<group>')` per section (the group is the section's `Grupo`). Its keys are the subfield names. Options-page groups: `get_field('<group>', 'option')`; the check fails without `'option'`.
 - No fixed text and no fallback text in the code: an empty field prints nothing. Layout words that are not content (a visually hidden label such as "se abre en una pestaña nueva") stay in the template and in `__()`.
 - Images through `<prefix>_image($campo, [...])` and links through `<prefix>_link()` / `<prefix>_link_attrs()` of `wp-helper`; never `$campo['url']` or `wp_get_attachment_image_url()` in a view. Pass `'loading' => 'eager'` on the first screen's main image. An image or link that is empty must not leave a broken element: wrap it in a condition when the surrounding markup would be empty.
-- Text with highlighted parts: `<prefix>_highlight()` (already escaped); everything else `esc_html()`, `esc_url()`, `esc_attr()`.
+- Text with highlighted parts **and every `textarea`**: `<prefix>_highlight()` (already escaped; it turns the editor's Enter into `<br>`). Everything else `esc_html()`, `esc_url()`, `esc_attr()`. A `textarea` printed with `esc_html()` loses its line breaks: `check.mjs` warns.
+- A text the design breaks with `<br>` is one `textarea`: remove the `<br>` from the template and print the field once; the break lives in the content (`"línea 1\nlínea 2"` in the seed). Never one field per line. A `<br>` the design showed only on desktop becomes a break on every screen too. A part with its own color class (`<span class="text-anaranjado">`) becomes that style's marker in the content and the `<span>` leaves the template.
 - A repeater is a `foreach` over `(array) ($group['<repeater>'] ?? [])`. A repeated card stays a component (`get_template_part('template-parts/components/…', null, $args)`) fed from the rows.
 - A component receives its data by `$args`, as before: the section reads ACF and passes the values down. A component never calls `get_field` itself, unless its only job is to print one site-wide option.
 - Keep classes, attributes, animations hooks (`data-…`) and the markup exactly as they were: the look must not change.

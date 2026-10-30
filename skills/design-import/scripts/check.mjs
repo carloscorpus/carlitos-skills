@@ -16,7 +16,7 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { fail } from './lib/common.mjs';
 import {
-    FILTER_TYPES, ORDER_KEYWORDS, labels, noAccent, normalizeText, parseDynamicContent, parseFilters, parseTable, phpLiterals, phpTexts, read, unwrap,
+    FILTER_TYPES, ORDER_KEYWORDS, labels, lineSplits, noAccent, normalizeText, parseDynamicContent, parseFilters, parseTable, phpLiterals, phpTexts, read, unwrap,
 } from './lib/specs.mjs';
 
 let args;
@@ -262,6 +262,9 @@ for (const name of pageFiles) {
             if (!['sí', 'si', 'no'].includes((required ?? '').toLowerCase())) error(where, `${field}: "Requerido" debe ser sí o no.`);
             const value = normalizeText(unwrap(current ?? ''));
             if (TEXT_TYPES.has(fieldType) && value && value !== '—') sectionTexts.push({ field, value });
+        }
+        for (const { base, fields } of lineSplits(rowNames)) {
+            warn(where, `${fields.join(', ')}: es un solo texto en varias líneas. Usa un campo textarea "${base}" y escribe los saltos como <br> en "valor actual".`);
         }
 
         const criteria = [...(criteriaBlock ?? '').matchAll(/^- \[( |x|X)\] .+$/gm)];

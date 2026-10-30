@@ -19,6 +19,7 @@ The specs describe the fields; they do not create them. The ACF step later turns
 |---|---|
 | Short single-line text (title, label, button text alone) | `text` |
 | Paragraph without formatting | `textarea` |
+| Title or paragraph split into lines with `<br>` | one `textarea` (never one field per line) |
 | Text with bold, lists or links inside | `wysiwyg` |
 | Image (photo, illustration, icon file) | `image` |
 | Button or link (text + URL + target together) | `link` |
@@ -29,6 +30,16 @@ The specs describe the fields; they do not create them. The ACF step later turns
 | Number, email, date | `number`, `email`, `date_picker` |
 
 Text with parts in another color is a normal `text`/`textarea`; the markers come from `wp-helper`'s text helper.
+
+### Text in several lines
+
+A title or paragraph the design splits with `<br>` is **one** `textarea`, not `…_linea_1`, `…_linea_2`. Write each break as `<br>` in "valor actual"; the editor will press Enter in the admin and `wp-helper` prints it as a line break. A part in another color keeps its marker inside its line:
+
+| Campo | Tipo | Descripción | Valor actual | Requerido |
+|---|---|---|---|---|
+| `home_hero_titulo` | textarea | Título principal de la portada, en dos líneas. Usa Enter para pasar a otra línea. Recomendado: ~40 caracteres | Terminal Portuario<br>del |Callao| | sí |
+
+A `<br>` the design shows only on some screens (a class such as `hidden md:block`) is a break on every screen too: write it as `<br>` and mobile shows the same lines as desktop. A part with its own color class is written with that style's marker; if the style does not exist yet, add it with `wp-helper` without asking (the class from the design, the name without `text-`, the first free marker). `check.mjs` warns when a section has `_linea_1`, `_linea_2`… fields.
 
 ## Description
 

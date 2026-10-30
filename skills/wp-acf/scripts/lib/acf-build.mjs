@@ -57,6 +57,8 @@ const choicesOf = (row) => fieldChoices(row.description);
 function typeProps(row, errors) {
     switch (row.type) {
         case 'text': return { default_value: '', maxlength: '', ...noBindings, placeholder: '', prepend: '', append: '' };
+        // new_lines vacío a propósito: <prefix>_highlight() de wp-helper convierte los saltos en <br>; si ACF
+        // pusiera los <br />, el helper los escaparía y se verían en la web.
         case 'textarea': return { default_value: '', maxlength: '', ...noBindings, placeholder: '', rows: 4, new_lines: '' };
         case 'wysiwyg': return { default_value: '', ...noBindings, tabs: 'all', toolbar: 'full', media_upload: 1, delay: 0 };
         case 'number': return { default_value: '', min: '', max: '', ...noBindings, placeholder: '', step: '', prepend: '', append: '' };
@@ -83,15 +85,19 @@ function typeProps(row, errors) {
     }
 }
 
+const ENTER_HINT = 'Usa Enter para pasar a otra línea.';
+
 // Un campo del spec -> un campo de ACF. `children` son las filas hijas (repeater o group).
 function buildField(row, name, children, errors) {
+    // Un textarea con varias líneas en el diseño (<br> en "valor actual") le dice al editor cómo cortar la línea.
+    const multiline = row.type === 'textarea' && row.breaks && !/\benter\b/i.test(row.description);
     const field = {
         key: keyOf('field', row.name),
         label: humanize(name),
         name,
         'aria-label': '',
         type: row.type,
-        instructions: row.description,
+        instructions: multiline ? `${row.description.replace(/\.?$/, '.')} ${ENTER_HINT}` : row.description,
         required: row.required ? 1 : 0,
         conditional_logic: 0,
         wrapper: { width: '', class: '', id: '' },

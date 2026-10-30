@@ -19,7 +19,7 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { fail, toList } from './lib/common.mjs';
 import { buildAll, flattenGroup, locationFor } from './lib/acf-build.mjs';
-import { hasSpecs, loadSpecs, normalizeText, phpLiterals, phpTexts, read, unwrap } from './lib/specs.mjs';
+import { hasSpecs, lineSplits, loadSpecs, normalizeText, phpLiterals, phpTexts, read, unwrap } from './lib/specs.mjs';
 
 let args;
 try {
@@ -144,6 +144,9 @@ for (const page of pages) {
         if (section.state === 'descartado' || !section.group || section.group === 'ninguno') continue;
         sectionCount++;
         const where = `${page.file} › ${section.name}`;
+        for (const { base, fields } of lineSplits(section.fields.map((f) => f.name))) {
+            warn(where, `${fields.join(', ')}: es un solo texto en varias líneas: únelo en un textarea "${base}" (saltos como <br> en "valor actual", colores con los marcadores de wp-helper).`);
+        }
         const acf = unwrap(section.labels.ACF ?? '');
         if (acf !== 'conectado') {
             if (section.state === 'aplicado') warn(where, 'La sección está aplicada pero no conectada a ACF (falta "ACF: conectado" en el spec).');
@@ -159,6 +162,12 @@ for (const page of pages) {
         const match = reads.exec(code);
         if (found.length && !match) error(where, `La plantilla no lee el grupo: falta get_field('${section.group}'${isOption ? ", 'option'" : ''}).`);
         else if (match && isOption && !/['"]option['"]/.test(match[1] ?? '')) error(where, `El grupo ${section.group} está en una página de opciones: lee get_field('${section.group}', 'option').`);
+
+        // Un textarea se imprime con <prefix>_highlight(): esc_html() pierde los saltos de línea que escribe el editor.
+        for (const field of section.fields.filter((f) => f.type === 'textarea')) {
+            const sub = field.name.includes('.') ? field.name.slice(field.name.lastIndexOf('.') + 1) : field.name.slice(section.group.length + 1);
+            if (new RegExp(`esc_html\\(\\s*\\$\\w+\\[\\s*['"]${escapeRe(sub)}['"]`).test(code)) warn(where, `${field.name}: es un textarea; imprímelo con <prefix>_highlight() para que se vean los saltos de línea.`);
+        }
 
         const texts = section.fields.filter((f) => ['text', 'textarea', 'wysiwyg'].includes(f.type) && f.current && f.current !== '—');
         const templateText = [...found.flatMap((p) => phpTexts(join(target, p))), ...found.flatMap((p) => phpLiterals(join(target, p)))].join(' ');
