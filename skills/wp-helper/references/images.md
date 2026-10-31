@@ -18,7 +18,7 @@ Returns `['id', 'url', 'alt', 'width', 'height']`, or `null` when there is no us
 | SVG | url with no `width` / `height` |
 | `javascript:` or any other protocol | `null` |
 
-The alt text comes from the ACF array, then from the attachment's alt, then `''`. An empty alt means decorative image; the helper never uses the file name.
+The alt text of `_image_data()` comes from the ACF array, then from the attachment's alt, then `''`. An empty alt means decorative image; the helper never uses the file name. `_image()` adds the `alt` and `alt_fallback` args on top (below).
 
 So switching an ACF field's return format (Array / ID / URL) does not break the views.
 
@@ -31,6 +31,7 @@ Returns an escaped `<img>` or `''`, so `echo` is always safe (the helper's outpu
 | `size` | any registered image size | `'full'` |
 | `class` | classes | none (no empty `class=""`) |
 | `alt` | text; `''` forces decorative | the image's alt |
+| `alt_fallback` | text used only when the image has no alt of its own | `''` |
 | `loading` | `lazy` \| `eager` | `lazy` |
 | `fetchpriority` | `high` \| `low` \| `auto` | not printed |
 | `sizes` | `sizes` attribute (needs an ID) | not printed |
@@ -47,6 +48,30 @@ With an ID, WordPress adds `srcset`, `sizes`, `width` and `height` (no layout sh
 ```
 
 Use `loading => 'eager'` (and `fetchpriority => 'high'`) only on the main image above the fold; everything else stays lazy.
+
+## Alt text when the client leaves it empty
+
+The client often replaces an image and never writes its alt. Order used by `_image()`:
+
+1. `alt` given by the call, even `''` (an explicit `''` is a decorative image on purpose, the fallback is not applied).
+2. The image's own alt (ACF array, then the attachment's alt from the Media Library). A real alt always beats the fallback.
+3. `alt_fallback`, trimmed.
+4. `''`.
+
+The helper only gives the tool; the view decides the text, because it depends on the design:
+
+| Case | `alt_fallback` |
+|---|---|
+| One image in a section | the section's title |
+| Several equal images (gallery, slider) | the title plus the position: `$title . ', ' . sprintf(__('foto %d de %d', 'tema'), $i + 1, $n)` |
+| Each image is a card or sub-section | that card's own title |
+| Decorative (ornament, background) | none: pass `'alt' => ''` |
+
+```php
+<?= demo_image($hero['imagen'] ?? null, ['alt_fallback' => $hero['titulo'] ?? '']) ?>
+```
+
+The text must come from a content field (the title the client already manages), never fixed text in the view.
 
 ## Out of scope
 

@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.0] - 2026-10-30
+
+### Agregado
+- `<prefix>_image()` acepta `alt_fallback`: texto de respaldo que se usa solo cuando la imagen no tiene alt propio (ni en el array de ACF ni en la biblioteca de medios). Orden: `alt` de la llamada (aunque sea `''`, que sigue siendo decorativa) > alt de la imagen > `alt_fallback` > `''`. Sirve para que una imagen que el cliente reemplaza sin escribir el alt use el título de su sección en vez de quedar vacía.
+- `references/images.md`: qué texto pasar según el caso (una imagen, varias iguales, tarjetas, decorativas); criterio de aceptación y bloque de `CLAUDE.md` actualizados; casos nuevos en `tests/cases.json`.
+
+### Cambiado
+- Motor de imágenes 1.3.0: los temas que ya lo tienen lo actualizan con `install.mjs --dry-run` y luego `--overwrite inc/helpers/images.php`.
+
 ## [1.2.0] - 2026-10-30
 
 ### Cambiado
