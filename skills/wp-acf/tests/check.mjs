@@ -110,6 +110,44 @@ try {
         assert.equal(slides.type, 'repeater');
         assert.deepEqual(slides.sub_fields.map((f) => [f.name, f.type]), [['imagen', 'image'], ['alt', 'text']]);
         assert.equal(slides.max, 0, 'sin límite de filas');
+        assert.equal(slides.min, 0, 'sin mínimo de filas');
+    });
+
+    test('generate: "Máximo" y "Mínimo" en la fila de un repetidor ponen sus límites de filas', () => {
+        const row = '| `home_hero_slides` | repeater | Fotos del slider | — | sí |';
+        const withText = (text) => change('specs/home.md', row, row.replace('Fotos del slider', text));
+        const slidesOf = (text) => {
+            const dir = theme(withText(text));
+            const r = run('generate.mjs', ['--target', dir]);
+            assert.equal(r.code, 0, r.stdout);
+            return readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel).fields[0].sub_fields[2];
+        };
+        const both = slidesOf('Fotos del slider. Máximo: 6. Mínimo: 2');
+        assert.deepEqual([both.min, both.max], [2, 6]);
+        assert.match(both.instructions, /Máximo: 6/, 'el texto sigue en la ayuda del campo');
+        const short = slidesOf('Fotos del slider. Máx. 4 filas');
+        assert.deepEqual([short.min, short.max], [0, 4]);
+        const onlyMin = slidesOf('Fotos del slider. mínimo de 3');
+        assert.deepEqual([onlyMin.min, onlyMin.max], [3, 0]);
+        const prose = slidesOf('Fotos del slider, el máximo permitido por el diseño');
+        assert.deepEqual([prose.min, prose.max], [0, 0], 'una palabra sin número no es un límite');
+
+        // Fuera de un repetidor no se aplica ni da error.
+        const dir = theme(change('specs/home.md', 'Recomendado: ~30 caracteres', 'Máximo: 3'));
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        const titulo = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel).fields[0].sub_fields[0];
+        assert.equal(titulo.maxlength, '');
+    });
+
+    test('generate: un límite de filas inválido es un error', () => {
+        const row = '| `home_hero_slides` | repeater | Fotos del slider | — | sí |';
+        const bad = (text) => run('generate.mjs', ['--target', theme(change('specs/home.md', row, row.replace('Fotos del slider', text))), '--dry-run']);
+        const zero = bad('Fotos del slider. Máximo: 0');
+        assert.equal(zero.code, 4, zero.stdout);
+        assert.match(messages(zero), /home_hero_slides: "Máximo" debe ser un número de 1 o más/);
+        const swapped = bad('Fotos del slider. Mínimo: 5. Máximo: 3');
+        assert.match(messages(swapped), /"Mínimo" \(5\) no puede ser mayor que "Máximo" \(3\)/);
     });
 
     test('generate: ubicaciones de opciones y de tipo de contenido', () => {
@@ -289,6 +327,14 @@ try {
         assert.match(messages(edited((json) => { json.fields[0].sub_fields[0].type = 'textarea'; })), /home_hero_titulo: el spec dice text y el JSON textarea/);
         assert.match(messages(edited((json) => { json.fields[0].sub_fields[0].required = 0; })), /home_hero_titulo: "Requerido" no coincide/);
         assert.match(messages(edited((json) => { json.location = [[{ param: 'page_type', operator: '==', value: 'posts_page' }]]; })), /La ubicación del JSON no coincide/);
+        assert.match(messages(edited((json) => { json.fields[0].sub_fields[2].max = 3; })), /home_hero_slides: el spec dice mínimo 0 y máximo 0 .* y el JSON 0 y 3/);
+    });
+
+    test('check: un límite de filas escrito en el spec después de generar pide generar de nuevo', () => {
+        const row = '| `home_hero_slides` | repeater | Fotos del slider | — | sí |';
+        const { r } = checked(change('specs/home.md', row, row.replace('Fotos del slider', 'Fotos del slider. Máximo: 6')));
+        assert.equal(r.code, 4);
+        assert.match(messages(r), /home_hero_slides: el spec dice mínimo 0 y máximo 6 .* y el JSON 0 y 0: corre generate\.mjs/);
     });
 
     test('check: claves repetidas entre archivos', () => {

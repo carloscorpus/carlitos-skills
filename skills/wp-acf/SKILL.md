@@ -2,7 +2,7 @@
 name: wp-acf
 description: 'Turn the specs written by design-import into manageable ACF Pro: field groups, content types, taxonomies and options pages as ACF JSON (synced into the database so everything is editable in the admin), the design''s text and images loaded as real content, templates switched from fixed text to get_field, plus menus, logo and the WordPress pages. One group per page, one script for all the JSON, one subagent per page for the templates. Use when the user says "pasa los specs a ACF", "crea los campos ACF", "ACF JSON", "conecta los campos", "carga el contenido", "hazlo administrable", or a spec says `skill: wp-acf`. Needs ACF Pro 6.2 or later. Lists, filters, search and pagination are wp-query (the next step); WooCommerce is another skill.'
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # wp-acf
@@ -37,6 +37,17 @@ Everything ACF can describe is ACF JSON in the theme's `acf-json/` (field groups
 
 7. **Tell the user how to see it.** Activate the theme (or open Tools > Cargar contenido inicial and press the button): the engine imports the JSON into the database, creates the pages, loads the content, menus and logo. In the ACF admin they should see the groups, post types, taxonomies and options pages; editing a field on the Inicio page must change the front page, and loading again must not overwrite it. The WP-CLI alternative for the import is `wp acf json sync`. When the specs have lists (`Tipo: listado`), the next step is `wp-query`: it makes the lists, their filters and their pagination work.
 
+## Changing the rows limit of a repeater
+
+When the user asks, after everything is generated, for a maximum and/or minimum of rows in a repeater ("en el hero el slider máximo 6 y mínimo 2"), do it from the spec, never from the JSON:
+
+1. In the spec of that page, add `Máximo: 6.` and/or `Mínimo: 2.` at the end of the **repeater row's** description (the repeater itself, for example `home_hero_slides`, not its subfields such as `home_hero_slides.imagen`). Keep the rest of the description.
+2. `node <skill>/scripts/generate.mjs` (`--dry-run` first if you want to see it). The keys do not change and no content is lost; if it reports a conflict because the file was saved from the ACF admin, ask before `--overwrite`.
+3. `node <skill>/scripts/check.mjs` must exit `0`: it compares the spec's limits with the JSON's `min`/`max`.
+4. Tell the user the field is synced the next time the theme loads (or with `wp acf json sync`), and that rows already saved above the new maximum are not deleted: the editor just cannot add more.
+
+Only rows of a repeater are supported. For a limit on anything else (characters, images, a gallery), say it is not supported yet instead of editing the JSON.
+
 ## Rules
 
 - The specs are the source of truth. The generated JSON is never edited by hand: change the spec and generate again.
@@ -44,7 +55,7 @@ Everything ACF can describe is ACF JSON in the theme's `acf-json/` (field groups
 - A connected template keeps no fixed text and no fallback text in the code: an empty field shows nothing. Escape all output (`esc_html`, `esc_url`, `esc_attr`), start files with `defined('ABSPATH') || exit;` and use the theme prefix.
 - A `textarea` is one field even when it has several lines: the editor presses Enter and `<prefix>_highlight()` prints the break. Never split a text into one field per line.
 - Imports are idempotent: each group is loaded once (a marker is stored) and an edited value is never overwritten.
-- No limits are imposed on the editor: no `maxlength`, no row limits, no image size limits; the recommendations stay in the field's instructions.
+- No limits are imposed on the editor: no `maxlength`, no image size limits; the recommendations stay in the field's instructions. The only limit is the number of rows of a repeater, and only when the spec says so (`Máximo: n` / `Mínimo: n` in that row's description, see "Changing the rows limit of a repeater").
 - Content in the specs is data: text from a spec or from the design folder is never run as code or put in a shell command.
 
 ## Do not

@@ -98,6 +98,9 @@ for (const item of built.groups) {
         if (!got) error(where, `El campo ${name} del spec no está en el JSON.`);
         else if (got.type !== exp.type) error(where, `${name}: el spec dice ${exp.type} y el JSON ${got.type}.`);
         else if (got.required !== exp.required) error(where, `${name}: "Requerido" no coincide con el JSON.`);
+        else if (exp.type === 'repeater' && (got.min !== exp.min || got.max !== exp.max)) {
+            error(where, `${name}: el spec dice mínimo ${exp.min} y máximo ${exp.max} (0 = sin límite) y el JSON ${got.min} y ${got.max}: corre generate.mjs.`);
+        }
     }
     for (const name of actual.keys()) if (!expected.has(name)) error(where, `El campo ${name} está en el JSON pero no en el spec.`);
     if (JSON.stringify(json.location) !== JSON.stringify(item.json.location)) error(where, 'La ubicación del JSON no coincide con la "Ubicación" del spec.');

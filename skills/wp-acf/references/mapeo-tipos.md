@@ -13,7 +13,7 @@ The type column of a spec's "Campos ACF" table is the ACF field type. `generate.
 | `true_false` | switch (`ui`) | the "valor actual" `sí`/`no` is the initial state |
 | `select`, `radio`, `checkbox`, `button_group` | return `value` | the description ends with `Opciones: a, b, c`; values are the slug of each label |
 | `oembed`, `date_picker`, `color_picker` | the same type | date format `d/m/Y` |
-| `repeater` | block layout, button "Añadir fila" | rows `name.sub` are its subfields; no min or max |
+| `repeater` | block layout, button "Añadir fila" | rows `name.sub` are its subfields; `min`/`max` of rows only if its description says `Mínimo: n` / `Máximo: n`, otherwise none |
 | `group` | block layout | rows `name.sub` are its subfields |
 
 Anything else (`post_object`, `relationship`, `taxonomy`, `page_link`, `user`, `google_map`, `tab`, `accordion`, `flexible_content`, `clone`, `message`, `password`, time pickers) stops `generate.mjs` with a clear error. Do not work around it in the JSON: either change the spec to a supported type or ask the user to add that field by hand in the ACF admin and tell them the regenerated group will conflict with it.
