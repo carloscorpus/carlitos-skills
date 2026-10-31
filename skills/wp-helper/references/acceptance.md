@@ -15,6 +15,7 @@ Copy the items that apply into the spec of the page or section that uses the hel
 - [ ] With the field empty, the page renders with no PHP warning and no broken `<img>`.
 - [ ] The main image of the page uses `'loading' => 'eager'`; the rest stay lazy.
 - [ ] Decorative images have `alt` empty on purpose; informative ones have real alt text.
+- [ ] Informative images pass `alt_fallback` (section title, title plus position, or the card's title) so an image the client replaces without alt does not end up with `alt=""`.
 
 ## Links
 

@@ -2,7 +2,7 @@
 name: wp-helper
 description: 'Install the reusable PHP helpers of a WordPress theme, prefixed per project: safe images from ACF Pro fields (empty or deleted never breaks the view), safe accessible links (target, rel, protocols, new-tab notice) and text with parts in another color (configurable markers, no clashes). Asks which helper to include, or creates a local one. Use when a spec says `skill: wp-helper`, or the user asks for "helper", "imágenes ACF", "enlaces", "target blank", "botón", "texto de dos colores", "resaltar texto", or after wp-vite-theme.'
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # wp-helper

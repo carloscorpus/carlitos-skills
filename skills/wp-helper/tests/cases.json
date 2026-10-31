@@ -400,6 +400,61 @@
       "notContains": [
         "width="
       ]
+    },
+    {
+      "name": "alt_fallback: sin alt de la imagen usa el respaldo",
+      "input": "https://x.test/z.png",
+      "args": {
+        "alt_fallback": "Título de la sección"
+      },
+      "contains": [
+        "alt=\"Título de la sección\""
+      ]
+    },
+    {
+      "name": "alt_fallback: el alt del adjunto gana al respaldo",
+      "input": 10,
+      "args": {
+        "alt_fallback": "Título de la sección"
+      },
+      "contains": [
+        "alt=\"Foto A\""
+      ],
+      "notContains": [
+        "Título de la sección"
+      ]
+    },
+    {
+      "name": "alt_fallback: alt vacío explícito sigue siendo decorativa",
+      "input": "https://x.test/z.png",
+      "args": {
+        "alt": "",
+        "alt_fallback": "Título de la sección"
+      },
+      "contains": [
+        "alt=\"\""
+      ],
+      "notContains": [
+        "Título de la sección"
+      ]
+    },
+    {
+      "name": "alt_fallback: se escapa",
+      "input": "https://x.test/z.png",
+      "args": {
+        "alt_fallback": "<b>x</b>"
+      },
+      "contains": [
+        "alt=\"&lt;b&gt;x&lt;/b&gt;\""
+      ]
+    },
+    {
+      "name": "alt_fallback: respaldo vacío o solo espacios deja el alt vacío",
+      "input": "https://x.test/z.png",
+      "args": {
+        "alt_fallback": "   "
+      },
+      "equals": "<img src=\"https://x.test/z.png\" alt=\"\" loading=\"lazy\" decoding=\"async\">"
     }
   ],
   "groups": [

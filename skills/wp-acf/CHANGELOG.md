@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.5.0] - 2026-10-30
+
+### Cambiado
+- Las plantillas pasan `alt_fallback` a `<prefix>_image()` (`wp-helper` 1.3.0): si el cliente cambia una imagen y no escribe el alt, se usa el título de su sección (una imagen), título más posición (varias iguales) o el título de su tarjeta (cada imagen es una sub-sección). Las decorativas siguen con `'alt' => ''`. El campo alt vacío se pasa como `null`, no como `''`, para que el respaldo aplique.
+- `references/plantillas.md`: regla nueva "Alt text of images" y ejemplo corregido; la regla de "sin texto de respaldo" admite el `alt_fallback` porque sale de un campo de contenido.
+
 ## [1.4.0] - 2026-10-30
 
 ### Cambiado
