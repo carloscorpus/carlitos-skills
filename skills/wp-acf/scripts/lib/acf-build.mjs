@@ -54,6 +54,21 @@ const noBindings = { allow_in_bindings: 0 };
 
 const choicesOf = (row) => fieldChoices(row.description);
 
+// "Fotos del slider. Máximo: 6. Mínimo: 2" -> { min: 2, max: 6 } (0 = sin límite). También "Máx. 6" y "Máximo de 6 filas".
+// Solo cuenta un número pegado a la palabra: "el máximo permitido" no es un límite.
+export function rowLimits(description) {
+    const read = (word) => {
+        const value = new RegExp(`\\b${word}(?:imo|\\.)?\\s*:?\\s*(?:de\\s+)?(\\d+)`, 'i').exec(description)?.[1];
+        return value === undefined ? undefined : Number(value);
+    };
+    const max = read('m[aá]x');
+    const min = read('m[ií]n');
+    const errors = [];
+    if (max === 0) errors.push('"Máximo" debe ser un número de 1 o más (sin límite = no escribirlo).');
+    if (max && min && min > max) errors.push(`"Mínimo" (${min}) no puede ser mayor que "Máximo" (${max}).`);
+    return { min: min ?? 0, max: max ?? 0, errors };
+}
+
 function typeProps(row, errors) {
     switch (row.type) {
         case 'text': return { default_value: '', maxlength: '', ...noBindings, placeholder: '', prepend: '', append: '' };
@@ -107,7 +122,11 @@ function buildField(row, name, children, errors) {
         const subs = children.get(row.name) ?? [];
         if (!subs.length) errors.push(`${row.name}: un ${row.type} necesita subcampos (filas "${row.name}.<campo>").`);
         const subFields = subs.map((sub) => buildField(sub, sub.name.slice(sub.name.lastIndexOf('.') + 1), children, errors));
-        if (row.type === 'repeater') Object.assign(field, { layout: 'block', pagination: 0, min: 0, max: 0, collapsed: '', button_label: 'Añadir fila', rows_per_page: 20 });
+        if (row.type === 'repeater') {
+            const { min, max, errors: limitErrors } = rowLimits(row.description);
+            for (const message of limitErrors) errors.push(`${row.name}: ${message}`);
+            Object.assign(field, { layout: 'block', pagination: 0, min, max, collapsed: '', button_label: 'Añadir fila', rows_per_page: 20 });
+        }
         else field.layout = 'block';
         field.sub_fields = subFields;
     }
@@ -373,7 +392,7 @@ export function flattenGroup(json) {
     const walk = (fields, prefix, parentPath) => {
         for (const field of fields) {
             const full = parentPath === null ? field.name : parentPath === '' ? `${prefix}_${field.name}` : `${parentPath}.${field.name}`;
-            out.set(full, { type: field.type, required: !!field.required });
+            out.set(full, { type: field.type, required: !!field.required, ...(field.type === 'repeater' && { min: Number(field.min) || 0, max: Number(field.max) || 0 }) });
             if (field.sub_fields) walk(field.sub_fields, field.name, full);
         }
     };

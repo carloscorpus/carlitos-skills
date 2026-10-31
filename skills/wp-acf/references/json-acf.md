@@ -15,7 +15,7 @@ One `group_*.json` per page spec with the state asked for (`--states`, default `
 - `title`: the page's `Grupo ACF`.
 - `fields`: one `group` field per section (`name` = the section's `Grupo`, for example `home_hero`), skipping sections with `Grupo: ninguno` or `Estado: descartado`. Its subfields are the table rows: `home_hero_titulo` is the subfield `titulo`, which ACF stores as `home_hero_titulo`.
 - A row `a_b_items` of type `repeater` with rows `a_b_items.titulo`, `a_b_items.imagen` becomes a repeater with those subfields (nested repeaters work the same, one dot per level). A `group` row works the same way. The repeater row must exist before its subfields.
-- `instructions`: the row's description (it keeps the "Recomendado: …" text). `required`: the row's "Requerido". Nothing else limits the editor: no `maxlength`, no `min`/`max` on repeaters, no image size limits.
+- `instructions`: the row's description (it keeps the "Recomendado: …" text). `required`: the row's "Requerido". Nothing else limits the editor: no `maxlength`, no image size limits. The one exception is the rows of a repeater: if the description of the repeater row says `Máximo: 6` and/or `Mínimo: 2` (also `Máx. 6`, `Mínimo de 2`), the repeater gets `max: 6` / `min: 2` (0 = no limit). The text stays in `instructions`. A `0` maximum or a minimum above the maximum is an error; a number-less "máximo" in prose is not a limit; the words are ignored on any row that is not a `repeater`.
 - `label`: the field name humanized in Spanish ("titulo_principal" → "Título principal"); the admin can rename it.
 - `location`, from the page's `Ubicación`:
 

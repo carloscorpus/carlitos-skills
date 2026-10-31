@@ -2,6 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.6.0] - 2026-10-31
+
+### Agregado
+- Límite de filas de un repetidor desde el spec: si la descripción de la fila del repetidor dice `Máximo: 6` y/o `Mínimo: 2` (también `Máx. 6`, `Mínimo de 2`), el JSON sale con `max: 6` / `min: 2` (0 = sin límite); el texto sigue en las instrucciones del campo. Un máximo `0` o un mínimo mayor que el máximo es un error de `generate.mjs`; la palabra "máximo" sin número, o en una fila que no es repeater, no es un límite.
+- `check.mjs` compara `min`/`max` del JSON con el spec: un límite escrito en el spec después de generar pide correr `generate.mjs` otra vez.
+- `SKILL.md`: paso "Changing the rows limit of a repeater" para cuando el usuario lo pide ya con todo generado (se escribe en el spec, se regenera y se comprueba; el JSON no se toca a mano).
+
+### Cambiado
+- La regla "no se impone ningún límite al editor" ahora exceptúa las filas de un repetidor cuando el spec lo dice. `maxlength` y los tamaños de imagen siguen sin límite.
+
 ## [1.5.0] - 2026-10-30
 
 ### Cambiado
