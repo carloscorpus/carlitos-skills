@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.7.1] - 2026-11-03
+
+### Cambiado
+- `SKILL.md`: una corrección después de conectar (campo nuevo, quitado o de otro tipo, texto corregido en la carga, sección movida, componente con otros argumentos) actualiza el spec en el mismo paso; si es un campo, primero el spec y después `generate.mjs`.
+
 ## [1.7.0] - 2026-11-03
 
 ### Agregado

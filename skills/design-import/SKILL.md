@@ -2,7 +2,7 @@
 name: design-import
 description: 'Turn a folder exported by Claude Design (static HTML + CSS + JS with bad practices) into a clean WordPress theme front end: tokens, components, page sections and page templates, following the wp-vite-theme structure or the structure it detects in another project. Writes one reviewable spec per page (sections, ACF Pro field groups and tables, acceptance criteria) and applies only what the user approves. Blog, catalog and WooCommerce designs are asked about once and documented (content types, taxonomies, filters, templates), not wired. What repeats on every page (logo, menus, footer data) is documented once as site-wide settings. Use when the user adds a design folder (/add-dir) and says "importa el diseño", "reordena el diseño de Claude Design", "pasa este diseño al tema", "design import", "limpia el HTML/CSS del diseño", or a spec says `skill: design-import`.'
 metadata:
-  version: "1.8.0"
+  version: "1.9.0"
 ---
 
 # design-import
@@ -63,6 +63,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 - Names are Spanish: specs, sections, field names (`<página>_<sección>_<campo>`, snake_case, no accents).
 - Reuse before creating: the theme's existing tokens, components and helpers come first; an existing modal, form or helper skill beats new markup.
 - Keep the design: spacing, sizes, colors and behavior must match the original. Changing structure is the job; changing the look is not.
+- The spec changes with the code. A correction that touches something the spec describes (fields and their type, "valor actual", a section's `Destino`, a component of `_shared.md` and its arguments, `Comportamiento`, tokens) updates the spec in the same step, and the answer says which spec lines changed. A visual or internal fix the spec does not describe leaves it alone. `check.mjs` warns when a component no longer matches `_shared.md` (missing file, arguments added or removed, component not documented).
 
 ## Reference
 

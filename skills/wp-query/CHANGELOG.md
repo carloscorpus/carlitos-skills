@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.1.1] - 2026-11-03
+
+### Cambiado
+- `SKILL.md`: una corrección que cambia un filtro, la paginación o los ítems por página va primero a la tabla "Filtros" o a las etiquetas del spec, y después `generate.mjs`.
+- `tests/check.mjs` lee la versión del motor desde `SKILL.md` en vez de tenerla escrita (`1.1.0`): antes, subir la versión de la skill rompía la prueba.
+
 ## [1.1.0] - 2026-10-22
 
 ### Agregado
