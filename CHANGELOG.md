@@ -2,6 +2,19 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.23.0] - 2026-11-03
+
+### Agregado
+- `wp-helper` 1.3.0: `<prefix>_image()` acepta `alt_fallback`, un alt de respaldo que se usa solo si la imagen no tiene alt propio. Detalle en `skills/wp-helper/CHANGELOG.md`.
+- `wp-acf` 1.6.0: máximo y mínimo de filas de un repetidor desde el spec (`Máximo: 6`, `Mínimo: 2`). Detalle en `skills/wp-acf/CHANGELOG.md`.
+- `CLAUDE.md` en la raíz con los pasos de cada cambio de skill (incluye este `CHANGELOG.md` y `plugin.json`, que se habían saltado desde wp-acf 1.5.0).
+
+### Cambiado
+- `wp-acf` 1.5.0: las plantillas pasan el título de la sección como alt de respaldo de sus imágenes. Detalle en `skills/wp-acf/CHANGELOG.md`.
+- Texto de color en componentes: todo componente que imprime texto con marcadores o saltos usa `<prefix>_highlight()`, sin reglas propias, para que el color salga igual en una línea o en varias.
+  - `design-import` 1.8.0: la regla en las referencias, los criterios de aceptación y `_shared.md`.
+  - `wp-acf` 1.7.0: `check.mjs` revisa también los componentes que llama cada sección conectada y avisa si tienen reglas propias o imprimen un textarea con `esc_html()`.
+
 ## [1.22.0] - 2026-10-30
 
 ### Agregado

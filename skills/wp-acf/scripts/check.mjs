@@ -135,6 +135,42 @@ let connected = 0;
 const fileText = (rel) => read(join(target, rel));
 const escapeRe = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+// Archivos de get_template_part('slug', 'name') que existen en el tema: primero slug-name.php, si no slug.php.
+const componentsOf = (code) => {
+    const seen = new Set();
+    const out = [];
+    for (const [, slug, name] of code.matchAll(/get_template_part\(\s*['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]*)['"])?/g)) {
+        const rel = [name ? `${slug}-${name}.php` : null, `${slug}.php`].filter(Boolean).find((p) => existsSync(join(target, p)));
+        if (!rel || seen.has(rel)) continue;
+        seen.add(rel);
+        out.push({ rel, code: fileText(rel) });
+    }
+    return out;
+};
+
+// ¿El componente imprime $args['key'] (o la variable que lo guarda) con esc_html()?
+const printsPlain = (code, key) => {
+    const vars = [...code.matchAll(new RegExp(`\\$(\\w+)\\s*=\\s*\\(?\\s*\\$args\\[\\s*['"]${escapeRe(key)}['"]`, 'g'))].map((m) => m[1]);
+    const targets = [`\\$args\\[\\s*['"]${escapeRe(key)}['"]`, ...vars.map((v) => `\\$${v}\\b(?!\\s*\\[)`)];
+    return targets.some((t) => new RegExp(`esc_html\\(\\s*${t}`).test(code));
+};
+
+// Reglas propias para saltos o marcadores de color, que solo debe aplicar <prefix>_highlight().
+const MARKER_LITERAL = /^\s*['"][*|~^=]{1,2}['"]/;
+const ownTextRules = (code) => {
+    const rules = [];
+    if (/\bnl2br\s*\(/.test(code)) rules.push('nl2br');
+    if (/\b(?:explode|preg_split)\s*\(\s*(?:PHP_EOL|"[^"]*\\n[^"]*"|'[^']*\\n[^']*')/.test(code)) rules.push('parte el texto por líneas');
+    for (const m of code.matchAll(/\b(?:str_replace|str_ireplace|strtr|explode|substr_count|strpos|str_contains)\s*\(([^)]*)/g)) {
+        if (MARKER_LITERAL.test(m[1]) || /\[\s*['"][*|~^=]['"]/.test(m[1])) {
+            rules.push('cambia los marcadores a mano');
+            break;
+        }
+    }
+    if (/\bpreg_(?:replace|replace_callback|match|match_all|split)\s*\(\s*(['"])[^'"]*\\[*|~^=]/.test(code) && !rules.includes('cambia los marcadores a mano')) rules.push('cambia los marcadores a mano');
+    return rules;
+};
+
 for (const page of pages) {
     const location = locationFor(page.labels.Ubicación, dynamic);
     const isOption = !!location.options;
@@ -166,10 +202,25 @@ for (const page of pages) {
         if (found.length && !match) error(where, `La plantilla no lee el grupo: falta get_field('${section.group}'${isOption ? ", 'option'" : ''}).`);
         else if (match && isOption && !/['"]option['"]/.test(match[1] ?? '')) error(where, `El grupo ${section.group} está en una página de opciones: lee get_field('${section.group}', 'option').`);
 
+        // Componentes que la sección llama: reciben sus textos por $args y también se revisan.
+        const components = componentsOf(code);
+
         // Un textarea se imprime con <prefix>_highlight(): esc_html() pierde los saltos de línea que escribe el editor.
         for (const field of section.fields.filter((f) => f.type === 'textarea')) {
             const sub = field.name.includes('.') ? field.name.slice(field.name.lastIndexOf('.') + 1) : field.name.slice(section.group.length + 1);
-            if (new RegExp(`esc_html\\(\\s*\\$\\w+\\[\\s*['"]${escapeRe(sub)}['"]`).test(code)) warn(where, `${field.name}: es un textarea; imprímelo con <prefix>_highlight() para que se vean los saltos de línea.`);
+            const advice = `${field.name}: es un textarea; imprímelo con <prefix>_highlight() para que se vean los saltos de línea.`;
+            if (new RegExp(`esc_html\\(\\s*\\$\\w+\\[\\s*['"]${escapeRe(sub)}['"]`).test(code)) warn(where, advice);
+            // El mismo texto pasado a un componente ('titulo' => $hero['subcampo']) se busca con su nombre en $args.
+            const keys = [...code.matchAll(new RegExp(`['"](\\w+)['"]\\s*=>\\s*\\$\\w+\\[\\s*['"]${escapeRe(sub)}['"]`, 'g'))].map((m) => m[1]);
+            for (const component of components) {
+                if (keys.some((key) => printsPlain(component.code, key))) warn(`${where} › ${component.rel}`, advice);
+            }
+        }
+
+        // Los saltos y los colores los pone solo <prefix>_highlight(): un componente o plantilla con reglas propias falla en algún caso.
+        for (const { rel, code: text } of [...found.map((p) => ({ rel: p, code: fileText(p) })), ...components]) {
+            const rules = ownTextRules(text);
+            if (rules.length) warn(`${where} › ${rel}`, `Trata el texto por su cuenta (${rules.join(', ')}): imprímelo con <prefix>_highlight() de wp-helper, sin reglas propias, para que los colores y los saltos salgan igual en una línea o en varias.`);
         }
 
         const texts = section.fields.filter((f) => ['text', 'textarea', 'wysiwyg'].includes(f.type) && f.current && f.current !== '—');

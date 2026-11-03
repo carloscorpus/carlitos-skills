@@ -43,6 +43,13 @@ Use this when the theme has `front-page.php`, `pages/`, `template-parts/` and `i
   $titulo = $args['titulo'] ?? '';
   $texto  = $args['texto'] ?? '';
   ```
+- **Text with color or line breaks goes through the text helper, also inside a component.** A section or component that prints a text with parts in another color, or a text in several lines (a section title, a card title), receives it as **one** string with the `wp-helper` markers and `\n` for each break (`"Terminal Portuario\ndel |Callao|"`) and prints it with `<prefix>_highlight()`. No rules of its own: do not split the text by lines (`explode("\n", …)`), do not use `nl2br()`, do not replace markers with `str_replace` or a regex, and do not take the colored part as a separate argument (`titulo_color`). The helper gives the same result with one line or several, in a `text` or a `textarea` field; a rule of its own breaks in one of those cases. If the text helper is not installed yet, install it with `wp-helper` first. `wp-acf`'s `check.mjs` warns about a component with its own rules.
+  ```php
+  // template-parts/components/titulo-seccion.php
+  $titulo = $args['titulo'] ?? '';
+  ?>
+  <h2 class="…"><?= <prefix>_highlight($titulo) ?></h2>
+  ```
 - File names are the section or component name in kebab-case without accents: `hero.php`, `por-que-elegirnos.php`.
 - Functions, hooks and constants you add start with the theme prefix; new code that is not a view goes in `inc/` and is required from `functions.php`.
 

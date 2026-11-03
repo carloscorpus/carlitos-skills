@@ -29,7 +29,7 @@ The specs describe the fields; they do not create them. The ACF step later turns
 | Repeated items | `repeater` |
 | Number, email, date | `number`, `email`, `date_picker` |
 
-Text with parts in another color is a normal `text`/`textarea`; the markers come from `wp-helper`'s text helper.
+Text with parts in another color is a normal `text`/`textarea`; the markers come from `wp-helper`'s text helper. Every template or component that prints it uses `<prefix>_highlight()`, never rules of its own (see "Files" in `destino-wp-vite-theme.md`): the same text must look the same in one line or in several, in a `text` or in a `textarea`.
 
 ### Text in several lines
 
