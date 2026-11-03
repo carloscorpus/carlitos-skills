@@ -445,6 +445,42 @@ try {
         assert.match(messages(r), /Aprueba _shared\.md/);
     });
 
+    // _shared.md documenta el componente "titulo-seccion" con sus argumentos; `php` es cómo quedó en el tema.
+    const withComponent = (php, args = '`titulo` (string, sí), `texto` (string, no)') => (dir) => {
+        edit('specs/_shared.md', '## Criterios comunes', `## Componentes compartidos\n\nCada componente vive en \`template-parts/components/<nombre>.php\` y recibe sus datos por \`$args\`.\n\n### titulo-seccion\n\n- **Origen:** index.html:40-44\n- **Destino:** \`template-parts/components/titulo-seccion.php\`\n- **Argumentos:** ${args}\n- **Se usa en:** home › hero\n\n## Criterios comunes`)(dir);
+        if (php !== null) {
+            mkdirSync(join(dir, 'template-parts/components'), { recursive: true });
+            writeFileSync(join(dir, 'template-parts/components/titulo-seccion.php'), php);
+        }
+    };
+    const componentPhp = (keys) => `<?php\ndefined('ABSPATH') || exit;\n${keys.map((k) => `$${k} = $args['${k}'] ?? '';`).join('\n')}\n`;
+    const componentWarnings = (r) => r.json.warnings.filter((w) => /Componente|componente|Argumentos|destino/.test(w.message));
+
+    test('check: un componente igual a lo que dice _shared.md no avisa', () => {
+        const r = broken('componente-ok', withComponent(componentPhp(['titulo', 'texto'])));
+        assert.equal(r.code, 0, r.stdout);
+        assert.deepEqual(componentWarnings(r), []);
+    });
+
+    test('check: un componente cambiado en el código sin tocar el spec avisa', () => {
+        const extra = broken('componente-extra', withComponent(componentPhp(['titulo', 'texto', 'titulo_color'])));
+        assert.ok(extra.json.warnings.some((w) => /usa \$args\['titulo_color'\], que no está en "Argumentos"/.test(w.message)), JSON.stringify(extra.json.warnings));
+        const gone = broken('componente-menos', withComponent(componentPhp(['titulo'])));
+        assert.ok(gone.json.warnings.some((w) => /"Argumentos" lista texto, que el componente ya no usa/.test(w.message)), JSON.stringify(gone.json.warnings));
+        const moved = broken('componente-movido', withComponent(null));
+        assert.ok(moved.json.warnings.some((w) => /no existe en el tema: si se movió o se renombró/.test(w.message)), JSON.stringify(moved.json.warnings));
+        const undocumented = broken('componente-nuevo', (dir) => {
+            withComponent(componentPhp(['titulo', 'texto']))(dir);
+            writeFileSync(join(dir, 'template-parts/components/boton.php'), componentPhp(['texto']));
+        });
+        assert.ok(undocumented.json.warnings.some((w) => w.file === 'template-parts/components/boton.php' && /sin documentar/.test(w.message)), JSON.stringify(undocumented.json.warnings));
+    });
+
+    test('check: "Argumentos" sin comillas invertidas también se lee', () => {
+        const r = broken('componente-sin-comillas', withComponent(componentPhp(['titulo', 'texto']), 'titulo (string, sí), texto (string, no)'));
+        assert.deepEqual(componentWarnings(r), []);
+    });
+
     // ---------- status ----------
     const viteTheme = () => {
         const dir = join(tmp, `status-${Math.random().toString(36).slice(2)}`);

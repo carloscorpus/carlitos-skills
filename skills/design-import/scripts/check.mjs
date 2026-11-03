@@ -80,6 +80,14 @@ let sharedState = null;
 const dynamicRows = new Map(); // contenido -> fila completa (taxonomías, filtros)
 const dynamicContent = new Map(); // contenido -> origen
 const commonCriteria = new Set(); // criterios de "Criterios comunes" de _shared.md
+let anyApplied = false; // alguna página ya está aplicada en el tema
+const sharedComponents = []; // { name, destino, args } de "Componentes compartidos" de _shared.md
+// Nombres de "Argumentos": los que van entre comillas invertidas, o el primer nombre de cada parte separada por coma.
+const argNames = (text) => {
+    const quoted = [...text.matchAll(/`\$?(?:args\[['"])?([a-z_][a-z0-9_]*)(?:['"]\])?`/gi)].map((m) => m[1]);
+    if (quoted.length) return [...new Set(quoted)];
+    return [...new Set(text.replace(/\([^)]*\)/g, '').split(/[,;]/).map((part) => part.trim().match(/^\$?([a-z_][a-z0-9_]*)/i)?.[1]).filter(Boolean))].filter((n) => !['ninguno', 'ninguna'].includes(n.toLowerCase()));
+};
 const sharedPath = join(specsDir, '_shared.md');
 if (!existsSync(sharedPath)) error('_shared.md', 'Falta _shared.md.');
 else {
@@ -118,6 +126,12 @@ else {
         if (content && content !== 'ninguno' && !dynamicContent.has(content)) error('_shared.md', `${where}: el contenido "${content}" no está en "Contenido dinámico".`);
     }
     for (const [, text] of (chunk('Criterios comunes') ?? '').matchAll(/^- \[[ xX]\] (.+)$/gm)) commonCriteria.add(text.trim());
+    for (const block of (chunk('Componentes compartidos') ?? '').split(/^### /m).slice(1)) {
+        const name = block.split('\n')[0].trim();
+        if (!name || name.startsWith('<')) continue;
+        const info = labels(block);
+        sharedComponents.push({ name, destino: unwrap(info.Destino ?? ''), args: argNames(info.Argumentos ?? '') });
+    }
 }
 
 // ---------- _index.md ----------
@@ -196,6 +210,7 @@ for (const name of pageFiles) {
         if (pageLabels['Por página'] && !/^[1-9]\d*$/.test(pageLabels['Por página'])) error(name, `"Por página" inválido "${pageLabels['Por página']}": un número mayor que 0.`);
     } else if (parseFilters(header)) error(name, 'La tabla "Filtros" solo va en un listado.');
     const pageState = pageLabels.Estado;
+    if (pageState === 'aplicado') anyApplied = true;
     if (pageState && !STATES.includes(pageState)) error(name, `Estado de página inválido "${pageState}".`);
     const row = indexRows.find((r) => r.file === name);
     if (row && pageState && row.state !== pageState) warn(name, `El estado del spec (${pageState}) no coincide con _index.md (${row.state}).`);
@@ -365,6 +380,32 @@ for (const { name, content, filters } of listings) {
                 if (order.field) fieldOf(where, order.field, FILTER_FIELD_TYPES.orden, 'orden');
                 else if (!ORDER_KEYWORDS.includes(order.key)) error(where, `Orden "${order.key}" desconocido: ${ORDER_KEYWORDS.join(', ')} o \`campo\` asc/desc.`);
             }
+        }
+    }
+}
+
+// ---------- Componentes de _shared.md frente al tema ----------
+// Una corrección en el código que cambia un componente (nuevo, movido, con otros argumentos) también va al spec.
+
+if (anyApplied) {
+    const documented = new Set();
+    for (const component of sharedComponents) {
+        const where = `_shared.md › Componentes › ${component.name}`;
+        if (!component.destino) { warn(where, 'Falta "Destino" (template-parts/components/<nombre>.php).'); continue; }
+        documented.add(component.destino);
+        const path = join(target, component.destino);
+        if (!existsSync(path)) { warn(where, `El destino "${component.destino}" no existe en el tema: si se movió o se renombró, actualiza el spec.`); continue; }
+        const used = [...new Set([...read(path).matchAll(/\$args\[\s*['"]([a-z_][a-z0-9_]*)['"]\s*\]/gi)].map((m) => m[1]))];
+        const extra = used.filter((name) => !component.args.includes(name));
+        const missing = component.args.filter((name) => !used.includes(name));
+        if (extra.length) warn(where, `El componente usa ${extra.map((n) => `$args['${n}']`).join(', ')}, que no está en "Argumentos": actualiza el spec.`);
+        if (missing.length && used.length) warn(where, `"Argumentos" lista ${missing.join(', ')}, que el componente ya no usa: actualiza el spec.`);
+    }
+    const dir = join(target, 'template-parts/components');
+    if (existsSync(dir)) {
+        for (const file of readdirSync(dir).filter((n) => n.endsWith('.php'))) {
+            const rel = `template-parts/components/${file}`;
+            if (!documented.has(rel)) warn(rel, 'Componente sin documentar en "Componentes compartidos" de _shared.md (origen, destino, argumentos y dónde se usa).');
         }
     }
 }

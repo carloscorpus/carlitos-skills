@@ -2,7 +2,7 @@
 name: wp-query
 description: 'Make the lists of a WordPress theme work from the specs written by design-import: the real loop of posts and custom post types, combined filters (taxonomies, ACF option fields, numeric ranges, dates, search and sort), counts per option, pagination, related items and SEO-safe filtered pages, on the main query (pre_get_posts), updating without reload and still working without JavaScript. The design is kept: the engine gives the data and the theme''s HTML paints it. One generic engine, one generated definition per list, one subagent per list for the templates. Use when the user says "conecta los listados", "haz funcionar los filtros", "filtros combinados", "buscador", "paginación", "relacionados", "blog con filtros", "catálogo con filtros", or a spec says `skill: wp-query`. Runs after wp-acf. WooCommerce is another skill.'
 metadata:
-  version: "1.1.0"
+  version: "1.1.1"
 ---
 
 # wp-query
@@ -35,6 +35,7 @@ The design rules the look. The engine never prints filter markup: it returns dat
 ## Rules
 
 - The specs are the source of truth. A definition is never edited by hand: change the spec and generate again.
+- A correction that changes a filter (name in the URL, type, source, several values, count, view), the pagination or the items per page goes to the "Filtros" table or the labels of the spec first, then `generate.mjs`. Say which spec lines changed.
 - The engine (`inc/query/motor.php`, `src/js/modules/query.js`) is never edited per project; it is updated with `install.mjs --overwrite inc/query/motor.php,src/js/modules/query.js`.
 - Filters always act on the main query. Never `query_posts`, never a `new WP_Query` that replaces the archive's loop. A secondary loop (related items) ends with `wp_reset_postdata()`.
 - The URL names are the table's: `categoria[]` (several values), `precio_min` / `precio_max`, `q`, `orden`. Never WordPress's own query vars (`s`, `p`, `cat`, `year`…).

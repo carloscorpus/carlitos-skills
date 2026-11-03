@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.9.0] - 2026-11-03
+
+### Agregado
+- `check.mjs` compara los componentes de "Componentes compartidos" de `_shared.md` con el tema (cuando alguna página está `aplicado`): avisa si el `Destino` no existe, si el componente usa un `$args['…']` que no está en "Argumentos", si "Argumentos" lista uno que el componente ya no usa, y si hay un archivo en `template-parts/components/` sin documentar. "Argumentos" se lee con o sin comillas invertidas.
+- Regla "el spec se corrige junto con el código" en `SKILL.md` y en el bloque de `CLAUDE.md` del tema: una corrección que toca algo que el spec describe (campos, "valor actual", `Destino`, componentes y sus argumentos, `Comportamiento`, tokens) actualiza el spec en el mismo paso y se dice qué líneas cambiaron. Va en `CLAUDE.md` para que aplique también en correcciones pedidas sin la skill cargada.
+
 ## [1.8.0] - 2026-11-03
 
 ### Cambiado

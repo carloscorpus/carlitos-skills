@@ -13,6 +13,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const skillDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// La versión del motor es la de la skill (metadata.version de SKILL.md).
+const engineVersion = readFileSync(join(skillDir, 'SKILL.md'), 'utf8').match(/version:\s*"([^"]+)"/)[1];
 const repoDir = resolve(skillDir, '..', '..');
 const fixture = join(skillDir, 'tests', 'fixtures', 'tema');
 
@@ -165,7 +167,7 @@ try {
         const motor = readFileSync(join(dir, 'inc/query/motor.php'), 'utf8').replace(/\r\n/g, '\n'); // la plantilla puede venir con CRLF (git en Windows)
         assert.ok(!/\{\{[A-Z_]+\}\}/.test(motor), 'quedaron placeholders');
         assert.match(motor, /function demo_query_filters\(/);
-        assert.match(motor, /Versión del motor: 1\.1\.0/);
+        assert.ok(motor.includes(`Versión del motor: ${engineVersion}`), 'el motor lleva la versión de la skill');
         assert.match(motor, /^<\?php\ndefined\('ABSPATH'\) \|\| exit;/);
         assert.ok(!/\bquery_posts\s*\(/.test(motor), 'el motor no usa query_posts');
         assert.match(readFileSync(join(dir, 'functions.php'), 'utf8'), /require_once get_theme_file_path\('\/inc\/query\/motor\.php'\);/);
@@ -186,7 +188,7 @@ try {
 
         assert.equal(run('install.mjs', ['--target', dir]).code, 0);
         assert.equal(run('install.mjs', ['--target', dir, '--check']).code, 0);
-        writeFileSync(join(dir, 'inc/query/motor.php'), readFileSync(join(dir, 'inc/query/motor.php'), 'utf8').replace('Versión del motor: 1.1.0', 'Versión del motor: 0.9.0'));
+        writeFileSync(join(dir, 'inc/query/motor.php'), readFileSync(join(dir, 'inc/query/motor.php'), 'utf8').replace(`Versión del motor: ${engineVersion}`, 'Versión del motor: 0.9.0'));
         const old = run('install.mjs', ['--target', dir, '--check']);
         assert.equal(old.json.engineVersion.installed, '0.9.0');
         assert.match(old.json.hints.join(' '), /--overwrite inc\/query\/motor\.php,src\/js\/modules\/query\.js/);

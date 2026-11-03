@@ -2,6 +2,13 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.24.0] - 2026-11-03
+
+### Cambiado
+- El spec se corrige junto con el código: una corrección que toca algo que el spec describe lo actualiza en el mismo paso, y se dice qué líneas cambiaron.
+  - `design-import` 1.9.0: la regla va en el bloque de `CLAUDE.md` del tema (aplica aunque no haya skill cargada) y en `SKILL.md`; `check.mjs` avisa si un componente no coincide con `_shared.md` (archivo que no existe, argumentos de más o de menos, componente sin documentar).
+  - `wp-acf` 1.7.1 y `wp-query` 1.1.1: la misma regla en `SKILL.md` para campos, carga, filtros y paginación.
+
 ## [1.23.0] - 2026-11-03
 
 ### Agregado
