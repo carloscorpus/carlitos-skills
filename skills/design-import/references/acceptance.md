@@ -24,6 +24,6 @@ The first line is always there: it is the check-off of the common set (base set 
 
 - Listado o detalle (blog, catálogo, WooCommerce): the card is a component with `$args`; filters are `label` markup and do not use `wp-form`; pagination is a `<nav aria-label="Paginación">`; the item button follows the "Acción" of `_shared.md`; no `WP_Query` and no Woo logic.
 - Header, footer or block shared by every page (spec `opciones`): the main logo comes from Site Identity, menus are menu locations, fixed texts match "valor actual" and no page repeats the header or the footer.
-- Component: documented in `_shared.md` with its arguments and where it is used.
+- Component: documented in `_shared.md` with its arguments and where it is used. If it prints a text with color or line breaks, it receives one string with the markers and prints it with `<prefix>_highlight()`, without rules of its own.
 
 `check.mjs` warns when a section repeats three or more common criteria instead of pointing to them. Specs from before 1.3.0 (with the full set in each section) still pass.

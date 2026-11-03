@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.8.0] - 2026-11-03
+
+### Cambiado
+- Todo componente o sección que imprime un texto con partes de otro color o con saltos de línea lo recibe como un solo texto con los marcadores de `wp-helper` y lo imprime con `<prefix>_highlight()`, sin reglas propias: no parte el texto por líneas, no usa `nl2br`, no cambia los marcadores a mano y no lleva un argumento aparte para la parte de color. Así el color sale igual en una línea o en varias, en un campo `text` o `textarea`. Ver `references/destino-wp-vite-theme.md`, `campos-acf.md`, `acceptance.md` y los criterios comunes de `_shared.md`.
+
 ## [1.7.0] - 2026-10-30
 
 ### Cambiado

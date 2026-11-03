@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.7.0] - 2026-11-03
+
+### Agregado
+- `check.mjs` también revisa los componentes que llama cada sección conectada (`get_template_part()`, con o sin segundo nombre). Avisa cuando un componente trata los saltos o los colores por su cuenta (`nl2br`, partir el texto por líneas, cambiar los marcadores con `str_replace` o una regex) en vez de `<prefix>_highlight()`, y cuando imprime con `esc_html()` un textarea que la sección le pasa por `$args`. Antes solo miraba el archivo de la sección, y un componente con regla propia hacía que el color saliera en un textarea solo si tenía salto de línea.
+
+### Cambiado
+- `references/plantillas.md`, `paralelo.md` y `SKILL.md`: el texto pasa al componente tal cual (marcadores y saltos incluidos) y el componente lo imprime con `<prefix>_highlight()`, sin reglas propias. Un componente compartido con reglas propias lo corrige el hilo principal una vez; el subagente solo lo reporta.
+
 ## [1.6.0] - 2026-10-31
 
 ### Agregado

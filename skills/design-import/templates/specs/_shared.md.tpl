@@ -81,6 +81,7 @@ Valen para todas las secciones y páginas. Cada sección lo declara con una sola
 - Comportamiento con JS: el JS vive en `src/js/modules/`, se activa por `data-` o clase, funciona con teclado y respeta `prefers-reduced-motion`.
 - Con skill (`wp-form`, `wp-modal`, `wp-accordion`, `wp-helper`): pasa los criterios de esa skill.
 - Bloque repetido: un solo componente con `$args`, usado en todos los lugares donde se repetía.
+- Texto con partes de otro color o con saltos de línea (también dentro de un componente): llega como un solo texto con los marcadores de `wp-helper` y se imprime con `<prefijo>_highlight()`, sin reglas propias (no se parte por líneas, no se cambian los marcadores a mano, no hay un argumento aparte para la parte de color).
 
 ### Cada página (una vez, al final)
 

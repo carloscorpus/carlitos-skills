@@ -7,7 +7,7 @@
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -420,6 +420,45 @@ try {
         assert.ok(!ok.json.warnings.some((w) => /home_hero_titulo/.test(w.message)), JSON.stringify(ok.json.warnings));
         const plain = fresh(all(multiline, change('template-parts/pages/home/hero.php', "copam_theme_highlight($hero['titulo'] ?? '')", "esc_html($hero['titulo'] ?? '')")));
         assert.ok(plain.json.warnings.some((w) => /home_hero_titulo: es un textarea; imprímelo con <prefix>_highlight\(\)/.test(w.message)), JSON.stringify(plain.json.warnings));
+    });
+
+    // El título del hero pasa a un componente; `body` es cómo el componente lo imprime.
+    const viaComponent = (body) => all(
+        change('template-parts/pages/home/hero.php', "<h1><?= copam_theme_highlight($hero['titulo'] ?? '') ?></h1>",
+            "<?php get_template_part('template-parts/components/titulo', 'seccion', ['titulo' => $hero['titulo'] ?? '']); ?>"),
+        (dir) => {
+            mkdirSync(join(dir, 'template-parts/components'), { recursive: true });
+            writeFileSync(join(dir, 'template-parts/components/titulo-seccion.php'),
+                `<?php\ndefined('ABSPATH') || exit;\n\n$titulo = $args['titulo'] ?? '';\n?>\n<h1>${body}</h1>\n`);
+        },
+    );
+    const textareaFresh = (edit) => {
+        const dir = theme(all(multiline, edit));
+        assert.equal(run('generate.mjs', ['--target', dir]).code, 0);
+        return run('check.mjs', ['--target', dir]);
+    };
+
+    test('check: un componente que recibe el textarea y lo imprime con <prefix>_highlight() pasa', () => {
+        const r = textareaFresh(viaComponent('<?= copam_theme_highlight($titulo) ?>'));
+        assert.equal(r.code, 0, r.stdout);
+        assert.ok(!r.json.warnings.some((w) => /titulo-seccion/.test(w.file ?? '') || /titulo-seccion/.test(w.message)), JSON.stringify(r.json.warnings));
+    });
+
+    test('check: un componente que imprime el textarea con esc_html avisa', () => {
+        const r = textareaFresh(viaComponent('<?= esc_html($titulo) ?>'));
+        assert.ok(r.json.warnings.some((w) => /titulo-seccion\.php/.test(JSON.stringify(w)) && /home_hero_titulo: es un textarea/.test(w.message)), JSON.stringify(r.json.warnings));
+    });
+
+    test('check: un componente con reglas propias para saltos o marcadores avisa', () => {
+        const lines = textareaFresh(viaComponent("<?php foreach (explode(\"\\n\", $titulo) as $linea) : ?><span class=\"block\"><?= esc_html(str_replace('|', '', $linea)) ?></span><?php endforeach; ?>"));
+        const own = lines.json.warnings.find((w) => /Trata el texto por su cuenta/.test(w.message));
+        assert.ok(own && /titulo-seccion\.php/.test(JSON.stringify(own)), JSON.stringify(lines.json.warnings));
+        assert.match(own.message, /parte el texto por líneas/);
+        assert.match(own.message, /cambia los marcadores a mano/);
+        const nl = textareaFresh(viaComponent('<?= nl2br(esc_html($titulo)) ?>'));
+        assert.ok(nl.json.warnings.some((w) => /Trata el texto por su cuenta \(nl2br\)/.test(w.message)), JSON.stringify(nl.json.warnings));
+        const regex = textareaFresh(viaComponent("<?= preg_replace('/\\|(.+?)\\|/', '<span>$1</span>', esc_html($titulo)) ?>"));
+        assert.ok(regex.json.warnings.some((w) => /cambia los marcadores a mano/.test(w.message)), JSON.stringify(regex.json.warnings));
     });
 
     const splitTitle = change('specs/home.md', '| `home_hero_titulo` | text | Título principal de la portada. Recomendado: ~30 caracteres | Hacemos crecer tu negocio | sí |',
