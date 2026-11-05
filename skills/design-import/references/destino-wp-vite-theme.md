@@ -15,7 +15,7 @@ Use this when the theme has `front-page.php`, `pages/`, `template-parts/` and `i
 | Main logo, site icon | Customizer (Site Identity): `custom-logo` and site icon, not an ACF field and not a file in the template |
 | Menus | WordPress menu locations, printed with `wp_nav_menu` in `header.php` / `footer.php` (documented in `_shared.md`, set up in a later step) |
 | List / detail of a content type or posts (blog, catalog) | `archive-<contenido>.php`, `single-<contenido>.php`, `taxonomy-<taxonomía>.php` at the theme root (`home.php`, `single.php`, `archive.php` for posts); sections in `template-parts/pages/<contenido>/`, the item in `template-parts/components/<contenido>-card.php`. See `contenido-dinamico.md` |
-| WooCommerce design | `woocommerce/` overrides (`archive-product.php`, `content-product.php`, `single-product.php`, ...), markup only |
+| WooCommerce design | `woocommerce/` overrides (`archive-product.php`, `content-product.php`, `single-product.php`, ...), markup only; cart, checkout, mini cart and account only when `_shared.md` marks them `clásico` (with `bloques` there is no template) |
 | Form / modal | `template-parts/forms/` / `template-parts/modals/`, written by `wp-form` / `wp-modal` |
 | Accordion | `template-parts/accordions/`, written by `wp-accordion` |
 | Colors, fonts, sizes, radii, shadows | `@theme` in `src/css/input.css`, after `@import "tailwindcss";` |

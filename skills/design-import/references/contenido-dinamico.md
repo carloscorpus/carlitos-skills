@@ -49,14 +49,30 @@ A blog follows the same shape with `Origen: post`: `home.php` (list), `single.ph
 
 ## WooCommerce: markup only
 
-Lay out the pieces as the design shows them (shop archive, product card, single product, cart, checkout, account) as the theme's WooCommerce overrides, and say in each spec that the content comes from Woo:
+Lay out the pieces as the design shows them as the theme's WooCommerce overrides, and say in each spec that the content comes from Woo. The files below are the usual ones, not a closed list: any other template of `woocommerce/` the design needs follows the same rule.
 
-| Design | File |
+| Design | File | Mode |
+|---|---|---|
+| Shop / category archive | `woocommerce/archive-product.php` | always PHP |
+| Product card | `woocommerce/content-product.php` | always PHP |
+| Single product | `woocommerce/single-product.php` / `content-single-product.php` | always PHP |
+| Cart, checkout, account (examples: `cart/cart.php`, `checkout/form-checkout.php`, `myaccount/`) | the matching template of `woocommerce/` | asked: classic or blocks |
+| Mini cart | `woocommerce/cart/mini-cart.php` | asked: classic or blocks |
+
+### Classic or blocks (asked once)
+
+WooCommerce can draw cart, checkout, mini cart and account either with PHP templates (classic: the shortcode or widget) or with its own blocks. With blocks the PHP templates of that piece are ignored, so laying them out would be wasted work. It depends on the project (the payment gateway must support blocks, and how far the design is from the standard layout), so it is never inferred: in the same message as the scope question, ask for each piece the design has and write it in the "WooCommerce" table of `_shared.md` (`clásico`, `bloques` or `no aplica`), together with:
+
+- **Variaciones** (`sí` / `no`): products with an attribute chosen before buying (size, colour). Default `no`; `sí` is only documented here.
+- **Filtros de tienda** (`sí` / `no`): the shop's filters. They are laid out as markup like any list; a later step connects them.
+
+What each mode changes:
+
+| Mode | In this skill |
 |---|---|
-| Shop / category archive | `woocommerce/archive-product.php` |
-| Product card | `woocommerce/content-product.php` |
-| Single product | `woocommerce/single-product.php` / `content-single-product.php` |
-| Cart, checkout, account | `woocommerce/cart/cart.php`, `woocommerce/checkout/form-checkout.php`, `woocommerce/myaccount/` |
+| `clásico` | Lay out the template of that piece from the design, as in the table above. |
+| `bloques` | Do **not** create the template. Keep the design's look in the spec (`Notas de página`: "bloques: sin plantilla; el diseño se aproxima con CSS") so the later step can style the blocks. |
+| `no aplica` | Nothing. |
 
 Keep Woo's hooks and function calls out of the markup; mark where they go with a PHP comment (`// woo: precio`). Declare Woo support and the templates' final form in a later step. The product's price, stock and add-to-cart button are Woo's: the spec's "Acción" says `carrito de Woo` and no field is documented for them. If the project also wants a WhatsApp button on a shop, record it as "Otra" in "Acción".
 

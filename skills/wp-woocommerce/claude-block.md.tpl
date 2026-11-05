@@ -1,0 +1,6 @@
+## WooCommerce ({{ENGINE_VERSION}})
+- `inc/woocommerce/base.php` (y `fragments.php` si hay mini-carrito clásico) declara el soporte de WooCommerce: no lo edites, se actualiza desde la skill `wp-woocommerce`. Pedidos, pagos, envíos y campos de negocio van en un plugin, nunca en el tema.
+- Las plantillas de `woocommerce/` conservan **todos** los `do_action()` y `apply_filters()` de la plantilla original de WooCommerce: solo cambia el marcado alrededor. Cada una lleva el `@version` de la original (se copia después de comparar el código, nunca se edita solo para quitar el aviso de WooCommerce → Estado).
+- La base quita lo que WooCommerce imprime por defecto en esos ganchos (título, precio, botón, imagen…): la plantilla del tema imprime cada pieza una sola vez, donde el diseño la pone. Si algo no aparece, falta su llamada en la plantilla; para recuperar uno por defecto, usa el filtro `{{PREFIX}}_woo_default_callbacks`.
+- La tabla "WooCommerce" de `specs/_shared.md` dice si carrito, checkout, mini-carrito y cuenta son `clásico` (plantilla PHP) o `bloques` (sin plantilla: solo CSS en `src/css/woocommerce.css`, sin `@layer` y acotado al bloque).
+- Si el plugin de WooCommerce se actualiza, mira WooCommerce → Estado → plantillas desactualizadas y pide `check.mjs` de `wp-woocommerce`.

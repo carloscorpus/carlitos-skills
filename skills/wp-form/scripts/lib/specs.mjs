@@ -91,6 +91,31 @@ export function parseMenus(sharedText) {
     });
 }
 
+// ---------- WooCommerce ----------
+
+// Sección "## WooCommerce" de _shared.md: cómo se dibuja cada pieza que WooCommerce puede entregar como
+// plantilla PHP (clásico) o como bloque, más las variaciones y los filtros de tienda.
+// Devuelve null si el spec no tiene la sección. Valores normalizados: mode 'clásico' | 'bloques' |
+// 'no aplica' (cualquier otro texto se deja como vino para que check.mjs lo marque); variations y
+// shopFilters 'sí' | 'no' | null (falta).
+export const WOO_PIECES = ['carrito', 'checkout', 'mini-carrito', 'cuenta'];
+export const WOO_MODES = ['clásico', 'bloques', 'no aplica'];
+const wooFold = (value) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+export function parseWoo(sharedText) {
+    const body = chunk(sharedText, 'WooCommerce');
+    if (body === undefined) return null;
+    const pieces = parseTable(body).map((cells) => {
+        const [piece, mode] = cells.map((cell) => unwrap(cell ?? ''));
+        const folded = wooFold(mode);
+        return { piece, mode: folded === 'clasico' ? 'clásico' : ['bloques', 'no aplica'].includes(folded) ? folded : mode };
+    });
+    const info = labels(body);
+    // La plantilla trae la sección vacía: sin filas ni valores es como si no existiera.
+    if (!pieces.length && !info.Variaciones && !info['Filtros de tienda']) return null;
+    const yesNo = (value) => (value === undefined ? null : wooFold(unwrap(value)) === 'si' ? 'sí' : wooFold(unwrap(value)) === 'no' ? 'no' : unwrap(value));
+    return { pieces, variations: yesNo(info.Variaciones), shopFilters: yesNo(info['Filtros de tienda']) };
+}
+
 // ---------- Filtros de un listado ----------
 
 export const FILTER_TYPES = ['taxonomía', 'rango', 'opciones', 'búsqueda', 'orden', 'fecha'];
