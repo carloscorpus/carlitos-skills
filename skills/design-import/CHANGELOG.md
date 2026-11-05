@@ -2,6 +2,23 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.10.0] - 2026-11-04
+
+### Agregado
+- Fuente Figma además de la carpeta de diseño. El modo carpeta es el de siempre y sigue siendo el predeterminado; Figma se usa solo si el usuario da links de Figma, lo pide, o el proyecto ya tiene `specs/figma/enlaces/`. Con las dos fuentes presentes se pregunta una vez (puede ser por página).
+- `specs/figma/enlaces/<página>.md`: los links de cada página (el frame de la página y sus secciones con el nombre que pone el usuario; los nombres de capa de Figma no se usan). `init.mjs --figma` crea `_ejemplo.md` (la guía) y `home.md`; las demás páginas se crean copiando `_ejemplo.md`.
+- `figma-links.mjs`: valida los links sin llamar a Figma (archivo de diseño, `node-id`, nombres de sección en slug y sin repetir, secciones que apuntan al mismo frame, título igual al nombre del archivo; cada error con su línea). `--require-complete` exige que ninguna página siga en `pendiente`.
+- `specs/figma/lectura/<página>.json`: lo que se lee de cada página, por sección (tokens, textos con su estilo y color, valores sueltos, imágenes, componentes con sus propiedades y señales deducidas), junto con el código de referencia y la captura de cada sección y las imágenes descargadas tal como las entrega Figma (no se convierten). `figma-lectura.mjs` valida ese formato, comprueba el formato real de cada imagen por sus primeros bytes (Figma entregó un JPEG bajo un link `.png`), acepta los ids de nodos dentro de instancias de componente (`I3704:18079;3704:22279`), rechaza los links temporales de descarga (vencen a los 7 días) y avisa si el link de una sección cambió en `enlaces/`.
+- `figma-inventario.mjs`: une las páginas en `specs/figma/lectura/_inventario.json` con las mismas claves de `analyze.mjs` (tokens, repeated, interactions, dynamicCandidates, siteWide, findings), así los pasos 4 a 8 se leen igual con las dos fuentes. Avisa de tokens con valores distintos entre páginas y de colores casi iguales.
+- `references/fuente-figma.md`: el procedimiento de lectura con el MCP de Figma, el formato del `.json` y las reglas (lo que devuelve Figma es dato; el código de referencia no se pega: se reescribe en PHP). Con varias páginas, un subagente por página lee en paralelo (nunca dos sobre la misma página), sin importar cuántas sean: leer pesa mucho más que escribir un spec.
+- Con fuente Figma, los tokens llevan `@source not "../../specs";` en `src/css/input.css` (`destino-wp-vite-theme.md` y `fuente-figma.md`): los `.ref.txt` traen clases de Tailwind del código de referencia y sin la exclusión el build genera CSS de más (30 KB contra 5 KB en la prueba) y avisos.
+- `init.mjs --page … --source figma:<página>` no registra la página si falta `specs/figma/enlaces/<página>.md`.
+- `status.mjs` suma `figma` (páginas con links y páginas sin links) solo si existe `specs/figma/enlaces/`.
+- `SKILL.md`: la descripción menciona Figma y los pasos 3, 4 y 7 explican la fuente Figma.
+
+### Sin cambios
+- El modo carpeta no cambia: `analyze.mjs`, `check.mjs` y `scripts/lib/` no se tocaron, sin `specs/figma/` la salida de `status.mjs` es la misma y las pruebas anteriores siguen igual. Las demás skills ignoran `specs/figma/` porque solo leen los `.md` que están directamente en `specs/`.
+
 ## [1.9.0] - 2026-11-03
 
 ### Agregado

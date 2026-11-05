@@ -16,7 +16,12 @@
 //       página estática de la que cuelga (wp-acf la crea como hija: /servicios/diseno-web/); por defecto ninguno.
 //       global es el spec de lo que se repite en todo el sitio (cabecera, pie, contacto, redes): el slug es
 //       siempre "opciones" y no lleva --content.
+//       --source puede ser "figma:<página>": la página tiene sus links en specs/figma/enlaces/<página>.md, que debe existir.
 //       Córrelo uno por uno desde el hilo principal: si varios subagentes editan _index.md a la vez se pisan.
+//   node init.mjs --figma [--target <dir>] [--dry-run] [--overwrite a,b] [--skip c,d]
+//       Fuente Figma (en vez de una carpeta de diseño): crea specs/figma/enlaces/_ejemplo.md (la guía) y
+//       specs/figma/enlaces/home.md (vacío, para pegar los links). Las demás páginas se crean copiando _ejemplo.md.
+//       No toca specs/_index.md ni _shared.md: es independiente de los otros modos.
 //
 // Requisitos: el tema tiene style.css y functions.php. Sale con JSON en stdout. Códigos: 0 ok,
 // 1 error de uso/validación, 2 conflictos sin resolver, 3 placeholders sin reemplazar. Nunca escribe
@@ -51,6 +56,7 @@ try {
             group: { type: 'string' },
             location: { type: 'string' },
             parent: { type: 'string' },
+            figma: { type: 'boolean', default: false },
             'dry-run': { type: 'boolean', default: false },
             overwrite: { type: 'string' },
             skip: { type: 'string' },
@@ -75,6 +81,30 @@ const values = {
     ENGINE_VERSION: version,
     FECHA: new Date().toISOString().slice(0, 10),
 };
+
+// ---------- --figma ----------
+
+if (args.figma) {
+    if (args.page !== undefined) fail(1, '--figma y --page no van juntos: --figma crea los enlaces; --page registra una página en specs/.');
+    const ENLACES = 'specs/figma/enlaces';
+    const wanted = new Set([`${ENLACES}/_ejemplo.md`, `${ENLACES}/pagina.md`]);
+    const files = renderTemplates(templatesDir, { ...values, PAGINA: 'home' }, target, (f) => wanted.has(f.rel))
+        .map((f) => ({ ...f, content: f.content.replace(/\r?\n/g, f.content.includes('\r\n') ? '\r\n' : '\n') }))
+        .map((f) => (f.rel === `${ENLACES}/pagina.md` ? { ...f, rel: `${ENLACES}/home.md`, dest: join(target, ENLACES, 'home.md') } : f))
+        .sort((a, b) => (a.rel < b.rel ? -1 : 1));
+    assertNoLeftovers(files);
+
+    const plan = planFiles(files, args);
+    const report = { target, create: plan.create, conflicts: plan.conflicts };
+    if (args['dry-run']) {
+        console.log(JSON.stringify({ ok: true, dryRun: true, ...report }, null, 2));
+        process.exit(0);
+    }
+    assertResolved(plan, report, `Ya existen archivos de ${ENLACES}/: indícalos en --overwrite o --skip.`);
+    const written = writeFiles(files, plan);
+    console.log(JSON.stringify({ ok: true, ...report, written, overwritten: [...plan.overwrite], skipped: [...plan.skip] }, null, 2));
+    process.exit(0);
+}
 
 // ---------- --page ----------
 
@@ -110,6 +140,15 @@ if (args.page !== undefined) {
             : type === 'listado' ? `página de opciones: archivo de ${content}`
             : template === 'front-page.php' ? 'página de inicio (front page)' : `plantilla ${template}`);
     if (!existsSync(join(target, INDEX))) fail(1, `Falta ${INDEX}: corre primero init.mjs sin --page.`);
+    // Fuente Figma: "figma:<página>" apunta a specs/figma/enlaces/<página>.md, que tiene que existir.
+    const figmaSource = /^figma:(.*)$/.exec(args.source.trim());
+    if (figmaSource) {
+        const figmaPage = figmaSource[1].trim();
+        if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(figmaPage)) fail(1, `--source "${args.source.trim()}": después de "figma:" va el nombre de la página en enlaces/ (por ejemplo figma:home).`);
+        if (!existsSync(join(target, 'specs', 'figma', 'enlaces', `${figmaPage}.md`))) {
+            fail(1, `--source figma:${figmaPage}: falta specs/figma/enlaces/${figmaPage}.md (node init.mjs --figma crea home.md y _ejemplo.md; para otra página copia _ejemplo.md).`);
+        }
+    }
 
     const pageValues = {
         ...values,

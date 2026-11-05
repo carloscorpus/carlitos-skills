@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.25.0] - 2026-11-04
+
+### Agregado
+- `design-import` 1.10.0: Figma como fuente del diseño, además de la carpeta (que sigue igual y es el modo predeterminado). Los links de cada página van en `specs/figma/enlaces/`, se validan y se leen con el MCP de Figma a `specs/figma/lectura/`, y un inventario con las mismas claves de `analyze.mjs` alimenta los mismos specs. Detalle en `skills/design-import/CHANGELOG.md`.
+
 ## [1.24.0] - 2026-11-03
 
 ### Cambiado
