@@ -389,6 +389,46 @@ try {
         assert.match(messages(broken('alcance-2', edit('specs/_shared.md', '| productos.html | catálogo | producto |', '| productos.html | tienda | producto |'))), /"Qué es" debe ser/);
     });
 
+    test('check: sección WooCommerce (clásico o bloques)', () => {
+        const section = (table, extra = '- **Variaciones:** no\n- **Filtros de tienda:** no\n') => `## WooCommerce\n\n| Pieza | Modo |\n|---|---|\n${table}\n\n${extra}\n`;
+        const pieces = (mode) => ['carrito', 'checkout', 'mini-carrito', 'cuenta'].map((p) => `| ${p} | ${mode} |`).join('\n');
+        // El contenido "producto" pasa a ser de WooCommerce; la sección se inserta antes de "## Sitio".
+        const woo = (body) => (dir) => {
+            edit('specs/_shared.md', '| producto | cpt |', '| producto | woo |')(dir);
+            if (body) edit('specs/_shared.md', '## Sitio', `${body}\n## Sitio`)(dir);
+        };
+        const run1 = (name, body) => broken(`woo-${name}`, woo(body));
+
+        const sin = run1('sin', null);
+        assert.equal(sin.code, 0, 'sin la sección solo avisa');
+        assert.ok(sin.json.warnings.some((w) => /Falta la sección "WooCommerce"/.test(w.message)));
+
+        const bien = run1('bien', section(`${pieces('clásico')}`));
+        assert.equal(bien.code, 0, messages(bien));
+        const mixto = run1('mixto', section('| carrito | bloques |\n| checkout | bloques |\n| mini-carrito | no aplica |\n| cuenta | clásico |', '- **Variaciones:** sí\n- **Filtros de tienda:** sí\n'));
+        assert.equal(mixto.code, 0, messages(mixto));
+        assert.match(messages(run1('modo', section(pieces('flotante')))), /"Modo" debe ser clásico, bloques o no aplica/);
+        assert.match(messages(run1('pieza', section(`${pieces('clásico')}\n| tienda | clásico |`))), /la pieza debe ser carrito, checkout, mini-carrito, cuenta/);
+        assert.match(messages(run1('repetida', section(`${pieces('clásico')}\n| carrito | bloques |`))), /pieza repetida/);
+        assert.match(messages(run1('falta', section('| carrito | clásico |\n| checkout | clásico |'))), /mini-carrito: falta la pieza/);
+        assert.match(messages(run1('variaciones', section(pieces('clásico'), '- **Variaciones:** quizás\n- **Filtros de tienda:** no\n'))), /"Variaciones" debe ser sí o no/);
+        assert.match(messages(run1('filtros', section(pieces('clásico'), '- **Variaciones:** no\n'))), /"Filtros de tienda" debe ser sí o no/);
+
+        // Una tienda Woo no pide la tabla "Filtros" (wp-query no la conecta): sin tabla no hay aviso; con contenido cpt sí.
+        const sinTabla = (name, extra) => broken(name, (dir) => {
+            extra(dir);
+            edit('specs/productos.md', '\n**Filtros**\n', '\n**Otra cosa**\n')(dir);
+        });
+        const filtrosWarn = (r) => r.json.warnings.some((w) => /Falta la tabla "Filtros"/.test(w.message));
+        assert.ok(!filtrosWarn(sinTabla('woo-sin-filtros', woo(section(pieces('clásico'))))));
+        assert.ok(filtrosWarn(sinTabla('cpt-sin-filtros', () => {})));
+
+        // Sin contenido woo la sección sobra (aviso, no error).
+        const sobra = broken('woo-sobra', edit('specs/_shared.md', '## Sitio', `${section(pieces('clásico'))}\n## Sitio`));
+        assert.equal(sobra.code, 0, messages(sobra));
+        assert.ok(sobra.json.warnings.some((w) => /no hace falta/.test(w.message)));
+    });
+
     // Una página estática pendiente (sin secciones) que cuelga de otra.
     const addPage = (slug, parent) => (dir) => writeFileSync(join(dir, 'specs', `${slug}.md`), [
         `# Página: ${slug}`, '',

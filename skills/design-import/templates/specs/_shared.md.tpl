@@ -28,6 +28,21 @@ Una fila por tipo de contenido que se repite o se filtra (entradas, productos, p
 - `Plantillas`: archivo de listado, de detalle y de taxonomía (`archive-producto.php`, `single-producto.php`).
 - `Acción`: qué hace el botón de cada elemento (WhatsApp con mensaje, formulario de consulta, contacto, carrito de Woo, ninguna) y de dónde sale el dato (campo global, campo del elemento).
 
+## WooCommerce
+
+Solo si algún contenido tiene `Origen: woo`; si no, se deja vacía o se borra. Con `woo`: una fila por pieza (las cuatro) y los dos valores. Lo responde el usuario una sola vez: no se adivina. Solo se documenta: no se escribe lógica de WooCommerce.
+
+| Pieza | Modo |
+|---|---|
+
+- **Variaciones:**
+- **Filtros de tienda:**
+
+- `Pieza`: las que WooCommerce puede dibujar como plantilla PHP o como bloque: `carrito`, `checkout`, `mini-carrito` y `cuenta`. Tienda, tarjeta de producto y ficha son siempre plantillas PHP y no se preguntan.
+- `Modo`: `clásico` (plantilla PHP de `woocommerce/`: el HTML sale del diseño), `bloques` (bloque de WooCommerce: no hay plantilla, el diseño se aproxima con CSS) o `no aplica` (el diseño no tiene esa pieza).
+- `Variaciones`: `sí` si hay productos con talla, color u otro atributo que se elige antes de comprar.
+- `Filtros de tienda`: `sí` si la tienda del diseño filtra (categoría, precio, orden).
+
 ## Sitio
 
 Lo que se repite en todas las páginas (cabecera, menú, pie). Aquí solo se decide dónde vive cada cosa; los campos van en `specs/opciones.md`. Nada se crea en esta etapa.

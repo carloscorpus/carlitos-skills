@@ -2,6 +2,17 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.28.0] - 2026-11-05
+
+### Agregado
+- `wp-woocommerce` 1.0.0: skill nueva que conecta la tienda maquetada por `design-import` (tienda, tarjeta, ficha; carrito, checkout, mini-carrito y cuenta según el spec: plantilla clásica o bloques) sin perder el diseño y sin romperse al actualizar WooCommerce: soporte del tema, marcadores `// woo:` reemplazados por las funciones de WooCommerce, todos los `do_action()` de la plantilla original conservados, `@version` igual al de la original, mini-carrito que se actualiza solo, CSS de los bloques y una auditoría (sin pagos ni pedidos en el tema). Filtros de tienda y productos variables quedan pendientes y se avisan. Probada en un sitio de Local con WooCommerce 11.2.2. Detalle en `skills/wp-woocommerce/CHANGELOG.md`.
+
+## [1.27.0] - 2026-11-05
+
+### Agregado
+- `design-import` 1.12.0: sección `WooCommerce` en `_shared.md` (y sin el aviso de la tabla Filtros en tiendas Woo). Se pregunta una vez si carrito, checkout, mini-carrito y cuenta van como plantillas PHP (clásico) o como bloques de WooCommerce, si hay variaciones y si la tienda tiene filtros; una pieza en bloques no se maqueta. Es la base de la skill de WooCommerce que viene después. Detalle en `skills/design-import/CHANGELOG.md`.
+- `shared/specs.mjs`: `parseWoo()`, `WOO_PIECES` y `WOO_MODES`. La copia se sincronizó en todas las skills; solo `design-import` cambia de comportamiento.
+
 ## [1.26.0] - 2026-11-04
 
 ### Agregado

@@ -16,7 +16,7 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { fail } from './lib/common.mjs';
 import {
-    FILTER_TYPES, ORDER_KEYWORDS, labels, lineSplits, noAccent, normalizeText, parseDynamicContent, parseFilters, parseTable, phpLiterals, phpTexts, read, unwrap,
+    FILTER_TYPES, ORDER_KEYWORDS, WOO_MODES, WOO_PIECES, labels, lineSplits, noAccent, normalizeText, parseDynamicContent, parseFilters, parseTable, parseWoo, phpLiterals, phpTexts, read, unwrap,
 } from './lib/specs.mjs';
 
 let args;
@@ -124,6 +124,24 @@ else {
         if (!SCOPES.includes(noAccent(scope))) error('_shared.md', `${where}: "Qué es" debe ser estática, blog, catálogo, woocommerce u otro.`);
         else if (noAccent(scope) !== 'estática' && (!content || content === 'ninguno')) error('_shared.md', `${where}: una página ${scope} necesita un Contenido de la tabla "Contenido dinámico".`);
         if (content && content !== 'ninguno' && !dynamicContent.has(content)) error('_shared.md', `${where}: el contenido "${content}" no está en "Contenido dinámico".`);
+    }
+    // WooCommerce: cómo se dibuja cada pieza (plantilla PHP o bloque). Se pregunta, no se adivina.
+    const hasWoo = [...dynamicContent.values()].includes('woo');
+    const woo = parseWoo(sharedText);
+    if (hasWoo && !woo) warn('_shared.md', 'Falta la sección "WooCommerce": cómo se dibujan carrito, checkout, mini-carrito y cuenta (clásico o bloques), variaciones y filtros de tienda.');
+    if (woo) {
+        if (!hasWoo) warn('_shared.md', 'La sección "WooCommerce" no hace falta: ningún contenido tiene Origen woo.');
+        const seen = new Set();
+        for (const { piece, mode } of woo.pieces) {
+            const where = `WooCommerce › ${piece || '(sin pieza)'}`;
+            if (!WOO_PIECES.includes(piece)) error('_shared.md', `${where}: la pieza debe ser ${WOO_PIECES.join(', ')}.`);
+            else if (seen.has(piece)) error('_shared.md', `${where}: pieza repetida.`);
+            else seen.add(piece);
+            if (!WOO_MODES.includes(mode)) error('_shared.md', `${where}: "Modo" debe ser clásico, bloques o no aplica.`);
+        }
+        for (const piece of WOO_PIECES) if (!seen.has(piece)) error('_shared.md', `WooCommerce › ${piece}: falta la pieza (usa "no aplica" si el diseño no la tiene).`);
+        if (!['sí', 'no'].includes(woo.variations)) error('_shared.md', 'WooCommerce: "Variaciones" debe ser sí o no.');
+        if (!['sí', 'no'].includes(woo.shopFilters)) error('_shared.md', 'WooCommerce: "Filtros de tienda" debe ser sí o no.');
     }
     for (const [, text] of (chunk('Criterios comunes') ?? '').matchAll(/^- \[[ xX]\] (.+)$/gm)) commonCriteria.add(text.trim());
     for (const block of (chunk('Componentes compartidos') ?? '').split(/^### /m).slice(1)) {
@@ -337,7 +355,8 @@ for (const { name, content, filters } of listings) {
     const row = dynamicRows.get(content);
     if (!row) continue; // ya se informó que el contenido no existe
     if (!filters?.length) {
-        if (row.filters && row.filters !== 'ninguno') warn(name, `${filters ? 'La tabla "Filtros" está vacía' : 'Falta la tabla "Filtros"'} (el diseño muestra: ${row.filters}): wp-query la necesita para conectar los filtros.`);
+        // Una tienda de WooCommerce no pasa por wp-query: sus filtros se anotan en la tabla "WooCommerce" (Filtros de tienda).
+        if (row.origin !== 'woo' && row.filters && row.filters !== 'ninguno') warn(name, `${filters ? 'La tabla "Filtros" está vacía' : 'Falta la tabla "Filtros"'} (el diseño muestra: ${row.filters}): wp-query la necesita para conectar los filtros.`);
         continue;
     }
     const fields = detailFields.get(content) ?? new Map();

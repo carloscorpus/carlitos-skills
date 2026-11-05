@@ -18,9 +18,10 @@
 | [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.3   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
 | [`wp-accordion`](skills/wp-accordion/SKILL.md)   | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Acordeones y FAQ con el `<details>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento solo con CSS, responsive y auditoría. |
 | [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.3.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
-| [`design-import`](skills/design-import/SKILL.md) | 1.11.0  | Un tema WordPress y la carpeta de un diseño (`/add-dir`) o links de Figma; sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también lo que se repite en todo el sitio, blog, catálogo y Woo, solo documentados o maquetados) y aplica solo lo que apruebas. |
+| [`design-import`](skills/design-import/SKILL.md) | 1.12.0  | Un tema WordPress y la carpeta de un diseño (`/add-dir`) o links de Figma; sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también lo que se repite en todo el sitio, blog, catálogo y Woo, solo documentados o maquetados) y aplica solo lo que apruebas. |
 | [`wp-acf`](skills/wp-acf/SKILL.md)               | 1.7.1   | Un tema WordPress con los specs de `design-import` aplicados y ACF Pro 6.2 o superior; `wp-helper` recomendado | Pasa los specs a ACF Pro administrable: campos, tipos de contenido, taxonomías y páginas de opciones como ACF JSON sincronizado con la base de datos, el contenido del diseño cargado como contenido real, menús, logo y las plantillas leyendo de ACF. |
 | [`wp-query`](skills/wp-query/SKILL.md)           | 1.1.1   | Un tema WordPress con Vite y los specs de `design-import` (tabla Filtros); los tipos de contenido y campos de `wp-acf` | Hace funcionar los listados de posts y tipos de contenido: el loop real, filtros combinados (taxonomías, opciones ACF, rangos, fechas, búsqueda y orden), conteos, paginación, relacionados, SEO de las páginas filtradas y filtrar sin recargar. El diseño pone el HTML. |
+| [`wp-woocommerce`](skills/wp-woocommerce/SKILL.md) | 1.0.0 | Un tema WordPress con Vite y los specs de `design-import` con contenido `Origen: woo` y su tabla WooCommerce; el plugin WooCommerce en el Local para comparar versiones | Conecta la tienda que `design-import` maquetó sin perder el diseño ni romperse al actualizar WooCommerce: soporte del tema, los marcadores `// woo:` reemplazados por las funciones de WooCommerce con todos sus hooks, `@version` de cada plantilla igual a la original, mini-carrito que se actualiza solo, CSS de los bloques y una auditoría (sin pagos ni pedidos en el tema). Carrito, checkout, mini-carrito y cuenta: plantilla clásica o bloques, según el spec. |
 | [`img-webp`](skills/img-webp/SKILL.md)           | 1.0.0   | Nada: cualquier carpeta con imágenes (WordPress no hace falta); necesita `sharp`, que se toma del proyecto y no se instala solo | Convierte PNG, JPG y JPEG a WebP: cada imagen conserva su tamaño (solo se reduce lo que pasa de 2000 px de ancho) y su transparencia; los originales se mueven a un respaldo; actualiza las referencias (PHP, CSS, JS, specs) y se puede deshacer. SVG, GIF, AVIF y WebP no se tocan. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
@@ -229,6 +230,32 @@ src/js/modules/query.js       filtrar sin recargar
 - **SEO:** las páginas filtradas no se indexan y su canonical apunta al listado sin filtros (WordPress, Yoast y Rank Math).
 - Comandos: `node skills/wp-query/scripts/status.mjs`, `install.mjs [--dry-run]`, `generate.mjs [--dry-run]`, `check.mjs`.
 - Prueba: `node skills/wp-query/tests/check.mjs`. Con `php` disponible también prueba el motor PHP.
+
+## wp-woocommerce
+
+Después de `wp-acf`, solo si el spec tiene contenido con `Origen: woo` (una tienda con pasarela; un catálogo con WhatsApp o formulario es `wp-acf` + `wp-query`): pide `conecta woocommerce`, `tienda con woocommerce` o `carrito y checkout`. Lee la tabla **WooCommerce** de `specs/_shared.md` (la escribe `design-import`: no infiere nada) y las plantillas de `woocommerce/` que dejó maquetadas.
+
+1. **Base** (`install.mjs`): según el spec copia `inc/woocommerce/base.php` (siempre), `fragments.php` (si el mini-carrito es clásico) y `src/css/woocommerce.css` (si alguna pieza va en bloques), y lo conecta a `functions.php` y al CSS principal de Vite.
+2. **Comparar con WooCommerce instalado**: cada plantilla del tema se compara con la original del plugin (misma ruta). Se conserva el HTML del diseño y se agrega lo que la original tiene: todos sus `do_action()`, los `name` de los formularios, los nonce.
+3. **Conectar** cada `// woo: precio` con la función de WooCommerce (`references/conexion.md`), con un subagente por grupo de plantillas, y copiar el `@version` de la original.
+4. **Estilar los bloques**: las piezas en `bloques` no llevan plantilla; su CSS va en `src/css/woocommerce.css`, sin `@layer`, acotado al bloque y con los tokens.
+5. **Verificar** (`check.mjs`): sin marcadores, `@version` igual a la original, ningún `do_action()` perdido, ninguna plantilla para una pieza en bloques, sin pasarelas, envíos ni pedidos en el tema.
+
+```text
+inc/woocommerce/base.php         soporte de WooCommerce, sin estilos clásicos ni envoltorios (genérico)
+inc/woocommerce/fragments.php    contador y total del mini-carrito que se actualizan solos (si es clásico)
+page.php                         solo si el tema no tiene plantilla de página: sin ella el carrito y el checkout salen vacíos
+src/css/woocommerce.css          CSS de los bloques (si hay piezas en bloques)
+woocommerce/                     las plantillas del diseño, conectadas
+```
+
+- **Se actualiza sin romperse:** primero hooks y las plantillas originales; el `@version` es el de la original (nunca se edita para silenciar el aviso de WooCommerce → Estado).
+- **Sin duplicados:** la base quita lo que WooCommerce imprime por defecto en los ganchos de sus plantillas, y los `do_action()` se conservan para plugins y pasarelas. Cada pieza sale una vez, donde el diseño la pone.
+- **Fuera del tema:** pasarelas, envíos, pedidos y campos extra del checkout van en un plugin del proyecto, donde también se declara la compatibilidad con HPOS y bloques.
+- **Pendiente:** filtros de tienda (`wp-query` todavía no acepta `Origen: woo`) y productos variables. Quedan como aviso en `status.mjs` y `check.mjs`, no como botones muertos sin avisar.
+- Comandos: `node skills/wp-woocommerce/scripts/status.mjs`, `install.mjs [--dry-run]`, `check.mjs [--woo <raíz del plugin>]`.
+- Prueba: `node skills/wp-woocommerce/tests/check.mjs [--php <ruta>]`. Usa plantillas de WooCommerce falsas; con `php` revisa la sintaxis y carga la base con funciones de WordPress simuladas.
+- **Probado en Local WP** con WooCommerce 11.2.2: tienda, ficha, carrito clásico, checkout en bloques y el mini-carrito por AJAX. Queda por ver en un navegador el ancho de celular y un pago real con la pasarela del proyecto.
 
 ## img-webp
 

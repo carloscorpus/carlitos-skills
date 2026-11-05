@@ -2,6 +2,18 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.12.0] - 2026-11-05
+
+### Agregado
+- Sección `## WooCommerce` en `_shared.md` (y en su plantilla): cuando algún contenido tiene `Origen: woo`, la skill pregunta **una vez**, en el mismo mensaje del alcance, cómo se dibuja cada pieza que WooCommerce puede entregar como plantilla PHP o como bloque (`carrito`, `checkout`, `mini-carrito`, `cuenta`: `clásico`, `bloques` o `no aplica`), si hay productos con variaciones y si la tienda tiene filtros. Nada se infiere. Tienda, tarjeta y ficha de producto son siempre plantillas PHP y no se preguntan.
+- `check.mjs` valida la sección: pieza y modo válidos, las cuatro piezas presentes y sin repetir, `Variaciones` y `Filtros de tienda` en `sí` o `no`. Si hay contenido `woo` y falta la sección, o la sección existe sin contenido `woo`, solo avisa (los proyectos anteriores no se rompen). La plantilla trae la sección vacía y vacía cuenta como ausente.
+- `parseWoo()`, `WOO_PIECES` y `WOO_MODES` en `shared/specs.mjs` (copia sincronizada en todas las skills) para que la skill de WooCommerce lea estas decisiones sin volver a preguntar.
+- Prueba en `tests/check.mjs` con los casos válidos (todo clásico, mixto) y los errores de cada regla.
+
+### Cambiado
+- `check.mjs` ya no avisa "Falta la tabla Filtros: wp-query la necesita" en una tienda de WooCommerce (`Origen: woo`): `wp-query` no la conecta todavía y los filtros de la tienda se anotan en la tabla "WooCommerce" (Filtros de tienda). Con una prueba.
+- `references/contenido-dinamico.md`, `references/destino-wp-vite-theme.md` y `SKILL.md`: una pieza en `bloques` **no se maqueta** (WooCommerce ignora la plantilla PHP cuando usa el bloque); el diseño queda descrito en `Notas de página` para estilarlo después con CSS. Los archivos de `woocommerce/` que se listan son los habituales, no una lista cerrada.
+
 ## [1.11.0] - 2026-11-04
 
 ### Agregado
