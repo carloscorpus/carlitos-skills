@@ -77,6 +77,8 @@ if (!specs) {
             contenido: unwrap(page.labels.Contenido ?? ''),
             state: page.labels.Estado ?? '',
             filtros: page.filters ? page.filters.length : null,
+            // Una tienda de WooCommerce sin tabla "Filtros" no tiene filtros que conectar (Filtros de tienda: no).
+            woo: dynamic.find((row) => row.name === unwrap(page.labels.Contenido ?? ''))?.origin === 'woo',
             sections: page.sections.length,
             connected: page.sections.filter((s) => unwrap(s.labels.Query ?? '') === 'conectado').length,
         }));
@@ -88,12 +90,12 @@ if (!specs) {
             return { contenido: listing.contenido, listado: listing.listado, rel: listing.rel, state };
         });
 
-        const noTable = listados.filter((l) => l.filtros === null);
+        const noTable = listados.filter((l) => l.filtros === null && !l.woo);
         if (noTable.length) next.push(`Falta la tabla "Filtros" en: ${noTable.map((l) => l.slug).join(', ')} (design-import)`);
         if (specsError) next.push('Los specs tienen errores: generate.mjs --dry-run los lista');
         const stale = definitions.filter((d) => d.state !== 'al día');
         if (stale.length) next.push(`Generar las definiciones: generate.mjs (${stale.map((d) => `${d.contenido} ${d.state}`).join(', ')})`);
-        const pending = listados.filter((l) => states.includes(l.state) && l.connected === 0);
+        const pending = listados.filter((l) => states.includes(l.state) && l.connected === 0 && !(l.woo && l.filtros === null));
         if (pending.length) next.push(`Conectar las plantillas: ${pending.map((l) => l.slug).join(', ')}`);
         if (!listados.some((l) => states.includes(l.state))) next.push(`Ningún listado está ${states.join(' o ')}: design-import (etapa C)`);
     } catch (e) {

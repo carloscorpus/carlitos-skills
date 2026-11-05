@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { detectCssEntry, fail, skillVersion } from './lib/common.mjs';
 import {
-    BUSINESS_LOGIC, CLASSIC_CHECKOUT_ONLY, ENGINE_BASE, ENGINE_CSS, ENGINE_FRAGMENTS, compareOverrides, findWooCore, hasPageTemplate, needs, readWoo, themePhpFiles,
+    BUSINESS_LOGIC, CLASSIC_CHECKOUT_ONLY, ENGINE_BASE, ENGINE_CSS, ENGINE_FRAGMENTS, compareOverrides, findWooCore, hasPageTemplate, hasWpQuery, needs, readWoo, themePhpFiles,
 } from './lib/woo.mjs';
 
 let args;
@@ -126,7 +126,7 @@ for (const rel of themeFiles) {
 
 // ---------- Pendientes del spec ----------
 
-if (decided && spec.woo.shopFilters === 'sí') warn('_shared.md', 'Filtros de tienda: pendientes. wp-query todavía no acepta Origen woo; el formulario del diseño queda como marcado sin efecto.');
+if (decided && spec.woo.shopFilters === 'sí' && !hasWpQuery(target)) warn('_shared.md', 'Filtros de tienda: sí, pero wp-query no está instalada en el tema: el formulario de filtros del diseño queda como marcado sin efecto. Corre wp-query (install.mjs, generate.mjs y conecta la plantilla de la tienda).');
 if (decided && spec.woo.variations === 'sí') warn('_shared.md', 'Variaciones: esta versión solo cubre productos simples; las plantillas de productos variables no están conectadas.');
 
 // ---------- php -l ----------

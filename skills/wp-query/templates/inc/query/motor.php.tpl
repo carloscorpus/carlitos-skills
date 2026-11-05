@@ -14,7 +14,9 @@ defined('ABSPATH') || exit;
  *   - cuenta resultados por opción (fijo o dinámico) con caché que se invalida al editar contenido;
  *   - entrega datos a la vista ({{PREFIX}}_query_filters, _active, _total, _pagination, _related): el HTML
  *     es del diseño;
- *   - marca noindex las páginas filtradas y apunta su canonical a la página sin filtros.
+ *   - marca noindex las páginas filtradas y apunta su canonical a la página sin filtros;
+ *   - en una tienda de WooCommerce (def `woo`) se engancha a la consulta que WooCommerce ya armó: suma el precio
+ *     contra su tabla wc_product_meta_lookup y el orden con get_catalog_ordering_args, y cuenta solo lo visible.
  */
 
 // ---------- Definiciones ----------
@@ -296,6 +298,12 @@ function {{PREFIX}}_query_args(array $def, array $activos, ?string $except = nul
                 break;
 
             case 'rango':
+                if (!empty($def['woo']) && $filtro['fuente'] === 'precio') {
+                    // El precio de WooCommerce vive en su tabla de búsqueda (wc_product_meta_lookup), no en un campo:
+                    // lo aplica el filtro posts_clauses de más abajo.
+                    $args['{{PREFIX}}_precio'] = ['min' => $value['min'], 'max' => $value['max']];
+                    break;
+                }
                 $key = $filtro['fuente'];
                 if ($value['min'] !== null && $value['max'] !== null) {
                     $meta[] = ['key' => $key, 'value' => [$value['min'], $value['max']], 'compare' => 'BETWEEN', 'type' => 'DECIMAL(20,4)'];
@@ -359,6 +367,11 @@ function {{PREFIX}}_query_args(array $def, array $activos, ?string $except = nul
         }
         $orden = $key !== null ? ($filtro['opciones'][$key] ?? null) : null;
         if (!$orden) {
+            break;
+        }
+        if (!empty($orden['woo'])) {
+            // Precio, popularidad y valoración los ordena WooCommerce (get_catalog_ordering_args, en pre_get_posts).
+            $args['{{PREFIX}}_orden_woo'] = ['orderby' => $orden['orderby'], 'order' => $orden['order']];
             break;
         }
         if (!empty($orden['campo'])) {
@@ -441,7 +454,73 @@ add_action('pre_get_posts', function (WP_Query $query) {
             $query->set($key, $args[$key]);
         }
     }
+    // Tienda de WooCommerce: WooCommerce ya armó su consulta (prioridad 10: visibilidad, existencias…) y aquí solo se
+    // le suman el precio y el orden propios de la tienda.
+    if (!empty($def['woo']) && function_exists('WC') && WC()->query) {
+        if (isset($args['{{PREFIX}}_precio'])) {
+            $query->set('{{PREFIX}}_precio', $args['{{PREFIX}}_precio']);
+        }
+        if (isset($args['{{PREFIX}}_orden_woo'])) {
+            $ordering = WC()->query->get_catalog_ordering_args($args['{{PREFIX}}_orden_woo']['orderby'], $args['{{PREFIX}}_orden_woo']['order']);
+            $query->set('orderby', $ordering['orderby']);
+            $query->set('order', $ordering['order']);
+            if (!empty($ordering['meta_key'])) {
+                $query->set('meta_key', $ordering['meta_key']);
+            }
+        }
+    }
 }, 20);
+
+/*
+ * Precio de una tienda de WooCommerce. WooCommerce filtra el precio contra su tabla de búsqueda
+ * (wc_product_meta_lookup) leyendo min_price y max_price de la URL, y cuida los impuestos: no se copia esa lógica,
+ * se llama a la suya presentándole nuestros valores un instante. Sin ese método (otra versión de WooCommerce), la
+ * misma condición escrita aquí, sin el ajuste de impuestos.
+ */
+add_filter('posts_clauses', function (array $clauses, WP_Query $query) {
+    $precio = $query->get('{{PREFIX}}_precio');
+    if (!is_array($precio) || !function_exists('WC') || !WC()->query) {
+        return $clauses;
+    }
+    $min = $precio['min'] ?? null;
+    $max = $precio['max'] ?? null;
+
+    if (!method_exists(WC()->query, 'price_filter_post_clauses')) {
+        global $wpdb;
+        if (strpos($clauses['join'], 'wc_product_meta_lookup') === false) {
+            $clauses['join'] .= " LEFT JOIN {$wpdb->prefix}wc_product_meta_lookup wc_product_meta_lookup ON {$wpdb->posts}.ID = wc_product_meta_lookup.product_id ";
+        }
+        $clauses['where'] .= $wpdb->prepare(
+            ' AND NOT (%f<wc_product_meta_lookup.min_price OR %f>wc_product_meta_lookup.max_price) ',
+            $max ?? PHP_INT_MAX,
+            $min ?? 0
+        );
+        return $clauses;
+    }
+
+    $before = [$_GET['min_price'] ?? null, $_GET['max_price'] ?? null];
+    unset($_GET['min_price'], $_GET['max_price']);
+    if ($min !== null) {
+        $_GET['min_price'] = (string) $min;
+    }
+    if ($max !== null) {
+        $_GET['max_price'] = (string) $max;
+    }
+    $enable = static function () {
+        return true;
+    };
+    add_filter('woocommerce_enable_post_clause_filtering', $enable, 99);
+    $clauses = WC()->query->price_filter_post_clauses($clauses, $query);
+    remove_filter('woocommerce_enable_post_clause_filtering', $enable, 99);
+    unset($_GET['min_price'], $_GET['max_price']);
+    if ($before[0] !== null) {
+        $_GET['min_price'] = $before[0];
+    }
+    if ($before[1] !== null) {
+        $_GET['max_price'] = $before[1];
+    }
+    return $clauses;
+}, 11, 2);
 
 // ---------- Caché ----------
 
@@ -499,6 +578,25 @@ function {{PREFIX}}_query_bounds(array $def, string $name): array
     if (!$filtro || $filtro['tipo'] !== 'rango') {
         return ['min' => null, 'max' => null];
     }
+    if (!empty($def['woo']) && $filtro['fuente'] === 'precio') {
+        // El precio de WooCommerce está en su tabla de búsqueda: el más barato y el más caro de lo visible en el catálogo.
+        return {{PREFIX}}_query_cache('bounds|woo|precio', function () use ($def) {
+            global $wpdb;
+            $ids = {{PREFIX}}_query_ids($def, [], null, false);
+            if (!$ids) {
+                return ['min' => null, 'max' => null];
+            }
+            $row = $wpdb->get_row(
+                "SELECT MIN(min_price) AS min_value, MAX(max_price) AS max_value
+                 FROM {$wpdb->prefix}wc_product_meta_lookup WHERE product_id IN (" . implode(',', array_map('intval', $ids)) . ')',
+                ARRAY_A
+            );
+            return [
+                'min' => isset($row['min_value']) ? (float) $row['min_value'] : null,
+                'max' => isset($row['max_value']) ? (float) $row['max_value'] : null,
+            ];
+        });
+    }
     return {{PREFIX}}_query_cache('bounds|' . $def['post_type'] . '|' . $filtro['fuente'], function () use ($def, $filtro) {
         global $wpdb;
         $row = $wpdb->get_row($wpdb->prepare(
@@ -525,15 +623,23 @@ function {{PREFIX}}_query_context_tax(): array
     return $term instanceof WP_Term ? [['taxonomy' => $term->taxonomy, 'field' => 'term_id', 'terms' => [$term->term_id]]] : [];
 }
 
-// IDs publicados del contenido con los filtros activos menos $except.
-function {{PREFIX}}_query_ids(array $def, array $activos, ?string $except): array
+// IDs publicados del contenido con los filtros activos menos $except. `$context` respeta la categoría que se está
+// viendo; en una tienda de WooCommerce solo cuenta lo visible en el catálogo (WooCommerce oculta lo marcado como
+// oculto y, si así se configuró, lo agotado).
+function {{PREFIX}}_query_ids(array $def, array $activos, ?string $except, bool $context = true): array
 {
     $args = {{PREFIX}}_query_args($def, $activos, $except);
-    $context = {{PREFIX}}_query_context_tax();
+    $context = $context ? {{PREFIX}}_query_context_tax() : [];
     if ($context) {
         $args['tax_query'] = {{PREFIX}}_query_merge($args['tax_query'] ?? [], array_merge(['relation' => 'AND'], $context));
     }
-    unset($args['orderby']);
+    if (!empty($def['woo']) && function_exists('WC') && WC()->query) {
+        $visible = WC()->query->get_tax_query([], false);
+        if ($visible) {
+            $args['tax_query'] = {{PREFIX}}_query_merge($args['tax_query'] ?? [], array_merge(['relation' => 'AND'], array_values($visible)));
+        }
+    }
+    unset($args['orderby'], $args['{{PREFIX}}_orden_woo']);
     $query = new WP_Query(array_merge($args, [
         'post_type'              => $def['post_type'],
         'post_status'            => 'publish',
@@ -564,7 +670,8 @@ function {{PREFIX}}_query_counts(array $def, string $name, array $activos): arra
 
     return {{PREFIX}}_query_cache($key, function () use ($def, $name, $filtro, $activos, $dinamico) {
         global $wpdb;
-        $ids = $dinamico ? {{PREFIX}}_query_ids($def, $activos, $name) : null;
+        // Una tienda de WooCommerce cuenta siempre sobre lo visible, también con el conteo fijo.
+        $ids = $dinamico ? {{PREFIX}}_query_ids($def, $activos, $name) : (!empty($def['woo']) ? {{PREFIX}}_query_ids($def, [], null, false) : null);
         if ($ids === []) {
             return [];
         }

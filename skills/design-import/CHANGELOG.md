@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.13.0] - 2026-11-05
+
+### Agregado
+- **Filtros de una tienda de WooCommerce.** Con `Filtros de tienda: sí` el spec del listado de la tienda lleva la tabla "Filtros" (antes se anotaba solo la intención) y `check.mjs` la valida con la gramática de una tienda: `taxonomía` sobre `product_cat`, `product_tag` o un atributo `pa_<nombre>`; `rango` sobre `precio`; `búsqueda`; `orden` con `popularidad`, `valoracion` y `precio` asc/desc. `opciones` y `fecha` (campos ACF) se rechazan con el motivo, y los nombres `orderby`, `min_price`, `max_price` y `rating_filter` están reservados (son de WooCommerce).
+- Avisos de coherencia: con `Filtros de tienda: sí` y sin tabla avisa que `wp-query` la necesita; con `no` y con tabla avisa que no se usa. `popularidad` y `valoracion` en un contenido que no es de WooCommerce son un error.
+- `ORDER_KEYWORDS` de `shared/specs.mjs` suma `popularidad` y `valoracion` (copia sincronizada en todas las skills).
+- Pruebas: una tienda con tabla válida, con atributo y etiqueta, y cada rechazo (taxonomía ajena, `opciones`, `fecha`, rango o orden por un campo, nombre reservado).
+
+### Cambiado
+- `references/formato-spec.md` ("A WooCommerce shop") y `references/contenido-dinamico.md`: qué admite la tabla en una tienda.
+
 ## [1.12.0] - 2026-11-05
 
 ### Agregado

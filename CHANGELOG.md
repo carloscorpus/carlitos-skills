@@ -2,6 +2,14 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.29.0] - 2026-11-05
+
+### Agregado
+- `wp-query` 1.2.0: filtros de la **tienda de WooCommerce** (`Origen: woo`): categorías, etiquetas y atributos, rango de precio, búsqueda y los órdenes de WooCommerce (precio, popularidad, valoración), con conteos, paginación y actualización sin recargar, enganchado a la consulta que WooCommerce ya armó. El precio usa la tabla de búsqueda de WooCommerce con su propia lógica (impuestos incluidos); los conteos y los límites del rango solo ven lo visible del catálogo (sin ocultos ni agotados). Probado en un sitio de Local con WooCommerce 11.2.2. Detalle en `skills/wp-query/CHANGELOG.md`.
+- `design-import` 1.13.0: la tabla "Filtros" de una tienda (taxonomías de WooCommerce, precio, búsqueda y órdenes de WooCommerce) con su validación; `opciones` y `fecha` se rechazan. Detalle en `skills/design-import/CHANGELOG.md`.
+- `wp-woocommerce` 1.1.0: los filtros de tienda ya no quedan pendientes cuando `wp-query` está instalada. Detalle en `skills/wp-woocommerce/CHANGELOG.md`.
+- `shared/specs.mjs`: `ORDER_KEYWORDS` suma `popularidad` y `valoracion`. La copia se sincronizó en todas las skills.
+
 ## [1.28.0] - 2026-11-05
 
 ### Agregado

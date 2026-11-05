@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.1.0] - 2026-11-05
+
+### Cambiado
+- Los filtros de tienda ya no quedan "pendientes" a ciegas: con `Filtros de tienda: sí` en el spec, `status.mjs` y `check.mjs` solo avisan si `wp-query` no está instalada en el tema (la que conecta los filtros desde su versión 1.2.0, con `Origen: woo`); con `wp-query` instalada no dicen nada. `SKILL.md` cambia "pendientes" por "los conecta wp-query".
+- Probado junto con `wp-query` 1.2.0 en el sitio de Local (WooCommerce 11.2.2): la plantilla `archive-product.php` con filtros, total, paginación y las zonas `data-query` sigue pasando `check.mjs` sin errores ni avisos (conserva todos los `do_action()` de la original).
+
 ## [1.0.0] - 2026-11-05
 
 ### Agregado

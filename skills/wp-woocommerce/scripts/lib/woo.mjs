@@ -43,6 +43,9 @@ export function needs(modes) {
 }
 
 // El tema ya tiene plantilla para las páginas con contenido (page.php o singular.php).
+// wp-query instalada en el tema (conecta los filtros de la tienda: Filtros de tienda: sí).
+export const hasWpQuery = (target) => existsSync(join(target, 'inc/query/motor.php'));
+
 export const hasPageTemplate = (target) => existsSync(join(target, 'page.php')) || existsSync(join(target, 'singular.php'));
 
 // Pieza a la que pertenece una plantilla de woocommerce/ (null: siempre es PHP: tienda, tarjeta, ficha…).

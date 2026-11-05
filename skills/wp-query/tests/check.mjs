@@ -146,8 +146,71 @@ try {
         assert.equal(tabla.code, 4);
         assert.match(messages(tabla), /Falta la tabla "Filtros"/);
 
+        // Una tienda de WooCommerce con la tabla de un catálogo propio (campos ACF, opciones, fechas): no se puede.
         const woo = run('generate.mjs', ['--target', theme(change('specs/_shared.md', '| producto | cpt |', '| producto | woo |'))]);
-        assert.match(messages(woo), /WooCommerce/);
+        assert.equal(woo.code, 4);
+        assert.match(messages(woo), /un filtro de opciones no está disponible en una tienda de WooCommerce/);
+    });
+
+    // ---------- tienda de WooCommerce ----------
+    // El contenido "producto" pasa a WooCommerce y su tabla "Filtros" a una válida para una tienda; `filtros` = null la quita.
+    const wooFilters = [
+        '', '**Filtros**', '',
+        '| Filtro | Tipo | Fuente | Varios | Conteo | Vista |',
+        '|---|---|---|---|---|---|',
+        '| `categoria` | taxonomía | `categoria_producto` | sí (o) | dinámico | checkbox |',
+        '| `talla` | taxonomía | `pa_talla` | sí (y) | fijo | chips |',
+        '| `precio` | rango | `precio` | no | — | dos casillas |',
+        '| `q` | búsqueda | título y contenido | — | — | campo |',
+        '| `orden` | orden | reciente, az, `precio` asc, `precio` desc, popularidad, valoracion | — | — | select |',
+        '',
+    ].join('\n');
+    const wooTheme = (filtros = wooFilters, edit = () => {}) => theme((dir) => {
+        change('specs/_shared.md', '| producto | cpt |', '| producto | woo |')(dir);
+        const file = join(dir, 'specs/productos.md');
+        const text = readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+        assert.ok(/\n\*\*Filtros\*\*\n/.test(text), 'el fixture ya no trae la tabla Filtros');
+        writeFileSync(file, text.replace(/\n\*\*Filtros\*\*\n[\s\S]*?(?=\n## Sección)/, filtros ?? '\n'));
+        edit(dir);
+    });
+
+    await test('generate: una tienda de WooCommerce (product, woo, precio y órdenes de WooCommerce)', () => {
+        const dir = wooTheme();
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        const def = loadDef(dir, 'inc/query/producto.php');
+        assert.match(def, /'post_type' => 'product',\n\s+'woo' => true,/);
+        assert.match(def, /'taxonomias' => \[\n\s+'categoria_producto',\n\s+'pa_talla',\n\s+\]/);
+        assert.match(def, /'fuente' => 'precio',\n\s+'etiqueta' => 'Precio'/);
+        assert.match(def, /'precio-asc' => \[\n\s+'orderby' => 'price',\n\s+'order' => 'ASC',\n\s+'woo' => true/);
+        assert.match(def, /'popularidad' => \[\n\s+'orderby' => 'popularity',\n\s+'order' => 'DESC',\n\s+'woo' => true/);
+        assert.match(def, /'valoracion' => \[\n\s+'orderby' => 'rating'/);
+        // Un catálogo propio no cambia: sin `woo` en su definición.
+        assert.doesNotMatch(loadDef(ready(), 'inc/query/producto.php'), /'woo'/);
+    });
+
+    await test('generate: lo que una tienda de WooCommerce no admite', () => {
+        const withRow = (row) => wooFilters.replace('| `q` | búsqueda', `${row}\n| \`q\` | búsqueda`);
+        const bad = (row) => run('generate.mjs', ['--target', wooTheme(withRow(row))]);
+        assert.match(messages(bad('| `color` | opciones | `producto_ficha_colores` | sí (o) | fijo | chips |')), /un filtro de opciones no está disponible en una tienda de WooCommerce/);
+        assert.match(messages(bad('| `cuando` | fecha | `post_date` | no | — | select |')), /un filtro de fecha no está disponible en una tienda de WooCommerce/);
+        assert.match(messages(bad('| `marca` | taxonomía | `marca` | sí (o) | ninguno | chips |')), /la taxonomía "marca" no es de producto/);
+        assert.match(messages(run('generate.mjs', ['--target', wooTheme(wooFilters.replace('| `precio` | rango | `precio`', '| `precio` | rango | `producto_ficha_precio`'))])), /el rango es el precio/);
+        assert.match(messages(run('generate.mjs', ['--target', wooTheme(wooFilters.replace('`precio` asc', '`producto_ficha_peso` asc'))])), /solo se ordena por `precio` asc\/desc/);
+        // popularidad y valoracion no existen fuera de WooCommerce.
+        assert.match(messages(run('generate.mjs', ['--target', theme(change('specs/productos.md', 'reciente, az,', 'reciente, popularidad, az,'))])), /el orden "popularidad" solo existe en una tienda de WooCommerce/);
+    });
+
+    await test('generate y status: una tienda de WooCommerce sin tabla "Filtros" no es un error ni queda pendiente', () => {
+        const dir = wooTheme(null);
+        const g = run('generate.mjs', ['--target', dir, '--page', 'productos']);
+        assert.equal(g.code, 1, 'sin listados con tabla no hay nada que generar');
+        const s = run('status.mjs', ['--target', dir]);
+        assert.equal(s.code, 0);
+        const productos = s.json.listados.find((l) => l.slug === 'productos');
+        assert.deepEqual([productos.woo, productos.filtros], [true, null]);
+        assert.doesNotMatch(s.json.next.join('\n'), /Falta la tabla "Filtros" en: productos/);
+        assert.doesNotMatch(s.json.next.join('\n'), /Conectar las plantillas: .*productos/);
     });
 
     await test('generate: --page y --states eligen los listados', () => {
@@ -336,6 +399,16 @@ try {
         assert.ok(JSON.parse(r.stdout).passed > 30);
         const lint = spawnSync(php, ['-l', join(dir, 'inc/query/motor.php')], { encoding: 'utf8' });
         assert.equal(lint.status, 0, lint.stdout);
+    });
+
+    await test('motor: una tienda de WooCommerce (php)', () => {
+        if (!php) return 'skip';
+        const dir = wooTheme();
+        assert.equal(run('install.mjs', ['--target', dir]).code, 0);
+        assert.equal(run('generate.mjs', ['--target', dir]).code, 0);
+        const r = spawnSync(php, [join(skillDir, 'tests', 'motor-woo.php'), join(dir, 'inc/query/motor.php'), join(dir, 'inc/query/producto.php')], { encoding: 'utf8' });
+        assert.equal(r.status, 0, r.stdout + r.stderr);
+        assert.ok(JSON.parse(r.stdout).passed > 25);
     });
 
     // ---------- código común ----------

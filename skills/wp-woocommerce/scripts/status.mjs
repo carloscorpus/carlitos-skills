@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { detectCssEntry, fail, skillVersion } from './lib/common.mjs';
 import { detectTheme } from './lib/tema.mjs';
-import { ENGINE_BASE, ENGINE_CSS, ENGINE_FRAGMENTS, compareOverrides, findWooCore, needs, readWoo } from './lib/woo.mjs';
+import { ENGINE_BASE, ENGINE_CSS, ENGINE_FRAGMENTS, compareOverrides, findWooCore, hasWpQuery, needs, readWoo } from './lib/woo.mjs';
 
 let args;
 try {
@@ -80,7 +80,7 @@ if (decided) {
     const versions = overrides.filter((o) => ['sin @version', 'desactualizada'].includes(o.state));
     if (versions.length) next.push(`Revisar contra la original y poner el @version: ${versions.map((o) => `${o.rel} (${o.state})`).join(', ')}`);
     if (need.css && spec.pages.length) next.push('Escribir el CSS de los bloques en src/css/woocommerce.css (references/estilos-y-modos.md)');
-    if (spec.woo.shopFilters === 'sí') next.push('Filtros de tienda: pendientes (wp-query todavía no acepta Origen woo)');
+    if (spec.woo.shopFilters === 'sí' && !hasWpQuery(target)) next.push('Filtros de tienda: sí, y wp-query no está instalada en el tema: corre wp-query (install.mjs, generate.mjs y conectar la plantilla de la tienda)');
     if (spec.woo.variations === 'sí') next.push('Variaciones: pendientes (esta versión solo cubre productos simples)');
     if (!core) next.push('Sin la carpeta templates/ de WooCommerce para comparar versiones y hooks: pasa --woo <raíz del plugin> o corre desde wp-content/themes/<tema>');
 }

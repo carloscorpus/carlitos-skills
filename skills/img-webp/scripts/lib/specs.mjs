@@ -119,7 +119,7 @@ export function parseWoo(sharedText) {
 // ---------- Filtros de un listado ----------
 
 export const FILTER_TYPES = ['taxonomía', 'rango', 'opciones', 'búsqueda', 'orden', 'fecha'];
-export const ORDER_KEYWORDS = ['reciente', 'antiguo', 'az', 'za', 'relevancia'];
+export const ORDER_KEYWORDS = ['reciente', 'antiguo', 'az', 'za', 'relevancia', 'popularidad', 'valoracion']; // popularidad y valoracion: solo en una tienda de WooCommerce
 const fold = (value) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 
 // Tabla "**Filtros**" del resumen de un listado (antes de la primera sección). null si no hay tabla.
