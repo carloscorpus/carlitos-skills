@@ -24,4 +24,29 @@ Una sección por línea, en el orden en que aparecen en la página:
 -->
 
 - hero: https://www.figma.com/design/<archivo>/<nombre>?node-id=1-10
+  - móvil: https://www.figma.com/design/<archivo>/<nombre>?node-id=5-20
+  - nota: el slider avanza solo cada 5 segundos.
+  - nota: el botón lleva a /contacto.
 - servicios: https://www.figma.com/design/<archivo>/<nombre>?node-id=1-25
+  - nota: las tarjetas las agrega el cliente (repetidor), máximo 6.
+
+<!--
+Debajo de cada sección, con sangría (dos espacios), puedes agregar:
+
+- móvil: el link del frame de la versión móvil. Opcional: ponlo solo si el diseño lo tiene.
+  Sin él, la versión móvil se propone en el spec y tú la apruebas.
+- nota: lo que el diseño no muestra y no se debe adivinar (qué hace un botón, si algo se mueve solo,
+  qué cambia el cliente, cuántos elementos caben...). Una nota por línea. Puedes escribir "- nota: ..."
+  o solo "- ...".
+
+Tus notas pasan tal cual al spec y mandan sobre lo que se ve en Figma. Si una nota choca con el diseño
+(dices 3 tarjetas y hay 4), la skill te pregunta.
+-->
+
+## Notas
+
+<!--
+Opcional: lo que vale para toda la página, una nota por línea. Pasan a "Notas de página" del spec.
+-->
+
+- el header es transparente solo en esta página.

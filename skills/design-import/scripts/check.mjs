@@ -14,6 +14,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { parseEnlaces } from './figma/enlaces.mjs';
 import { fail } from './lib/common.mjs';
 import {
     FILTER_TYPES, ORDER_KEYWORDS, WOO_MODES, WOO_PIECES, labels, lineSplits, noAccent, normalizeText, parseDynamicContent, parseFilters, parseTable, parseWoo, phpLiterals, phpTexts, read, unwrap,
@@ -332,6 +333,27 @@ for (const name of pageFiles) {
 
     if (pageState === 'aplicado' && blocks.some((b) => !['aplicado', 'descartado'].includes(labels(b).Estado))) {
         error(name, 'La página está aplicada pero tiene secciones que no están aplicadas ni descartadas.');
+    }
+
+    // Fuente Figma: las notas del usuario en enlaces/ pasan tal cual al spec. Falta una: aviso; en una página
+    // aprobada o aplicada, error (no se aprueba algo que ignora lo que el usuario pidió).
+    const figmaPage = /^figma:([a-z][a-z0-9]*(?:-[a-z0-9]+)*)$/.exec(unwrap(pageLabels.Fuente ?? ''))?.[1];
+    const enlacesFile = figmaPage && join(specsDir, 'figma', 'enlaces', `${figmaPage}.md`);
+    if (enlacesFile && existsSync(enlacesFile)) {
+        const enlaces = parseEnlaces(read(enlacesFile), figmaPage);
+        const report = ['aprobado', 'aplicado'].includes(pageState) ? error : warn;
+        const has = (text, note) => normalizeText(text).toLowerCase().includes(normalizeText(note).toLowerCase());
+        for (const note of enlaces.notes) {
+            if (!has(header, note)) report(name, `La nota de la página en enlaces/${figmaPage}.md no está en "Notas de página": "${note}".`);
+        }
+        const byName = new Map(blocks.map((b) => [b.split('\n')[0].trim(), b]));
+        for (const s of enlaces.sections) {
+            const block = byName.get(s.name);
+            if (!block) continue;
+            for (const note of s.notes) {
+                if (!has(block, note)) report(`${name} › ${s.name}`, `La nota de enlaces/${figmaPage}.md no está en "Indicaciones del diseño": "${note}".`);
+            }
+        }
     }
 }
 

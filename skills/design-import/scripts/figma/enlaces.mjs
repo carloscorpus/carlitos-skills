@@ -35,7 +35,15 @@ const stripComments = (text) => text.replace(/<!--[\s\S]*?-->/g, (m) => m.replac
 const PENDING = /^(pendiente|ninguno|-|)$/i;
 const FIRST_URL = /https?:\/\/[^\s)>\]]+/;
 
-// Devuelve { page, frame, sections, pending, errors, warnings }. `slug` es el nombre del archivo sin .md.
+// Debajo de una sección, con sangría, van sus extras: "- móvil: <link>" (el frame de la versión móvil, opcional) y
+// sus notas ("- nota: <texto>" o cualquier otra línea con sangría). Las notas de toda la página van en "## Notas".
+// Las notas las escribe el usuario: son indicaciones que no se deducen del diseño y pasan tal cual al spec.
+const MOBILE_KEY = /^(m[oó]vil|mobile)$/i;
+const NOTE_KEY = /^notas?$/i;
+const BULLET = /^[-*]\s+(.*)$/;
+
+// Devuelve { page, frame, notes, sections, pending, errors, warnings }. `slug` es el nombre del archivo sin .md.
+// Cada sección: { name, fileKey, nodeId, url, line, mobile, notes } o, si está pendiente, { name, pending, line, mobile, notes }.
 export function parseEnlaces(text, slug) {
     const errors = [];
     const warnings = [];
@@ -52,8 +60,11 @@ export function parseEnlaces(text, slug) {
     let frameLine = null;
     let framePending = false;
     let inSections = false;
+    let inNotes = false;
     let sectionsHeadingSeen = false;
+    const notes = [];
     const sections = [];
+    let current = null; // la última sección leída, para sus líneas con sangría
     const names = new Map();
     const nodes = new Map();
 
@@ -70,11 +81,54 @@ export function parseEnlaces(text, slug) {
         }
         if (/^##\s+Secciones\s*$/i.test(line)) {
             inSections = true;
+            inNotes = false;
             sectionsHeadingSeen = true;
+            return;
+        }
+        if (/^##\s+Notas\s*$/i.test(line)) {
+            inNotes = true;
+            inSections = false;
             return;
         }
         if (/^#{1,6}\s/.test(line)) {
             inSections = false;
+            inNotes = false;
+            return;
+        }
+
+        // Notas de la página: una por viñeta; una línea sin viñeta sigue la nota anterior.
+        if (inNotes) {
+            const bullet = BULLET.exec(line);
+            if (bullet || !notes.length) notes.push((bullet ? bullet[1] : line).trim());
+            else notes[notes.length - 1] += ` ${line}`;
+            return;
+        }
+
+        // Con sangría bajo una sección: su móvil o sus notas.
+        if (inSections && /^[ \t]+\S/.test(raw)) {
+            if (!current) return error(n, 'Una línea con sangría va debajo de una sección ("- nombre: link").');
+            const bullet = BULLET.exec(line);
+            if (!bullet) {
+                if (!current.notes.length) return error(n, `No se entiende la línea "${line}": las notas de una sección van como "- nota: texto", con sangría.`);
+                current.notes[current.notes.length - 1] += ` ${line}`;
+                return;
+            }
+            const keyed = /^([^:]+?)\s*:\s*(.*)$/.exec(bullet[1]);
+            if (keyed && MOBILE_KEY.test(keyed[1])) {
+                if (current.mobile) return error(n, `La sección "${current.name}" ya tiene link de móvil (línea ${current.mobile.line}).`);
+                const url = FIRST_URL.exec(keyed[2])?.[0];
+                if (!url) return error(n, `Móvil de "${current.name}": hace falta el link del frame móvil.`);
+                const parsed = parseFigmaUrl(url);
+                if (parsed.error) return error(n, `Móvil de "${current.name}": ${parsed.error}`);
+                const key = `${parsed.fileKey}/${parsed.nodeId}`;
+                if (nodes.has(key)) return error(n, `El móvil de "${current.name}" apunta al mismo frame que "${nodes.get(key)}".`);
+                nodes.set(key, `${current.name} (móvil)`);
+                current.mobile = { ...parsed, url, line: n };
+                return;
+            }
+            const note = (keyed && NOTE_KEY.test(keyed[1]) ? keyed[2] : bullet[1]).trim();
+            if (!note) return error(n, `Nota vacía en la sección "${current.name}".`);
+            current.notes.push(note);
             return;
         }
 
@@ -95,9 +149,12 @@ export function parseEnlaces(text, slug) {
         }
 
         if (!inSections) return;
+        // Una sección con error deja `current` en un objeto suelto: sus líneas con sangría no se pegan a la anterior.
+        current = { name: null, mobile: null, notes: [] };
         const item = /^[-*]\s+([^:]+?)\s*:\s*(.*)$/.exec(line);
         if (!item) return error(n, `No se entiende la línea "${line}": cada sección va como "- nombre: link".`);
         const [, name, value] = item;
+        current.name = name;
         if (!SLUG.test(name)) {
             const hint = /\s/.test(name) ? ' ¿Falta ":" después del nombre?' : '';
             return error(n, `Nombre de sección inválido "${name}": minúsculas, números y guiones, empieza con letra, sin tildes.${hint}`);
@@ -105,7 +162,8 @@ export function parseEnlaces(text, slug) {
         if (names.has(name)) error(n, `La sección "${name}" ya está en la línea ${names.get(name)}.`);
         else names.set(name, n);
         if (PENDING.test(value.trim())) {
-            sections.push({ name, pending: true, line: n });
+            current = { name, pending: true, line: n, mobile: null, notes: [] };
+            sections.push(current);
             return;
         }
         const url = FIRST_URL.exec(value)?.[0];
@@ -115,7 +173,8 @@ export function parseEnlaces(text, slug) {
         const key = `${parsed.fileKey}/${parsed.nodeId}`;
         if (nodes.has(key)) error(n, `La sección "${name}" apunta al mismo frame que "${nodes.get(key)}".`);
         else nodes.set(key, name);
-        sections.push({ name, ...parsed, url, line: n });
+        current = { name, ...parsed, url, line: n, mobile: null, notes: [] };
+        sections.push(current);
     });
 
     if (title === null) error(1, 'Falta el título "# Figma: <página>".');
@@ -128,11 +187,19 @@ export function parseEnlaces(text, slug) {
             if (s.fileKey !== frame.fileKey) warn(s.line, `La sección "${s.name}" es de otro archivo de Figma que la página.`);
             else if (s.nodeId === frame.nodeId) warn(s.line, `La sección "${s.name}" es el frame completo de la página: solo tiene sentido si la página tiene una única sección.`);
         }
+        for (const s of sections) {
+            if (s.mobile && s.mobile.fileKey !== frame.fileKey) warn(s.mobile.line, `El móvil de "${s.name}" es de otro archivo de Figma que la página.`);
+        }
     }
+    // Espacios de más (o de líneas unidas) no cuentan.
+    const clean = (list) => list.splice(0, list.length, ...list.map((note) => note.replace(/\s+/g, ' ').trim()));
+    clean(notes);
+    for (const s of sections) clean(s.notes);
 
     return {
         page: slug,
         frame,
+        notes,
         pending: framePending,
         sections,
         errors,

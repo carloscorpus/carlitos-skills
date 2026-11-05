@@ -132,6 +132,19 @@ export function validateLectura(data, slug, { dir, enlaces = null } = {}) {
         checkFile(`${label}.referencia`, s.referencia);
         checkFile(`${label}.captura`, s.captura);
 
+        // Versión móvil (opcional, solo si enlaces/ trae su link): la referencia y la captura de ese frame.
+        if (s.movil !== undefined) {
+            const m = s.movil;
+            if (!isObj(m)) err(`${label}.movil`, '"movil" es un objeto { nodeId, tamano, referencia, captura }.');
+            else {
+                if (!NODE_ID.test(m.nodeId ?? '')) err(`${label}.movil.nodeId`, 'El nodeId debe verse como "3638:2098" (con ":").');
+                else if (m.nodeId === s.nodeId) err(`${label}.movil.nodeId`, 'El móvil es el mismo frame que la sección.');
+                if (!isObj(m.tamano) || !isNum(m.tamano.ancho) || !isNum(m.tamano.alto)) err(`${label}.movil.tamano`, 'Falta "tamano" ({ ancho, alto }).');
+                checkFile(`${label}.movil.referencia`, m.referencia);
+                checkFile(`${label}.movil.captura`, m.captura);
+            }
+        }
+
         const list = (key) => {
             if (!Array.isArray(s[key])) {
                 err(`${label}.${key}`, `Falta "${key}" (una lista; puede ir vacía).`);
@@ -216,6 +229,12 @@ export function validateLectura(data, slug, { dir, enlaces = null } = {}) {
             const found = byName.get(wanted.name);
             if (!found) warn(`secciones[${wanted.name}]`, `La sección "${wanted.name}" está en enlaces/ pero todavía no se lee.`);
             else if (found.nodeId !== wanted.nodeId) err(`secciones[${wanted.name}].nodeId`, `El link de "${wanted.name}" cambió en enlaces/ (${wanted.nodeId}) y la lectura es de ${found.nodeId}: vuelve a leerla.`);
+            else if (found.estado === 'leida') {
+                const movil = isObj(found.movil) ? found.movil : null;
+                if (wanted.mobile && !movil) warn(`secciones[${wanted.name}].movil`, `"${wanted.name}" tiene link de móvil en enlaces/ pero todavía no se lee.`);
+                else if (wanted.mobile && movil.nodeId !== wanted.mobile.nodeId) err(`secciones[${wanted.name}].movil.nodeId`, `El link de móvil de "${wanted.name}" cambió en enlaces/ (${wanted.mobile.nodeId}) y la lectura es de ${movil.nodeId}: vuelve a leerla.`);
+                else if (!wanted.mobile && movil) warn(`secciones[${wanted.name}].movil`, `"${wanted.name}" tiene lectura de móvil pero su link ya no está en enlaces/.`);
+            }
         }
         if (enlaces.sections.length) {
             const listed = new Set(enlaces.sections.map((s) => s.name));

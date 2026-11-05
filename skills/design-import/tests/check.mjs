@@ -803,6 +803,70 @@ try {
         assert.equal(r.json.summary.sections, 2, 'la sección "pendiente" no cuenta como leída');
     });
 
+    test('figma-links: lee las notas de la página y, con sangría bajo cada sección, su móvil y sus notas', () => {
+        writeEnlaces('notas.md', [
+            '# Figma: notas', '', `- **Frame de la página:** ${fig('20-1')}`, '', '## Secciones', '',
+            `- hero: ${fig('20-2')}`,
+            `  - móvil: ${fig('21-2')}`,
+            '  - nota: el slider avanza solo cada 5 segundos.',
+            '  - el botón lleva a: /contacto', // sin "nota:" también es nota, aunque tenga ":"
+            '    y abre en la misma pestaña.', // sin viñeta: sigue la nota anterior
+            `- servicios: ${fig('20-3')}`,
+            '\t- notas: las tarjetas las agrega el cliente, máximo 6.',
+            '- precios: pendiente',
+            '  - nota: falta el diseño final.',
+            '', '## Notas', '',
+            '<!-- los comentarios no cuentan -->',
+            '- el header es transparente solo en esta página.',
+            '- sin meta descripción', 'en el diseño.', '',
+        ].join('\n'));
+        const r = links('--page', 'notas');
+        assert.equal(r.code, 0, r.stdout);
+        const page = r.json.pages[0];
+        assert.deepEqual(page.notes, ['el header es transparente solo en esta página.', 'sin meta descripción en el diseño.']);
+        const [hero, servicios, precios] = page.sections;
+        assert.equal(hero.mobile.nodeId, '21:2');
+        assert.deepEqual(hero.notes, ['el slider avanza solo cada 5 segundos.', 'el botón lleva a: /contacto y abre en la misma pestaña.']);
+        assert.equal(servicios.mobile, null, 'el móvil es opcional');
+        assert.deepEqual(servicios.notes, ['las tarjetas las agrega el cliente, máximo 6.']);
+        assert.deepEqual([precios.pending, precios.notes], [true, ['falta el diseño final.']]);
+        assert.equal(r.json.summary.sections, 2);
+    });
+
+    test('figma-links: errores del móvil y de las notas, con su línea', () => {
+        writeEnlaces('notasmal.md', [
+            '# Figma: notasmal', '', `- **Frame de la página:** ${fig('30-1')}`, '', '## Secciones', '', // 1-6
+            '  - nota: antes de cualquier sección', // 7
+            `- hero: ${fig('30-2')}`, // 8
+            '  suelta sin viñeta ni nota previa', // 9
+            `  - móvil: ${fig('30-2')}`, // 10: el mismo frame que la sección
+            `  - móvil: ${fig('31-2')}`, // 11: ok
+            `  - móvil: ${fig('31-3')}`, // 12: segundo móvil
+            `- servicios: ${fig('30-3')}`, // 13
+            `  - movil: ${fig('31-2')}`, // 14: el mismo móvil que hero
+            '  - nota:', // 15: vacía
+            `- contacto: ${fig('30-4')}`, // 16
+            `  - mobile: https://www.figma.com/board/${KEY}/Demo?node-id=1-6`, // 17: no es de diseño
+            `- Mal Nombre: ${fig('30-5')}`, // 18: nombre inválido
+            '  - nota: de una sección con error', // 19: no se pega a "contacto"
+            '',
+        ].join('\n'));
+        const r = links('--page', 'notasmal');
+        assert.equal(r.code, 4, r.stdout);
+        const byLine = Object.fromEntries(r.json.pages[0].errors.map((e) => [e.line, e.message]));
+        assert.match(byLine[7], /va debajo de una sección/);
+        assert.match(byLine[9], /las notas de una sección van como "- nota: texto"/);
+        assert.match(byLine[10], /El móvil de "hero" apunta al mismo frame que "hero"/);
+        assert.equal(byLine[11], undefined);
+        assert.match(byLine[12], /ya tiene link de móvil \(línea 11\)/);
+        assert.match(byLine[14], /mismo frame que "hero \(móvil\)"/);
+        assert.match(byLine[15], /Nota vacía en la sección "servicios"/);
+        assert.match(byLine[17], /Móvil de "contacto": .*"board" no sirve/);
+        assert.equal(byLine[19], undefined);
+        const contacto = r.json.pages[0].sections.find((s) => s.name === 'contacto');
+        assert.deepEqual(contacto.notes, [], 'la nota de una sección con error no se pega a la anterior');
+    });
+
     test('figma-links: --page con una página que no existe falla con código 1', () => {
         const r = links('--page', 'nada');
         assert.equal(r.code, 1);
@@ -1011,6 +1075,101 @@ try {
         const inv = JSON.parse(readFileSync(out, 'utf8'));
         assert.deepEqual(inv.pages.map((p) => p.title), ['home']);
         assert.equal(inv.repeated.find((g) => g.nombre === 'Header'), undefined, 'con una sola página el Header no se repite');
+    });
+
+    test('figma-lectura: el móvil de una sección se valida y se compara con enlaces/', () => {
+        const conMovil = (movil) => seccion('movil', 'hero', '50:2', movil === undefined ? {} : { movil });
+        touch('movil/hero.movil.ref.txt', 'export default function Movil() {}');
+        touch('movil/hero.movil.png', 'png');
+        const bien = { nodeId: '51:2', tamano: { ancho: 390, alto: 800 }, referencia: 'movil/hero.movil.ref.txt', captura: 'movil/hero.movil.png' };
+        const enlacesMovil = (mobileNode) => {
+            mkdirSync(join(lecTheme, 'specs/figma/enlaces'), { recursive: true });
+            writeFileSync(join(lecTheme, 'specs/figma/enlaces/movil.md'), [
+                '# Figma: movil', '', `- **Frame de la página:** ${fig('3638-2095')}`, '', '## Secciones', '',
+                `- hero: ${fig('50-2')}`, ...(mobileNode ? [`  - móvil: ${fig(mobileNode)}`] : []), '',
+            ].join('\n'));
+        };
+        const warnings = (r) => r.json.pages[0].warnings.map((w) => w.message).join('\n');
+        try {
+            enlacesMovil('51-2');
+            writeLectura(pagina('movil', [conMovil(bien)]));
+            const ok = lectura('--page', 'movil');
+            assert.equal(ok.code, 0, ok.stdout);
+            assert.equal(ok.json.summary.warnings, 0);
+
+            writeLectura(pagina('movil', [conMovil()]));
+            assert.match(warnings(lectura('--page', 'movil')), /"hero" tiene link de móvil en enlaces\/ pero todavía no se lee/);
+
+            enlacesMovil('51-9');
+            writeLectura(pagina('movil', [conMovil(bien)]));
+            assert.match(lecErrors(lectura('--page', 'movil')), /El link de móvil de "hero" cambió en enlaces\/ \(51:9\)/);
+
+            enlacesMovil(null);
+            assert.match(warnings(lectura('--page', 'movil')), /tiene lectura de móvil pero su link ya no está en enlaces\//);
+
+            writeLectura(pagina('movil', [conMovil({ nodeId: '50:2', referencia: 'movil/no-hay.txt', captura: 'movil/hero.movil.png' })]));
+            const mal = lecErrors(lectura('--page', 'movil'));
+            assert.match(mal, /movil\.nodeId: El móvil es el mismo frame que la sección/);
+            assert.match(mal, /movil\.tamano: Falta "tamano"/);
+            assert.match(mal, /movil\.referencia: No existe el archivo "movil\/no-hay\.txt"/);
+        } finally {
+            rmSync(join(lecDir, 'movil.json'), { force: true });
+            rmSync(join(lecTheme, 'specs/figma/enlaces'), { recursive: true, force: true });
+        }
+    });
+
+    test('figma-inventario: lleva las notas del usuario y el móvil de cada sección', () => {
+        mkdirSync(join(lecTheme, 'specs/figma/enlaces'), { recursive: true });
+        writeFileSync(join(lecTheme, 'specs/figma/enlaces/home.md'), [
+            '# Figma: home', '', `- **Frame de la página:** ${fig('3638-2095')}`, '', '## Secciones', '',
+            `- header: ${fig('3704-1')}`, `- hero: ${fig('3638-2098')}`, '  - nota: el slider avanza solo.',
+            `- servicios: ${fig('3638-2125')}`, `- contacto: ${fig('3638-2200')}`, '  - nota: falta el diseño final.',
+            '', '## Notas', '', '- header transparente.', '',
+        ].join('\n'));
+        try {
+            const r = inventario('--page', 'home');
+            assert.equal(r.code, 0, r.stdout);
+            const home = JSON.parse(readFileSync(join(lecDir, '_inventario.json'), 'utf8')).pages[0];
+            assert.deepEqual(home.notes, ['header transparente.']);
+            const by = Object.fromEntries(home.sections.map((s) => [s.name, s]));
+            assert.deepEqual(by.hero.notes, ['el slider avanza solo.']);
+            assert.equal(by.hero.mobile, null);
+            assert.deepEqual(by.contacto.notes, ['falta el diseño final.'], 'también en una sección pendiente');
+            assert.deepEqual(by.servicios.notes, []);
+        } finally {
+            rmSync(join(lecTheme, 'specs/figma/enlaces'), { recursive: true, force: true });
+        }
+    });
+
+    test('check: las notas de enlaces/ tienen que estar en el spec de una página de Figma', () => {
+        const figmaHome = (notesInSpec, state) => (dir) => {
+            mkdirSync(join(dir, 'specs/figma/enlaces'), { recursive: true });
+            writeFileSync(join(dir, 'specs/figma/enlaces/home.md'), [
+                '# Figma: home', '', `- **Frame de la página:** ${fig('3638-2095')}`, '', '## Secciones', '',
+                `- hero: ${fig('3638-2098')}`, '  - nota: El slider avanza   solo cada 5 s.', '',
+                '## Notas', '', '- header transparente', '',
+            ].join('\n'));
+            edit('specs/home.md', '- **Fuente:** `index.html`', '- **Fuente:** `figma:home`')(dir);
+            if (notesInSpec) {
+                edit('specs/home.md', '  - título SEO "Inicio"\n', '  - título SEO "Inicio"\n  - Header transparente\n')(dir);
+                edit('specs/home.md', '- **Comportamiento:** el botón lleva a la sección contacto\n', '- **Comportamiento:** el botón lleva a la sección contacto\n- **Indicaciones del diseño:**\n  - el slider avanza solo cada 5 s.\n')(dir);
+            }
+            if (state) {
+                edit('specs/home.md', '- **Estado:** aplicado\n\n## Sección: hero', `- **Estado:** ${state}\n\n## Sección: hero`)(dir);
+            }
+        };
+        const conNotas = broken('notas-ok', figmaHome(true));
+        assert.equal(conNotas.code, 0, conNotas.stdout);
+        assert.doesNotMatch(JSON.stringify(conNotas.json.warnings), /enlaces\/home\.md/, 'espacios y mayúsculas no importan');
+
+        const aplicada = broken('notas-faltan', figmaHome(false));
+        assert.equal(aplicada.code, 4, 'en una página aplicada falta una nota: error');
+        assert.match(messages(aplicada), /La nota de la página en enlaces\/home\.md no está en "Notas de página": "header transparente"/);
+        assert.match(messages(aplicada), /no está en "Indicaciones del diseño": "El slider avanza solo cada 5 s\."/);
+
+        const pendienteSinNotas = broken('notas-pendiente', figmaHome(false, 'pendiente'));
+        assert.doesNotMatch(messages(pendienteSinNotas), /enlaces\/home\.md/, 'en una página pendiente no es error');
+        assert.match(pendienteSinNotas.json.warnings.map((w) => w.message).join('\n'), /no está en "Indicaciones del diseño"/);
     });
 } finally {
     rmSync(tmp, { recursive: true, force: true });

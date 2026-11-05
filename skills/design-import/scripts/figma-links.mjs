@@ -6,7 +6,9 @@
 //
 // Por página comprueba: título igual al nombre del archivo, link del frame de la página (archivo de diseño y
 // node-id), cada sección como "- nombre: link" con nombre en slug y sin repetirse, y que dos secciones no
-// apunten al mismo frame. Una página con "pendiente" no es error (aún no se llenó) salvo con
+// apunten al mismo frame. También lee las notas del usuario ("## Notas" de la página y, con sangría bajo cada
+// sección, "- nota: …") y el link opcional de su versión móvil ("- móvil: <link>"), y los devuelve en `notes` y
+// `mobile`. Una página con "pendiente" no es error (aún no se llenó) salvo con
 // --require-complete. Con --page solo valida esa página; sin ella, todas (los archivos que empiezan con "_"
 // son guías y no se leen).
 //

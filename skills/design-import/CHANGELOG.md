@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.14.0] - 2026-11-05
+
+### Agregado
+- Fuente Figma: **notas del usuario** en `specs/figma/enlaces/<página>.md`. Las de toda la página van en `## Notas`; las de una sección, con sangría debajo de ella (`- nota: …` o cualquier línea con sangría). Dicen lo que el diseño no muestra (qué hace un botón, qué se mueve solo, qué cambia el cliente, límites) para que no se deduzca.
+- Las notas mandan sobre lo que muestra Figma y sobre lo que deduce la skill: pasan **tal cual** al spec (las de la página a `Notas de página`, las de la sección a la etiqueta nueva `Indicaciones del diseño`), lo que responden no se vuelve a preguntar, y si chocan con el diseño o no son claras, se pregunta. `check.mjs` avisa si una nota falta en el spec y falla si la página ya está `aprobado` o `aplicado`.
+- **Link opcional de la versión móvil** de cada sección (`- móvil: <link>`, con sangría). Si está, se lee también (`<sección>.movil.ref.txt` y `.movil.png`, entrada `movil` en la lectura) y las pantallas chicas lo siguen. Si no está, todo funciona como antes.
+- `figma-links.mjs` devuelve `notes` y `mobile`; `figma-lectura.mjs` valida el `movil` y avisa si su link cambió o falta leerlo; `figma-inventario.mjs` lleva las notas y el móvil a `_inventario.json` para la etapa A.
+- `_ejemplo.md` y la plantilla de cada página traen el formato y un ejemplo.
+
 ## [1.13.0] - 2026-11-05
 
 ### Agregado
