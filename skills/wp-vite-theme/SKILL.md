@@ -2,7 +2,7 @@
 name: wp-vite-theme
 description: 'Scaffold a new WordPress theme (Local WP) with Vite + JS + Tailwind (latest) + pnpm. Use when the user starts a new WP theme project, says "inicia tema", "nuevo tema wp", "scaffold theme", "arranca proyecto wp con vite", or asks for the usual enqueue.php / vite.config.ts / style.css / header / footer base.'
 metadata:
-  version: "1.3.0"
+  version: "1.3.1"
 ---
 
 # wp-vite-theme
@@ -45,11 +45,15 @@ The Vite `base` needs no placeholder: `vite.config.ts` derives the theme folder 
    - WebFetch `https://tailwindcss.com/docs/installation/using-vite` before trusting `vite.config.ts.tpl` / `input.css.tpl`. If the major changed the plugin name or CSS import, adapt to the docs and update the templates.
    - Grep `node_modules/vite/dist/node/index.d.ts` for `@deprecated` on every option the config uses, including nested ones (e.g. `rolldownOptions` vs `rollupOptions`, `server.ws.host` vs `server.hmr.host`). Read each `@deprecated` line with the property below it (`grep -n -A1 "@deprecated"`): the comment names the replacement, not always the old option. Update the template if something is deprecated.
 7. **Validate.** Detect the OS first (`node -p process.platform`: `win32`, `darwin`, `linux`).
-   - `php -l` on every PHP file. Use `php` if it is in PATH; otherwise Local's PHP (newest `php-*` version):
-     - win32: `%APPDATA%/Local/lightning-services/php-*/bin/win32/php.exe`
-     - darwin: `~/Library/Application Support/Local/lightning-services/php-*/bin/darwin*/bin/php`
-     - linux: `~/.config/Local/lightning-services/php-*/bin/linux/bin/php`
-     If the path does not match, search `lightning-services/` for a `php` binary. If none exists, report that PHP lint was skipped.
+   - `php -l` on every PHP file, with the same PHP the Local site runs (another version can flag valid code or miss real errors). Pick it with the script, from the theme root:
+     ```
+     node <skill>/scripts/local-php.mjs
+     ```
+     It reads Local's `sites.json`, finds the site that contains the theme and returns its PHP binary (`php`), `version`, `source`, `securityUntil`, `warning` and `notes`. On Windows it looks in `bin/win64/` before `bin/win32/` (newer versions only ship `win64`).
+     - `source: "site"`: lint with it, even if a newer PHP is installed.
+     - `source: "newest-supported"` (site or its PHP not found) or `"path"` (no Local, `php` from PATH): lint with it and tell the user why, from `notes`.
+     - `php: null`: report that PHP lint was skipped.
+     - `warning` not null: tell the user, as is. That PHP has no security patches or loses them soon; changing it is the user's call, in Local and on the hosting. Never change the site's PHP.
    - `pnpm build` → confirm `dist/manifest.json` has keys `src/css/input.css` and `src/js/main.js`, and no `hot` file exists. Then delete `dist/`.
    - `pnpm dev` check. Never leave a dev server running when the skill ends.
      - Before starting: port 5173 must be free (`strictPort` fails otherwise). If it is busy, do not kill anything; report the owning process (it may be a leftover Vite from an earlier run) and skip this check.
