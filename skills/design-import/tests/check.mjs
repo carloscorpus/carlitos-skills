@@ -512,6 +512,412 @@ try {
         const noTheme = run('status.mjs', ['--target', tmp]);
         assert.equal(noTheme.code, 1);
     });
+
+    // ---------- fuente Figma: specs/figma/enlaces ----------
+    const figmaTheme = join(tmp, 'tema-figma');
+    mkdirSync(figmaTheme);
+    writeFileSync(join(figmaTheme, 'style.css'), '/*\nTheme Name: Demo Figma\n*/\n');
+    writeFileSync(join(figmaTheme, 'functions.php'), '<?php\n');
+    const enlaces = (name) => join(figmaTheme, 'specs/figma/enlaces', name);
+
+    test('init --figma: dry-run no escribe nada', () => {
+        const r = run('init.mjs', ['--figma', '--target', figmaTheme, '--dry-run']);
+        assert.equal(r.code, 0, r.stdout);
+        assert.deepEqual(r.json.create, ['specs/figma/enlaces/_ejemplo.md', 'specs/figma/enlaces/home.md']);
+        assert.equal(existsSync(join(figmaTheme, 'specs')), false);
+    });
+
+    test('init --figma: crea solo _ejemplo.md y home.md, sin tocar specs/_index.md ni CLAUDE.md', () => {
+        const r = run('init.mjs', ['--figma', '--target', figmaTheme]);
+        assert.equal(r.code, 0, r.stdout);
+        assert.deepEqual(r.json.written, ['specs/figma/enlaces/_ejemplo.md', 'specs/figma/enlaces/home.md']);
+        assert.match(readFileSync(enlaces('home.md'), 'utf8'), /^# Figma: home/);
+        assert.match(readFileSync(enlaces('home.md'), 'utf8'), /\*\*Frame de la página:\*\* pendiente/);
+        assert.doesNotMatch(readFileSync(enlaces('home.md'), 'utf8'), /\{\{/);
+        assert.match(readFileSync(enlaces('_ejemplo.md'), 'utf8'), /node-id=1-2/);
+        assert.equal(existsSync(join(figmaTheme, 'specs/_index.md')), false);
+        assert.equal(existsSync(join(figmaTheme, 'CLAUDE.md')), false);
+    });
+
+    test('init --figma: un segundo init es conflicto (2) y no pisa lo que el usuario ya llenó', () => {
+        writeFileSync(enlaces('home.md'), '# Figma: home\n\nmi contenido\n');
+        const r = run('init.mjs', ['--figma', '--target', figmaTheme]);
+        assert.equal(r.code, 2, r.stdout);
+        assert.equal(readFileSync(enlaces('home.md'), 'utf8'), '# Figma: home\n\nmi contenido\n');
+        const skip = run('init.mjs', ['--figma', '--target', figmaTheme, '--skip', 'specs/figma/enlaces/_ejemplo.md,specs/figma/enlaces/home.md']);
+        assert.equal(skip.code, 0, skip.stdout);
+        assert.deepEqual(skip.json.written, []);
+        assert.equal(readFileSync(enlaces('home.md'), 'utf8'), '# Figma: home\n\nmi contenido\n');
+        const over = run('init.mjs', ['--figma', '--target', figmaTheme, '--overwrite', 'specs/figma/enlaces/home.md', '--skip', 'specs/figma/enlaces/_ejemplo.md']);
+        assert.equal(over.code, 0, over.stdout);
+        assert.match(readFileSync(enlaces('home.md'), 'utf8'), /pendiente/);
+    });
+
+    test('init --page: una fuente "figma:<página>" exige su archivo en specs/figma/enlaces/', () => {
+        const dir = join(tmp, 'tema-fuente-figma');
+        mkdirSync(dir);
+        writeFileSync(join(dir, 'style.css'), '/*\nTheme Name: Demo Fuente\n*/\n');
+        writeFileSync(join(dir, 'functions.php'), '<?php\n');
+        assert.equal(run('init.mjs', ['--target', dir]).code, 0);
+        const page = (source) => run('init.mjs', ['--target', dir, '--page', 'home', '--title', 'Inicio', '--source', source, '--template', 'front-page.php']);
+
+        const missing = page('figma:home');
+        assert.equal(missing.code, 1, missing.stdout);
+        assert.match(missing.json.error, /falta specs\/figma\/enlaces\/home\.md/);
+        assert.equal(existsSync(join(dir, 'specs/home.md')), false, 'no registra la página si faltan los enlaces');
+        assert.equal(page('figma:Sobre Nosotros').code, 1);
+
+        assert.equal(run('init.mjs', ['--figma', '--target', dir]).code, 0);
+        const ok = page('figma:home');
+        assert.equal(ok.code, 0, ok.stdout);
+        assert.match(readFileSync(join(dir, 'specs/home.md'), 'utf8'), /\*\*Fuente:\*\* `figma:home`/);
+        assert.match(readFileSync(join(dir, 'specs/_index.md'), 'utf8'), /\[home\.md\]\(home\.md\)/);
+    });
+
+    test('init --figma: no se combina con --page', () => {
+        const r = run('init.mjs', ['--figma', '--page', 'home', '--target', figmaTheme]);
+        assert.equal(r.code, 1);
+    });
+
+    test('status: sin specs/figma/ no aparece "figma" y con ella cuenta las páginas con y sin links', () => {
+        const plain = join(tmp, 'tema-sin-figma');
+        mkdirSync(plain);
+        writeFileSync(join(plain, 'style.css'), '/*\nTheme Name: Demo\n*/\n');
+        writeFileSync(join(plain, 'functions.php'), '<?php\n');
+        const without = run('status.mjs', ['--target', plain]);
+        assert.equal(without.code, 0, without.stdout);
+        assert.equal('figma' in without.json, false);
+
+        // home.md recién creada (sin links) y una página con un link fuera de comentarios
+        writeFileSync(enlaces('home.md'), '# Figma: home\n\n- **Frame de la página:** pendiente\n\n<!-- https://www.figma.com/design/AAA/Demo?node-id=1-2 -->\n');
+        writeFileSync(enlaces('servicios.md'), '# Figma: servicios\n\n- **Frame de la página:** https://www.figma.com/design/BBB/Demo?node-id=3-4\n');
+        const r = run('status.mjs', ['--target', figmaTheme]);
+        assert.equal(r.code, 0, r.stdout);
+        assert.deepEqual(r.json.figma, { pages: 2, withLinks: ['servicios'], withoutLinks: ['home'] });
+        assert.ok(r.json.next.some((line) => /Figma: faltan los links de 1 página\(s\): home/.test(line)), r.stdout);
+
+        writeFileSync(enlaces('home.md'), '# Figma: home\n\n- **Frame de la página:** https://www.figma.com/design/AAA/Demo?node-id=1-2\n');
+        const done = run('status.mjs', ['--target', figmaTheme]);
+        assert.deepEqual(done.json.figma, { pages: 2, withLinks: ['home', 'servicios'], withoutLinks: [] });
+        assert.equal(done.json.next.some((line) => /^Figma:/.test(line)), false);
+    });
+
+    // ---------- figma-links: validador de specs/figma/enlaces ----------
+    const linksTheme = join(tmp, 'tema-enlaces');
+    mkdirSync(linksTheme);
+    writeFileSync(join(linksTheme, 'style.css'), '/*\nTheme Name: Demo Enlaces\n*/\n');
+    writeFileSync(join(linksTheme, 'functions.php'), '<?php\n');
+    const KEY = 'FumWuCPT1PPDg5vBTYoufA';
+    const OTHER = 'ZZZZZZZZZZZZZZZZZZZZZZ';
+    const fig = (node, key = KEY) => `https://www.figma.com/design/${key}/Demo?node-id=${node}&t=abc-4`;
+    const writeEnlaces = (name, text) => {
+        mkdirSync(join(linksTheme, 'specs/figma/enlaces'), { recursive: true });
+        writeFileSync(join(linksTheme, 'specs/figma/enlaces', name), text);
+    };
+    const links = (...extra) => run('figma-links.mjs', ['--target', linksTheme, ...extra]);
+    const errorMessages = (r) => r.json.pages.flatMap((p) => p.errors.map((e) => e.message)).join('\n');
+
+    test('figma-links: sin specs/figma/enlaces falla con código 1', () => {
+        const r = links();
+        assert.equal(r.code, 1);
+        assert.match(r.json.error, /init\.mjs --figma/);
+    });
+
+    test('figma-links: la home de ejemplo recién creada es válida pero pendiente', () => {
+        assert.equal(run('init.mjs', ['--figma', '--target', linksTheme]).code, 0);
+        const r = links();
+        assert.equal(r.code, 0, r.stdout);
+        assert.deepEqual(r.json.summary.pending, ['home']);
+        assert.equal(r.json.summary.errors, 0);
+        assert.equal(r.json.pages.length, 1, '_ejemplo.md es una guía y no se lee');
+        const strict = links('--require-complete');
+        assert.equal(strict.code, 4);
+        assert.match(errorMessages(strict), /sigue en "pendiente"/);
+    });
+
+    test('figma-links: una página completa (frame y secciones con nombre propio) es válida', () => {
+        writeEnlaces('home.md', [
+            '# Figma: home', '', `- **Frame de la página:** ${fig('3638-2095')}`, '', '## Secciones', '',
+            '<!-- los comentarios no cuentan: - cualquier: cosa -->',
+            `- cintillo: ${fig('3638-2096')}`, `- header: ${fig('3704-18079')}`, `- hero: ${fig('3638-2098')}`,
+            `- servicios: ${fig('3638-2125')}`, `- sobre-barbara: ${fig('3638-2200')}`, `- footer: ${fig('3704-18144')}`, '',
+        ].join('\n'));
+        const r = links('--page', 'home');
+        assert.equal(r.code, 0, r.stdout);
+        const home = r.json.pages[0];
+        assert.equal(home.frame.fileKey, KEY);
+        assert.equal(home.frame.nodeId, '3638:2095', 'el node-id queda con ":" como pide el MCP');
+        assert.deepEqual(home.sections.map((s) => s.name), ['cintillo', 'header', 'hero', 'servicios', 'sobre-barbara', 'footer']);
+        assert.equal(home.sections[2].nodeId, '3638:2098');
+        assert.equal(r.json.summary.sections, 6);
+        assert.deepEqual(r.json.summary.pending, []);
+    });
+
+    test('figma-links: un link de rama usa la clave de la rama y las secciones pueden quedar vacías', () => {
+        writeEnlaces('contacto.md', `# Figma: contacto\n\n- **Frame de la página:** https://www.figma.com/design/${KEY}/branch/${OTHER}/Demo?node-id=5%3A6\n\n## Secciones\n`);
+        const r = links('--page', 'contacto');
+        assert.equal(r.code, 0, r.stdout);
+        assert.equal(r.json.pages[0].frame.fileKey, OTHER);
+        assert.equal(r.json.pages[0].frame.nodeId, '5:6');
+        assert.deepEqual(r.json.pages[0].sections, []);
+    });
+
+    test('figma-links: avisa cada error con su línea (links, nombres, repetidos y título)', () => {
+        writeEnlaces('mal.md', [
+            '# Figma: otra', // 1: el título no es "mal"
+            '', // 2
+            '<!-- comentario', // 3
+            'de dos líneas -->', // 4
+            `- **Frame de la página:** https://www.figma.com/design/${KEY}/Demo`, // 5: sin node-id
+            '', '## Secciones', '', // 6-8
+            `- Sobre Nosotros: ${fig('1-2')}`, // 9: nombre inválido (con espacio)
+            `- hero ${fig('1-3')}`, // 10: falta ":"
+            `- hero: ${fig('1-4')}`, // 11: ok
+            `- hero: ${fig('1-5')}`, // 12: nombre repetido
+            `- precios: ${fig('1-4')}`, // 13: mismo frame que hero
+            `- tablero: https://www.figma.com/board/${KEY}/Demo?node-id=1-6`, // 14: no es de diseño
+            `- clave: https://www.figma.com/design/corta/Demo?node-id=1-7`, // 15: clave inválida
+            '- vacio: algo sin link', // 16
+            'texto suelto', // 17
+        ].join('\n'));
+        const r = links('--page', 'mal');
+        assert.equal(r.code, 4, r.stdout);
+        const byLine = Object.fromEntries(r.json.pages[0].errors.map((e) => [e.line, e.message]));
+        assert.match(byLine[1], /"otra" pero el archivo es "mal\.md"/);
+        assert.match(byLine[5], /no trae node-id/);
+        assert.match(byLine[9], /Nombre de sección inválido "Sobre Nosotros"/);
+        assert.match(byLine[10], /¿Falta ":" después del nombre\?/);
+        assert.equal(byLine[11], undefined, 'la primera "hero" es válida');
+        assert.match(byLine[12], /ya está en la línea 11/);
+        assert.match(byLine[13], /mismo frame que "hero"/);
+        assert.match(byLine[14], /"board" no sirve/);
+        assert.match(byLine[15], /clave del archivo/);
+        assert.match(byLine[16], /necesita un link de Figma/);
+        assert.match(byLine[17], /No se entiende la línea/);
+    });
+
+    test('figma-links: avisos (no errores) para una sección de otro archivo o que es la página entera', () => {
+        writeEnlaces('avisos.md', [
+            '# Figma: avisos', '', `- **Frame de la página:** ${fig('9-1')}`, '', '## Secciones', '',
+            `- completa: ${fig('9-1')}`, `- ajena: ${fig('9-2', OTHER)}`, `- pronto: pendiente`, '',
+        ].join('\n'));
+        const r = links('--page', 'avisos');
+        assert.equal(r.code, 0, r.stdout);
+        assert.equal(r.json.summary.errors, 0);
+        assert.equal(r.json.summary.warnings, 2);
+        assert.match(r.json.pages[0].warnings.map((w) => w.message).join('\n'), /frame completo de la página/);
+        assert.equal(r.json.summary.sections, 2, 'la sección "pendiente" no cuenta como leída');
+    });
+
+    test('figma-links: --page con una página que no existe falla con código 1', () => {
+        const r = links('--page', 'nada');
+        assert.equal(r.code, 1);
+        assert.ok(r.json.available.includes('home'));
+    });
+
+    // ---------- figma-lectura y figma-inventario: specs/figma/lectura ----------
+    const lecTheme = join(tmp, 'tema-lectura');
+    mkdirSync(lecTheme);
+    writeFileSync(join(lecTheme, 'style.css'), '/*\nTheme Name: Demo Lectura\n*/\n');
+    writeFileSync(join(lecTheme, 'functions.php'), '<?php\n');
+    const lecDir = join(lecTheme, 'specs/figma/lectura');
+    const touch = (rel, content = 'x') => {
+        mkdirSync(dirname(join(lecDir, rel)), { recursive: true });
+        writeFileSync(join(lecDir, rel), content);
+    };
+    // Cabeceras reales: el validador mira los primeros bytes, no solo la extensión.
+    const PNG_BYTES = Buffer.from('89504e470d0a1a0a0000000d4948445200000001000000010806000000', 'hex');
+    const JPG_BYTES = Buffer.from('ffd8ffe000104a46494600010100000100010000', 'hex');
+    // Una sección leída con sus archivos (referencia, captura e imagen) creados de verdad.
+    const seccion = (page, name, nodeId, extra = {}) => {
+        touch(`${page}/${name}.ref.txt`, 'export default function Frame() {}');
+        touch(`${page}/${name}.png`, 'png');
+        touch(`${page}/assets/${name}-foto.png`, PNG_BYTES);
+        return {
+            nombre: name, nodeId, nombreCapa: 'Frame 40', estado: 'leida', leidoEn: '2026-11-04', tamano: { ancho: 1920, alto: 626 },
+            referencia: `${page}/${name}.ref.txt`, captura: `${page}/${name}.png`,
+            textos: [{ nodeId: '1:1', texto: 'Hola', estilo: '2026/Display', color: 'color/verde', rol: 'titulo' }],
+            sueltos: { espacios: [{ valor: 22, usos: 2 }], colores: [], radios: [{ valor: 100, usos: 1 }] },
+            imagenes: [{ id: `${name}-foto`, nodeId: '1:2', tipo: 'png', ancho: 940, alto: 626, rol: 'contenido', archivo: `${page}/assets/${name}-foto.png` }],
+            componentes: [{ nombre: 'Botón', variante: 'Frambuesa', props: { texto: 'Ir', flecha: true } }],
+            senales: [],
+            ...extra,
+        };
+    };
+    const pendiente = (name, nodeId) => ({ nombre: name, nodeId, estado: 'pendiente' });
+    const pagina = (page, secciones, tokens = {}) => ({
+        formato: 1, pagina: page, fuente: { fileKey: KEY, nodeId: '3638:2095', ancho: 1920, alto: 6509 },
+        tokens: {
+            colores: { 'color/verde': '#234549', 'color/teal': '#9cb0b0' },
+            texto: { '2026/Display': { familia: 'Barlow Condensed', peso: 600, tamano: 52, interlineado: 1, espaciado: { valor: 0, unidad: '%' } } },
+            sombras: {},
+            ...tokens,
+        },
+        secciones,
+    });
+    const writeLectura = (data) => {
+        mkdirSync(lecDir, { recursive: true });
+        writeFileSync(join(lecDir, `${data.pagina}.json`), JSON.stringify(data, null, 2));
+    };
+    const lectura = (...extra) => run('figma-lectura.mjs', ['--target', lecTheme, ...extra]);
+    const inventario = (...extra) => run('figma-inventario.mjs', ['--target', lecTheme, ...extra]);
+    const lecErrors = (r) => r.json.pages.flatMap((p) => p.errors.map((e) => `${e.path}: ${e.message}`)).join('\n');
+
+    test('figma-lectura / figma-inventario: sin lecturas fallan con código 1', () => {
+        assert.equal(lectura().code, 1);
+        assert.match(lectura().json.error, /todavía no se leyó/);
+        assert.equal(inventario().code, 1);
+    });
+
+    test('figma-lectura: una lectura completa es válida y la sección sin leer cuenta como pendiente', () => {
+        writeLectura(pagina('home', [
+            seccion('home', 'hero', '3638:2098'), seccion('home', 'servicios', '3638:2125'), pendiente('contacto', '3638:2200'),
+        ]));
+        const r = lectura();
+        assert.equal(r.code, 0, r.stdout);
+        assert.deepEqual(r.json.summary, { pages: 1, sectionsRead: 2, sectionsPending: 1, errors: 0, warnings: 0 });
+    });
+
+    test('figma-lectura: acepta los nodeId de nodos dentro de una instancia de componente', () => {
+        const header = seccion('instancia', 'header', '3704:18079');
+        header.textos[0].nodeId = 'I3704:18079;3704:22279';
+        header.imagenes[0].nodeId = 'I3704:18079;3704:22280;3704:22281';
+        writeLectura(pagina('instancia', [header]));
+        const ok = lectura('--page', 'instancia');
+        assert.equal(ok.code, 0, ok.stdout);
+        header.textos[0].nodeId = 'I3704;abc';
+        writeLectura(pagina('instancia', [header]));
+        const bad = lectura('--page', 'instancia');
+        assert.equal(bad.code, 4);
+        assert.match(lecErrors(bad), /nodeId inválido/);
+        rmSync(join(lecDir, 'instancia.json'));
+    });
+
+    test('figma-lectura: errores de forma, archivos, imágenes y links temporales', () => {
+        const hero = seccion('mala', 'hero', '3638:2098');
+        hero.referencia = '../afuera.txt';
+        hero.captura = 'mala/no-existe.png';
+        hero.textos[0].rol = 'gigante';
+        hero.imagenes = [
+            { id: 'a', nodeId: '1:3', tipo: 'bmp', ancho: 10, alto: 10, rol: 'contenido', archivo: 'mala/assets/hero-foto.png' },
+            { id: 'a', nodeId: '1:4', tipo: 'svg', ancho: 10, alto: 10, rol: 'decorativa', archivo: 'mala/assets/hero-foto.png' },
+            { id: 'b', nodeId: '1:5', tipo: 'png', ancho: 10, alto: 10, rol: 'contenido', archivo: 'https://www.figma.com/api/mcp/asset/abc/7ad66.png' },
+        ];
+        touch('mala/assets/disfrazada.png', JPG_BYTES); // un JPEG bajo un nombre .png (lo que Figma entregó en el hero)
+        touch('mala/assets/vacia.jpg', 'esto no es una imagen');
+        hero.imagenes.push(
+            { id: 'c', nodeId: '1:6', tipo: 'png', ancho: 10, alto: 10, rol: 'contenido', archivo: 'mala/assets/disfrazada.png' },
+            { id: 'd', nodeId: '1:7', tipo: 'jpg', ancho: 10, alto: 10, rol: 'contenido', archivo: 'mala/assets/vacia.jpg' },
+        );
+        hero.senales = [{ tipo: 'slider', evidencia: 'flechas', estado: 'quizá' }];
+        const data = pagina('mala', [hero], {
+            colores: { 'color/verde': 'verde' },
+            texto: { '2026/Eyebrow': { familia: 'Barlow Condensed', peso: 500, tamano: 18, interlineado: 1.3, espaciado: 4 } },
+        });
+        data.formato = 2;
+        writeLectura(data);
+        const r = lectura('--page', 'mala');
+        assert.equal(r.code, 4, r.stdout);
+        const messages = lecErrors(r);
+        assert.match(messages, /"formato" debe ser 1/);
+        assert.match(messages, /links temporales de descarga/);
+        assert.match(messages, /color\/verde: El color debe ser hexadecimal/);
+        assert.match(messages, /espaciado: El espaciado entre letras lleva su unidad/);
+        assert.match(messages, /referencia: La ruta "\.\.\/afuera\.txt" debe ser relativa/);
+        assert.match(messages, /captura: No existe el archivo "mala\/no-existe\.png"/);
+        assert.match(messages, /rol: "rol" debe ser uno de: eyebrow/);
+        assert.match(messages, /tipo: "tipo" debe ser uno de: png, jpg, svg/);
+        assert.match(messages, /El id "a" está repetido/);
+        assert.match(messages, /La extensión "\.png" no coincide con el tipo "svg"/);
+        assert.match(messages, /es realmente un JPG, no un PNG: pon tipo "jpg" y la extensión "\.jpg"/);
+        assert.match(messages, /"mala\/assets\/vacia\.jpg" no parece una imagen/);
+        assert.match(messages, /estado: "estado" debe ser "propuesto"/);
+        assert.match(r.json.pages[0].warnings.map((w) => w.message).join('\n'), /"2026\/Display" no está en los tokens de la página/);
+    });
+
+    test('figma-lectura: si el link de enlaces/ cambió, la lectura queda vieja', () => {
+        mkdirSync(join(lecTheme, 'specs/figma/enlaces'), { recursive: true });
+        writeFileSync(join(lecTheme, 'specs/figma/enlaces/home.md'), [
+            '# Figma: home', '', `- **Frame de la página:** ${fig('3638-9999')}`, '', '## Secciones', '',
+            `- hero: ${fig('3638-7777')}`, `- servicios: ${fig('3638-2125')}`, `- nueva: ${fig('3638-5555')}`, '',
+        ].join('\n'));
+        const r = lectura('--page', 'home');
+        assert.equal(r.code, 4, r.stdout);
+        const messages = lecErrors(r);
+        assert.match(messages, /fuente: El frame de la página en enlaces\/ ya no es el que se leyó/);
+        assert.match(messages, /El link de "hero" cambió en enlaces\/ \(3638:7777\) y la lectura es de 3638:2098/);
+        assert.match(r.json.pages[0].warnings.map((w) => w.message).join('\n'), /"nueva" está en enlaces\/ pero todavía no se lee/);
+        rmSync(join(lecTheme, 'specs/figma/enlaces'), { recursive: true, force: true });
+    });
+
+    test('figma-inventario: no arma nada si hay lecturas con errores', () => {
+        const r = inventario();
+        assert.equal(r.code, 4, r.stdout);
+        assert.equal(existsSync(join(lecDir, '_inventario.json')), false);
+        assert.equal(r.json.pages[0].page, 'mala');
+    });
+
+    test('figma-inventario: une las páginas con las claves de analyze.mjs', () => {
+        rmSync(join(lecDir, 'mala.json'));
+        const header = (page, node) => seccion(page, 'header', node, { componentes: [{ nombre: 'Header', variante: null, props: {} }], imagenes: [] });
+        const hero = seccion('home', 'hero', '3638:2098', {
+            sueltos: { espacios: [{ valor: 22, usos: 2 }], colores: [{ valor: '#9EC0C1', usos: 3 }], radios: [{ valor: 100, usos: 1 }] },
+            senales: [{ tipo: 'slider', evidencia: 'dos flechas a los lados de las cards', estado: 'propuesto' }],
+        });
+        const form = seccion('nosotros', 'contacto', '4:2', {
+            senales: [
+                { tipo: 'formulario', evidencia: 'campos y botón enviar', estado: 'confirmado' },
+                { tipo: 'listado', evidencia: 'tarjetas con "ver más"', estado: 'propuesto' },
+            ],
+            sueltos: { espacios: [{ valor: 22, usos: 1 }, { valor: 16, usos: 5 }], colores: [], radios: [] },
+        });
+        writeLectura(pagina('home', [header('home', '3704:1'), hero, seccion('home', 'servicios', '3638:2125'), pendiente('contacto', '3638:2200')]));
+        writeLectura(pagina('nosotros', [header('nosotros', '3704:2'), form], {
+            colores: { 'color/verde': '#234550', 'color/teal': '#9cb0b0', 'green 20': '#9EC0C0' },
+            sombras: { 'shadow header': 'Effect(type: DROP_SHADOW)' },
+        }));
+        const r = inventario();
+        assert.equal(r.code, 0, r.stdout);
+        const inv = JSON.parse(readFileSync(join(lecDir, '_inventario.json'), 'utf8'));
+
+        for (const key of Object.keys(analysis.json).filter((k) => k !== 'ok')) assert.ok(key in inv, `falta la clave "${key}" de analyze.mjs`);
+        assert.equal(inv.source, 'figma');
+        assert.deepEqual(inv.summary, { pages: 2, sections: 5, sectionsPending: 1, images: 3, repeatedGroups: 2, interactions: 2, dynamicCandidates: 1, findings: 4 });
+
+        const ids = Object.fromEntries(inv.findings.map((f) => [f.id, f]));
+        assert.deepEqual(Object.keys(ids).sort(), ['figma-color-parecido', 'figma-seccion-pendiente', 'figma-senal-propuesta', 'figma-token-conflict']);
+        assert.equal(ids['figma-token-conflict'].locations[0].token, 'color/verde');
+        assert.ok(ids['figma-color-parecido'].locations.some((l) => /green 20/.test(l.b) && /color\/teal/.test(l.a)), 'green 20 y color/teal son casi iguales');
+        assert.deepEqual(ids['figma-seccion-pendiente'].locations, [{ page: 'home', section: 'contacto' }]);
+
+        const suelto = inv.tokens.colors.find((c) => c.suelto);
+        assert.equal(suelto.value, '#9ec0c1');
+        assert.equal(suelto.cercano.name, 'green 20');
+        assert.deepEqual(inv.tokens.spacing.find((s) => s.valor === 16), { valor: 16, usos: 5, paginas: ['nosotros'] });
+        assert.deepEqual(inv.tokens.spacing[0], { valor: 22, usos: 9, paginas: ['home', 'nosotros'] }, 'suma entre páginas y va primero (el más usado)');
+        assert.deepEqual(inv.tokens.fonts, [{ familia: 'Barlow Condensed', pesos: [600] }]);
+        assert.equal(inv.tokens.shadows[0].name, 'shadow header');
+
+        const grupoHeader = inv.repeated.find((g) => g.nombre === 'Header');
+        assert.ok(grupoHeader && grupoHeader.kind === 'cross-page' && grupoHeader.count === 2, 'el Header sale en las dos páginas');
+        assert.equal(inv.repeated.find((g) => g.nombre === 'Botón').kind, 'cross-page');
+        assert.deepEqual(inv.siteWide.chrome.map((g) => g.nombre), ['Header']);
+        assert.deepEqual(inv.siteWide.repeated.map((g) => g.nombre), ['Botón']);
+
+        assert.deepEqual(inv.interactions.map((i) => [i.type, i.suggestedSkill]).sort(), [['formulario', 'wp-form'], ['slider', null]]);
+        assert.equal(inv.dynamicCandidates[0].page, 'nosotros');
+        assert.equal(inv.assets.images.length, 3);
+        assert.equal(inv.pages.find((p) => p.title === 'home').sections.find((s) => s.name === 'contacto').estado, 'pendiente');
+    });
+
+    test('figma-inventario: --page une solo esa página y --out cambia el destino', () => {
+        const out = join(tmp, 'solo-home.json');
+        const r = inventario('--page', 'home', '--out', out);
+        assert.equal(r.code, 0, r.stdout);
+        const inv = JSON.parse(readFileSync(out, 'utf8'));
+        assert.deepEqual(inv.pages.map((p) => p.title), ['home']);
+        assert.equal(inv.repeated.find((g) => g.nombre === 'Header'), undefined, 'con una sola página el Header no se repite');
+    });
 } finally {
     rmSync(tmp, { recursive: true, force: true });
 }

@@ -30,7 +30,7 @@ Use this when the theme has `front-page.php`, `pages/`, `template-parts/` and `i
 
 - Name by role, not by value: `--color-brand`, `--color-ink`, `--font-display`, `--radius-card`, `--shadow-card`. Never `--color-orange`.
 - Replace a repeated value by its token everywhere. A value that appears once stays an arbitrary Tailwind value (`text-[17px]`) and is reported to the user; do not invent a token for it.
-- Tailwind detects classes by itself: do not add `@source`.
+- Tailwind detects classes by itself: do not add `@source`. The one exception is excluding `specs/` with a Figma source: its `.ref.txt` files hold Tailwind classes from Figma's reference code, and Tailwind would generate CSS for them (30 KB of junk and build warnings in the first test). Put `@source not "../../specs";` in `src/css/input.css` (the path is relative to that file) when you write the tokens.
 - Map a size to Tailwind's default scale only when it matches exactly (`16px` = `4`, `24px` = `6`). Never round a spacing to the nearest step: that changes the design.
 
 ## Files
