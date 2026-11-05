@@ -42,7 +42,9 @@ export function buildInventario(pages) {
     const propuestas = [];
     const outPages = [];
 
-    for (const { slug, data } of pages) {
+    for (const { slug, data, enlaces = null } of pages) {
+        // Las notas y los links de móvil del usuario (enlaces/) viajan con el inventario para la etapa A.
+        const linked = new Map((enlaces?.sections ?? []).map((s) => [s.name, s]));
         for (const kind of ['colores', 'texto', 'sombras']) {
             for (const [name, value] of Object.entries(data.tokens[kind])) {
                 const values = nombrados[kind].get(name) ?? new Map();
@@ -56,7 +58,7 @@ export function buildInventario(pages) {
         for (const s of data.secciones) {
             if (s.estado === 'pendiente') {
                 pendientes.push({ page: slug, section: s.nombre });
-                secciones.push({ name: s.nombre, nodeId: s.nodeId, estado: 'pendiente' });
+                secciones.push({ name: s.nombre, nodeId: s.nodeId, estado: 'pendiente', notes: linked.get(s.nombre)?.notes ?? [] });
                 continue;
             }
             for (const item of s.sueltos.espacios) sumar(espacios, item.valor, slug, item.usos);
@@ -80,9 +82,10 @@ export function buildInventario(pages) {
                 name: s.nombre, nodeId: s.nodeId, nombreCapa: s.nombreCapa, estado: 'leida', size: s.tamano,
                 components: unique(s.componentes.map((c) => c.nombre)), images: s.imagenes.length, texts: s.textos.length,
                 signals: s.senales.map((sig) => sig.tipo),
+                notes: linked.get(s.nombre)?.notes ?? [], mobile: s.movil ? s.movil.nodeId : null,
             });
         }
-        outPages.push({ file: `specs/figma/enlaces/${slug}.md`, title: slug, fuente: { fileKey: data.fuente.fileKey, nodeId: data.fuente.nodeId }, sections: secciones });
+        outPages.push({ file: `specs/figma/enlaces/${slug}.md`, title: slug, fuente: { fileKey: data.fuente.fileKey, nodeId: data.fuente.nodeId }, notes: enlaces?.notes ?? [], sections: secciones });
     }
 
     // ----- tokens -----

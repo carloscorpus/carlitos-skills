@@ -94,6 +94,9 @@ The filter names cannot be `orderby`, `min_price`, `max_price` or `rating_filter
 - **Grupo:** `home_hero`
 - **Skill:** ninguna
 - **Comportamiento:** el botón lleva a la sección contacto; la imagen se recorta con `object-cover` (relación 16:9); en móvil el texto va sobre la imagen
+- **Indicaciones del diseño:**
+  - el slider avanza solo cada 5 segundos.
+  - el botón lleva a /contacto.
 - **Estado:** pendiente
 
 **Campos ACF**
@@ -114,6 +117,7 @@ The filter names cannot be `orderby`, `min_price`, `max_price` or `rating_filter
 
 - `Origen` points to the file and lines of the design; `Destino` to the file(s) in the theme (comma-separated if there are several, relative to the theme root).
 - `Grupo`: the `group` field of the section (`<page>_<section>`, unique in the theme) or `ninguno` when the section has no fields. Every field of the table starts with it.
+- `Indicaciones del diseño` (only with a Figma source whose `enlaces/` has notes for the section): the user's notes, copied word for word, one per indented line. They win over what the design shows; apply them in `Comportamiento`, the fields and the criteria. The user's page notes go the same way into `Notas de página`. `check.mjs` warns when one is missing and fails when the page is `aprobado` or `aplicado`. See "The user's notes" in [fuente-figma.md](fuente-figma.md).
 - `Skill`: `ninguna`, `wp-form`, `wp-modal`, `wp-accordion`, `wp-helper`. A section with a skill has no markup of yours: `Comportamiento` says what the skill must do (recipients, trigger, motion).
 - `ACF` (optional, written by `wp-acf`, not by you): `pendiente` or `conectado`. `conectado` means the section template reads its fields from ACF and the text now lives in the initial load (`inc/acf/seed/`), so `check.mjs` stops comparing "valor actual" with the template for that section.
 - `Query` (optional, written by `wp-query`, only in a `listado` or `detalle`): `pendiente` or `conectado`. `conectado` means the section shows the real query (the loop, the filters, the pagination or the related items) instead of the design's sample items.

@@ -8,7 +8,7 @@ import { validateLectura } from './lectura.mjs';
 
 export const lecturaDir = (target) => join(target, 'specs', 'figma', 'lectura');
 
-// Devuelve [{ page, file, data, errors, warnings, counts }] o { error } si no se puede empezar.
+// Devuelve [{ page, file, data, enlaces, errors, warnings, counts }] o { error } si no se puede empezar.
 export function cargarLecturas(target, page) {
     const dir = lecturaDir(target);
     if (!existsSync(dir)) return { error: 'No hay specs/figma/lectura/: todavía no se leyó ninguna página (references/fuente-figma.md).' };
@@ -31,6 +31,6 @@ export function cargarLecturas(target, page) {
         }
         const enlacesFile = join(target, 'specs', 'figma', 'enlaces', `${slug}.md`);
         const enlaces = existsSync(enlacesFile) ? parseEnlaces(readFileSync(enlacesFile, 'utf8'), slug) : null;
-        return { page: slug, file, data, ...validateLectura(data, slug, { dir, enlaces }) };
+        return { page: slug, file, data, enlaces, ...validateLectura(data, slug, { dir, enlaces }) };
     });
 }

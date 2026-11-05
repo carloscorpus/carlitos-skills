@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.30.0] - 2026-11-05
+
+### Agregado
+- `design-import` 1.14.0: con Figma, los enlaces de cada página aceptan notas del usuario (de la página y de cada sección) que pasan tal cual al spec y mandan sobre lo que se deduce, y un link opcional a la versión móvil de cada sección. Detalle en `skills/design-import/CHANGELOG.md`.
+
 ## [1.29.2] - 2026-11-05
 
 ### Corregido

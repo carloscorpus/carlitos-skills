@@ -43,7 +43,7 @@ if (invalid.length) {
     });
 }
 
-const inventario = buildInventario(lecturas.map((l) => ({ slug: l.page, data: l.data })));
+const inventario = buildInventario(lecturas.map((l) => ({ slug: l.page, data: l.data, enlaces: l.enlaces })));
 const out = args.out ? resolve(args.out) : join(lecturaDir(target), '_inventario.json');
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, `${JSON.stringify(inventario, null, 2)}\n`);
