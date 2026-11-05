@@ -35,10 +35,15 @@ function findPhp() {
         join(homedir(), 'Library/Application Support/Local/lightning-services'),
         join(homedir(), '.config/Local/lightning-services'),
     ];
+    // Del PHP más nuevo al más viejo, comparando números (8.10 va después de 8.9).
+    const byVersion = (a, b) => b.localeCompare(a, 'en', { numeric: true });
+    // En Windows, win64 antes que win32: las versiones nuevas de Local solo traen win64.
+    const darwin = process.arch === 'arm64' ? ['bin/darwin-arm64/bin/php', 'bin/darwin/bin/php'] : ['bin/darwin/bin/php', 'bin/darwin-arm64/bin/php'];
+    const bins = ['bin/win64/php.exe', 'bin/win32/php.exe', ...darwin, 'bin/linux/bin/php'];
     for (const root of roots.filter(existsSync)) {
-        const versions = readdirSync(root).filter((d) => d.startsWith('php-')).sort().reverse();
+        const versions = readdirSync(root).filter((d) => d.startsWith('php-')).sort(byVersion);
         for (const v of versions) {
-            for (const rel of ['bin/win32/php.exe', 'bin/darwin/bin/php', 'bin/darwin-arm64/bin/php', 'bin/linux/bin/php']) {
+            for (const rel of bins) {
                 if (existsSync(join(root, v, rel))) return join(root, v, rel);
             }
         }

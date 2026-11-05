@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.1] - 2026-11-05
+
+### Corregido
+- La prueba (`tests/check.mjs`) busca el PHP de Local en `bin/win64/` antes que en `bin/win32/`. En Windows, las versiones nuevas de Local (8.3, 8.4) solo traen `win64`, así que la prueba terminaba usando 8.2. También ordena las versiones por número (8.10 después de 8.9) y en macOS prefiere la carpeta de la arquitectura de la máquina. Los helpers no cambian.
+
 ## [1.3.0] - 2026-10-30
 
 ### Agregado

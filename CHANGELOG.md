@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.29.2] - 2026-11-05
+
+### Corregido
+- `wp-helper` 1.3.1: la prueba busca el PHP de Local en `win64` antes que en `win32` (antes no veía 8.3 ni 8.4 en Windows). Detalle en `skills/wp-helper/CHANGELOG.md`.
+
 ## [1.29.1] - 2026-11-05
 
 ### Corregido
