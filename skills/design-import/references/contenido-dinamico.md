@@ -64,7 +64,7 @@ Lay out the pieces as the design shows them as the theme's WooCommerce overrides
 WooCommerce can draw cart, checkout, mini cart and account either with PHP templates (classic: the shortcode or widget) or with its own blocks. With blocks the PHP templates of that piece are ignored, so laying them out would be wasted work. It depends on the project (the payment gateway must support blocks, and how far the design is from the standard layout), so it is never inferred: in the same message as the scope question, ask for each piece the design has and write it in the "WooCommerce" table of `_shared.md` (`clásico`, `bloques` or `no aplica`), together with:
 
 - **Variaciones** (`sí` / `no`): products with an attribute chosen before buying (size, colour). Default `no`; `sí` is only documented here.
-- **Filtros de tienda** (`sí` / `no`): the shop's filters. They are laid out as markup like any list; a later step connects them.
+- **Filtros de tienda** (`sí` / `no`): the shop's filters. With `sí` the shop list spec gets the "Filtros" table (what a shop admits is in "Filters (lists only)" of [formato-spec.md](formato-spec.md): categories, tags, attributes, price, search and WooCommerce's sorting) and they are laid out as markup like any list; `wp-query` connects them. With `no` there is no table.
 
 What each mode changes:
 

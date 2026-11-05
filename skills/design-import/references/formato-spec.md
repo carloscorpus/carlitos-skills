@@ -70,6 +70,18 @@ A `listado` spec says how its list is filtered, so wp-query can wire it without 
 - `Conteo`: `ninguno`, `fijo` (the total of each option) or `dinámico` (how many results each option would give with the other filters applied). Only `taxonomía` and `opciones`; follow the design (`Sillas (12)`).
 - `Vista`: how the design shows it (checkbox, radio, select, chips, slider, two inputs, field). Required.
 
+**A WooCommerce shop** (`Origen: woo`, `Filtros de tienda: sí`) uses the same table with these sources. Products have no ACF fields of the project, so there is no detail-spec field to point at:
+
+| Tipo | Fuente in a shop |
+|---|---|
+| `taxonomía` | `product_cat`, `product_tag` or an attribute `pa_<name>` (also the taxonomies listed in the content's row) |
+| `rango` | `` `precio` `` (WooCommerce's price) |
+| `búsqueda` | free text |
+| `orden` | the usual keywords plus `popularidad`, `valoracion` and `` `precio` `` asc/desc |
+| `opciones`, `fecha` | not available: use an attribute |
+
+The filter names cannot be `orderby`, `min_price`, `max_price` or `rating_filter` (WooCommerce's own variables, which keep working beside them). With `Filtros de tienda: no` the table is not needed.
+
 `check.mjs` validates all of it against `_shared.md` and the detail spec. A list without the table only warns (specs written before 1.6.0).
 
 ## Section block

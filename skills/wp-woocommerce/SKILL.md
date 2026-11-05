@@ -1,8 +1,8 @@
 ---
 name: wp-woocommerce
-description: 'Connect the WooCommerce pieces that design-import laid out in a WordPress theme (Vite + pnpm) without losing the custom design or breaking on WooCommerce updates: declare the theme support, replace the `// woo:` markers of the theme''s `woocommerce/` templates with the real WooCommerce functions while keeping every original hook, keep each override''s `@version` honest against the installed WooCommerce, mini cart that updates itself, and CSS for the cart/checkout blocks. Cart, checkout, mini cart and account are classic PHP templates or WooCommerce blocks, as decided in the spec; payments, shipping and orders stay out of the theme. Use when a spec has content with `Origen: woo`, or the user says "conecta woocommerce", "tienda con woocommerce", "carrito", "checkout", "mini carrito", "pasarela", or a spec says `skill: wp-woocommerce`. Runs after wp-acf. Shop filters are wp-query (pending).'
+description: 'Connect the WooCommerce pieces that design-import laid out in a WordPress theme (Vite + pnpm) without losing the custom design or breaking on WooCommerce updates: declare the theme support, replace the `// woo:` markers of the theme''s `woocommerce/` templates with the real WooCommerce functions while keeping every original hook, keep each override''s `@version` honest against the installed WooCommerce, mini cart that updates itself, and CSS for the cart/checkout blocks. Cart, checkout, mini cart and account are classic PHP templates or WooCommerce blocks, as decided in the spec; payments, shipping and orders stay out of the theme. Use when a spec has content with `Origen: woo`, or the user says "conecta woocommerce", "tienda con woocommerce", "carrito", "checkout", "mini carrito", "pasarela", or a spec says `skill: wp-woocommerce`. Runs after wp-acf. Shop filters (categories, price, search, sorting, no reload) are wp-query.'
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # wp-woocommerce
@@ -14,7 +14,7 @@ The rule that makes it update-safe: **hooks and the original templates first, th
 ## What it does and does not do
 
 - **Does:** theme support and the gallery features; WooCommerce's classic styles off (the design owns the CSS of the PHP templates); WooCommerce's default output removed from the hooks of its templates (link, image, title, price, button, tabs…) so the design's own calls do not print twice while the hooks stay for plugins; the markers of each `woocommerce/` template turned into WooCommerce's functions; every override keeps **all** the `do_action()` of the original template and the original's `@version`; the classic mini cart (count and total) updating without reload (it also enqueues WooCommerce's `wc-cart-fragments`, which WooCommerce only loads with its cart widget); a `page.php` when the theme has no page template (cart, checkout and account are pages whose content must be printed, and `index.php` prints only the excerpt); the CSS of the pieces in blocks; an audit against the installed WooCommerce (versions, hooks, business logic in the theme).
-- **Does not:** payments, shipping, orders, taxes, or extra checkout fields: that is a plugin of the project (also where the HPOS and blocks compatibility is declared). Shop filters and the shop's no-reload updates (`wp-query` does not accept `Origen: woo` yet). Variable products (this version covers simple products; the spec's `Variaciones: sí` is only reported). Registering content types or fields (`wp-acf`).
+- **Does not:** payments, shipping, orders, taxes, or extra checkout fields: that is a plugin of the project (also where the HPOS and blocks compatibility is declared). Shop filters and the shop's no-reload updates (`wp-query` connects them: it accepts `Origen: woo`; this skill only warns when the spec asks for them and `wp-query` is not installed). Variable products (this version covers simple products; the spec's `Variaciones: sí` is only reported). Registering content types or fields (`wp-acf`).
 
 ## Flow
 
@@ -46,7 +46,7 @@ The rule that makes it update-safe: **hooks and the original templates first, th
 
 - Do not infer classic or blocks, variations or shop filters: they are in the spec or they are asked with `design-import`.
 - Do not write a template for a piece in `bloques`, and do not write CSS inside `@layer` for the blocks.
-- Do not wire the shop's filter form: it stays as the design's markup until `wp-query` accepts WooCommerce.
+- Do not wire the shop's filter form here: with `Filtros de tienda: sí` it is `wp-query`'s (run it after this skill; it keeps the `do_action()` of `archive-product.php`, so `check.mjs` still passes).
 - Do not let a subagent edit `functions.php`, `inc/woocommerce/`, the main CSS, `specs/_shared.md` or another group's templates.
 - Do not overwrite `src/css/woocommerce.css` or a base file that differs without asking.
 

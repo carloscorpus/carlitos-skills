@@ -393,9 +393,25 @@ try {
         const section = (table, extra = '- **Variaciones:** no\n- **Filtros de tienda:** no\n') => `## WooCommerce\n\n| Pieza | Modo |\n|---|---|\n${table}\n\n${extra}\n`;
         const pieces = (mode) => ['carrito', 'checkout', 'mini-carrito', 'cuenta'].map((p) => `| ${p} | ${mode} |`).join('\n');
         // El contenido "producto" pasa a ser de WooCommerce; la sección se inserta antes de "## Sitio".
-        const woo = (body) => (dir) => {
+        // La tabla "Filtros" del listado pasa a una válida para WooCommerce (categoría, precio, búsqueda y orden);
+        // `filtros` = null la quita.
+        const wooFilters = [
+            '', '**Filtros**', '',
+            '| Filtro | Tipo | Fuente | Varios | Conteo | Vista |',
+            '|---|---|---|---|---|---|',
+            '| `categoria` | taxonomía | `categoria_producto` | sí (o) | dinámico | checkbox |',
+            '| `precio` | rango | `precio` | no | — | dos casillas |',
+            '| `q` | búsqueda | título y contenido | — | — | campo |',
+            '| `orden` | orden | reciente, az, `precio` asc, `precio` desc, popularidad, valoracion | — | — | select |',
+            '',
+        ].join('\n');
+        const woo = (body, filtros = wooFilters) => (dir) => {
             edit('specs/_shared.md', '| producto | cpt |', '| producto | woo |')(dir);
             if (body) edit('specs/_shared.md', '## Sitio', `${body}\n## Sitio`)(dir);
+            const file = join(dir, 'specs/productos.md');
+            const text = readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+            assert.ok(/\n\*\*Filtros\*\*\n/.test(text), 'el fixture ya no trae la tabla Filtros');
+            writeFileSync(file, text.replace(/\n\*\*Filtros\*\*\n[\s\S]*?(?=\n## Sección)/, filtros ?? '\n'));
         };
         const run1 = (name, body) => broken(`woo-${name}`, woo(body));
 
@@ -414,14 +430,31 @@ try {
         assert.match(messages(run1('variaciones', section(pieces('clásico'), '- **Variaciones:** quizás\n- **Filtros de tienda:** no\n'))), /"Variaciones" debe ser sí o no/);
         assert.match(messages(run1('filtros', section(pieces('clásico'), '- **Variaciones:** no\n'))), /"Filtros de tienda" debe ser sí o no/);
 
-        // Una tienda Woo no pide la tabla "Filtros" (wp-query no la conecta): sin tabla no hay aviso; con contenido cpt sí.
-        const sinTabla = (name, extra) => broken(name, (dir) => {
-            extra(dir);
-            edit('specs/productos.md', '\n**Filtros**\n', '\n**Otra cosa**\n')(dir);
-        });
-        const filtrosWarn = (r) => r.json.warnings.some((w) => /Falta la tabla "Filtros"/.test(w.message));
-        assert.ok(!filtrosWarn(sinTabla('woo-sin-filtros', woo(section(pieces('clásico'))))));
-        assert.ok(filtrosWarn(sinTabla('cpt-sin-filtros', () => {})));
+        // Tienda Woo: la tabla "Filtros" se pide solo con "Filtros de tienda: sí"; con no, sobra (aviso).
+        const warns = (r) => r.json.warnings.map((w) => w.message).join('\n');
+        const si = '- **Variaciones:** no\n- **Filtros de tienda:** sí\n';
+        const wooSi = (name, filtros = wooFilters) => broken(`woo-${name}`, woo(section(pieces('clásico'), si), filtros));
+        const conTabla = wooSi('filtros-ok');
+        assert.equal(conTabla.code, 0, messages(conTabla));
+        assert.ok(!/Filtros/.test(warns(conTabla)), warns(conTabla));
+        assert.match(warns(wooSi('sin-tabla', null)), /Falta la tabla "Filtros"/);
+        assert.match(warns(broken('woo-no-usa', woo(section(pieces('clásico')), wooFilters))), /"Filtros de tienda" está en no/);
+        assert.ok(!/Filtros/.test(warns(broken('woo-no-sin-tabla', woo(section(pieces('clásico')), null)))));
+        const cpt = broken('cpt-sin-filtros', edit('specs/productos.md', '\n**Filtros**\n', '\n**Otra cosa**\n'));
+        assert.match(warns(cpt), /Falta la tabla "Filtros"/);
+
+        // Qué admite una tienda Woo en la tabla: taxonomías de WooCommerce, el precio, búsqueda y órdenes de WooCommerce.
+        const withRow = (row) => wooFilters.replace('| `q` | búsqueda', `${row}\n| \`q\` | búsqueda`);
+        assert.equal(wooSi('atributo', withRow('| `talla` | taxonomía | `pa_talla` | sí (o) | fijo | chips |')).code, 0);
+        assert.equal(wooSi('etiqueta', withRow('| `etiqueta` | taxonomía | `product_tag` | sí (o) | ninguno | chips |')).code, 0);
+        assert.match(messages(wooSi('taxonomia-ajena', withRow('| `marca` | taxonomía | `marca` | sí (o) | ninguno | chips |'))), /la taxonomía "marca" no está/);
+        assert.match(messages(wooSi('opciones', withRow('| `color` | opciones | `producto_ficha_color` | sí (o) | fijo | chips |'))), /opciones no está disponible en una tienda de WooCommerce/);
+        assert.match(messages(wooSi('fecha', withRow('| `cuando` | fecha | `post_date` | no | — | select |'))), /fecha no está disponible en una tienda de WooCommerce/);
+        assert.match(messages(wooSi('rango-campo', wooFilters.replace('| `precio` | rango | `precio`', '| `precio` | rango | `producto_ficha_precio`'))), /el rango es el precio: `precio`/);
+        assert.match(messages(wooSi('orden-campo', wooFilters.replace('`precio` asc', '`producto_ficha_peso` asc'))), /solo se ordena por `precio`/);
+        assert.match(messages(wooSi('reservado', wooFilters.replace('| `orden` | orden', '| `orderby` | orden'))), /"orderby" choca con una variable/);
+        // popularidad y valoracion solo existen en una tienda Woo.
+        assert.match(messages(broken('cpt-popularidad', edit('specs/productos.md', 'reciente, az,', 'reciente, popularidad,'))), /solo existe en una tienda de WooCommerce/);
 
         // Sin contenido woo la sección sobra (aviso, no error).
         const sobra = broken('woo-sobra', edit('specs/_shared.md', '## Sitio', `${section(pieces('clásico'))}\n## Sitio`));

@@ -15,6 +15,13 @@ const ORDER_PRESETS = {
     za: { orderby: 'title', order: 'DESC' },
     relevancia: { orderby: 'relevance', order: 'DESC' },
 };
+// Órdenes que solo existen en una tienda de WooCommerce: los ordena WooCommerce (get_catalog_ordering_args).
+const WOO_ORDER_PRESETS = {
+    popularidad: { orderby: 'popularity', order: 'DESC', woo: true },
+    valoracion: { orderby: 'rating', order: 'DESC', woo: true },
+};
+// Taxonomías propias de WooCommerce que un filtro puede usar: categoría, etiqueta y los atributos (pa_<atributo>).
+const isWooTaxonomy = (key) => ['product_cat', 'product_tag'].includes(key) || /^pa_[a-z0-9_-]+$/.test(key ?? '');
 const PAGINATION = { números: 'numeros', numeros: 'numeros', 'cargar más': 'cargar_mas', 'cargar mas': 'cargar_mas', infinito: 'infinito', ninguna: 'ninguna' };
 const ON_FILTER = { 'sin recargar': 'auto', 'botón aplicar': 'boton', 'boton aplicar': 'boton' };
 
@@ -43,7 +50,9 @@ function buildListing(page, { all, dynamic }) {
     const content = contentOf(page);
     const row = dynamic.find((r) => r.name === content);
     if (!row) return { errors: [{ file: page.file, message: `Contenido "${content}": no está en la tabla "Contenido dinámico" de _shared.md.` }] };
-    if (row.origin === 'woo') return { errors: [{ file: page.file, message: `Contenido "${content}" es de WooCommerce: wp-query no lo conecta (es otra skill).` }] };
+    const woo = row.origin === 'woo';
+    // Una tienda de WooCommerce sin tabla "Filtros" no tiene filtros que conectar (Filtros de tienda: no).
+    if (woo && !page.filters) return { errors: [] };
     if (!page.filters) err('Falta la tabla "Filtros" (design-import 1.6.0): complétala antes de generar.');
 
     const { fields } = detailFields(all, content);
@@ -71,9 +80,14 @@ function buildListing(page, { all, dynamic }) {
         const base = { tipo, vista: filter.view };
         if (tipo === 'taxonomia') {
             const taxonomy = filter.fields[0] ?? filter.source;
-            const known = row.taxonomies.some((t) => t.key === taxonomy) || (row.origin === 'post' && ['category', 'post_tag'].includes(taxonomy));
+            const known = row.taxonomies.some((t) => t.key === taxonomy) || (row.origin === 'post' && ['category', 'post_tag'].includes(taxonomy)) || (woo && isWooTaxonomy(taxonomy));
             if (!known) err(`Filtro ${where}: la taxonomía "${taxonomy}" no es de ${content}.`);
             filters[filter.name] = { ...base, fuente: taxonomy, etiqueta: '', varios: filter.multiple ?? 'no', conteo: countKey(filter.count) };
+        } else if (woo && (tipo === 'opciones' || tipo === 'fecha')) {
+            err(`Filtro ${where}: un filtro de ${filter.type} no está disponible en una tienda de WooCommerce: usa una taxonomía (categoría, etiqueta o atributo).`);
+        } else if (tipo === 'rango' && woo) {
+            if ((filter.fields[0] ?? filter.source) === 'precio') filters[filter.name] = { ...base, fuente: 'precio', etiqueta: 'Precio' };
+            else err(`Filtro ${where}: en una tienda de WooCommerce el rango es el precio (\`precio\`).`);
         } else if (tipo === 'rango') {
             const field = fieldOf(filter.fields[0] ?? filter.source, RANGE_TYPES, where);
             if (field) filters[filter.name] = { ...base, fuente: field.name, etiqueta: firstSentence(field.description) };
@@ -107,7 +121,10 @@ function buildListing(page, { all, dynamic }) {
         } else {
             const options = {};
             for (const order of filter.orders) {
-                if (order.field) {
+                if (order.field && woo) {
+                    if (order.field === 'precio') options[`precio-${order.dir}`] = { orderby: 'price', order: order.dir.toUpperCase(), woo: true };
+                    else err(`Filtro ${where}: en una tienda de WooCommerce solo se ordena por \`precio\` asc/desc, además de ${[...Object.keys(ORDER_PRESETS), ...Object.keys(WOO_ORDER_PRESETS)].join(', ')}.`);
+                } else if (order.field) {
                     const field = fields.get(order.field);
                     if (!field) {
                         err(`Filtro ${where}: el campo de orden "${order.field}" no está en el spec de detalle de ${content}.`);
@@ -121,6 +138,9 @@ function buildListing(page, { all, dynamic }) {
                     };
                 } else if (ORDER_PRESETS[order.key]) {
                     options[order.key] = { ...ORDER_PRESETS[order.key] };
+                } else if (WOO_ORDER_PRESETS[order.key]) {
+                    if (woo) options[order.key] = { ...WOO_ORDER_PRESETS[order.key] };
+                    else err(`Filtro ${where}: el orden "${order.key}" solo existe en una tienda de WooCommerce.`);
                 } else {
                     err(`Filtro ${where}: orden "${order.key}" desconocido (${Object.keys(ORDER_PRESETS).join(', ')} o \`campo\` asc/desc).`);
                 }
@@ -137,7 +157,10 @@ function buildListing(page, { all, dynamic }) {
     if (!onFilter) err(`Al filtrar "${page.labels['Al filtrar']}" desconocido.`);
     if (errors.length) return { errors };
 
-    const taxonomies = row.taxonomies.map((t) => t.key);
+    // En una tienda de WooCommerce el tipo es `product` y las taxonomías incluyen las de los filtros (atributos).
+    const taxonomies = woo
+        ? [...new Set([...row.taxonomies.map((t) => t.key), ...Object.values(filters).filter((f) => f.tipo === 'taxonomia').map((f) => f.fuente)])]
+        : row.taxonomies.map((t) => t.key);
     return {
         errors,
         listing: {
@@ -147,7 +170,8 @@ function buildListing(page, { all, dynamic }) {
             def: {
                 contenido: content,
                 listado: page.slug,
-                post_type: row.origin === 'post' ? 'post' : content,
+                post_type: row.origin === 'post' ? 'post' : woo ? 'product' : content,
+                ...(woo ? { woo: true } : {}),
                 taxonomias: taxonomies,
                 por_pagina: perPage,
                 paginacion: pagination,

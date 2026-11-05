@@ -1,8 +1,8 @@
 ---
 name: wp-query
-description: 'Make the lists of a WordPress theme work from the specs written by design-import: the real loop of posts and custom post types, combined filters (taxonomies, ACF option fields, numeric ranges, dates, search and sort), counts per option, pagination, related items and SEO-safe filtered pages, on the main query (pre_get_posts), updating without reload and still working without JavaScript. The design is kept: the engine gives the data and the theme''s HTML paints it. One generic engine, one generated definition per list, one subagent per list for the templates. Use when the user says "conecta los listados", "haz funcionar los filtros", "filtros combinados", "buscador", "paginación", "relacionados", "blog con filtros", "catálogo con filtros", or a spec says `skill: wp-query`. Runs after wp-acf. WooCommerce is another skill.'
+description: 'Make the lists of a WordPress theme work from the specs written by design-import: the real loop of posts and custom post types, combined filters (taxonomies, ACF option fields, numeric ranges, dates, search and sort), counts per option, pagination, related items and SEO-safe filtered pages, on the main query (pre_get_posts), updating without reload and still working without JavaScript. The design is kept: the engine gives the data and the theme''s HTML paints it. One generic engine, one generated definition per list, one subagent per list for the templates. Use when the user says "conecta los listados", "haz funcionar los filtros", "filtros combinados", "buscador", "paginación", "relacionados", "blog con filtros", "catálogo con filtros", or a spec says `skill: wp-query`. Runs after wp-acf. It also connects the shop of a WooCommerce store (`Origen: woo`): categories, tags, attributes, price, search and WooCommerce's own sorting, on the query WooCommerce already built; cart and checkout are wp-woocommerce.'
 metadata:
-  version: "1.1.1"
+  version: "1.2.0"
 ---
 
 # wp-query
@@ -14,7 +14,7 @@ The design rules the look. The engine never prints filter markup: it returns dat
 ## What it does and does not do
 
 - **Does:** posts (`post`: the posts page, categories, tags) and custom post types with their taxonomies; every filter type of the table (taxonomía, opciones, rango, fecha, búsqueda, orden) combined with "and" between filters and "or"/"and" inside one; counts `fijo` or `dinámico`; pagination `números`, `cargar más`, `infinito` or `ninguna`; related items on the detail; `noindex` and canonical on filtered pages; updating the results without reload (the URL and the back button keep working), "load more" and infinite scroll, with the same HTML as a normal page load.
-- **Does not:** register content types, taxonomies or fields (`wp-acf`), WooCommerce (another skill), multilanguage, or a design of its own. Without JavaScript the filters are a normal GET form and the pagination normal links: the list must work that way first.
+- **Does not:** register content types, taxonomies or fields (`wp-acf`), WooCommerce's cart, checkout or product templates (`wp-woocommerce`), multilanguage, or a design of its own. Without JavaScript the filters are a normal GET form and the pagination normal links: the list must work that way first.
 
 ## Flow
 
@@ -42,9 +42,19 @@ The design rules the look. The engine never prints filter markup: it returns dat
 - Escape all output (`esc_html`, `esc_attr`, `esc_url`), start files with `defined('ABSPATH') || exit;` and use the theme prefix.
 - The design decides counts, views and the mobile panel: follow the table, do not add filters the design does not show.
 
+## The shop of a WooCommerce store
+
+A list whose content has `Origen: woo` (the spec's "WooCommerce" table says `Filtros de tienda: sí`) is the shop archive. It works like any other list, with these differences; read [references/filtros.md](references/filtros.md) ("WooCommerce").
+
+- **It hooks into WooCommerce's query, it does not replace it.** WooCommerce builds its main query first (visibility, stock, taxonomies); the engine runs after (priority 20) and adds its own tax_query, price and order. The definition has `post_type: product` and `woo: true`.
+- **Filters allowed:** `taxonomía` (`product_cat`, `product_tag`, any attribute `pa_<name>`), `rango` on `precio`, `búsqueda`, `orden`. **Not allowed:** `opciones` and `fecha` (they are ACF fields): use an attribute. The sorting keys `popularidad` and `valoracion` and `precio` asc/desc are WooCommerce's (`get_catalog_ordering_args`).
+- **Price** is filtered against WooCommerce's lookup table by calling WooCommerce's own `price_filter_post_clauses` (taxes included); the range limits and the counts only see what the catalog shows (hidden and, if the store hides them, out-of-stock products are left out). The URL names are the table's (`precio_min`, `precio_max`); WooCommerce's own `min_price` / `max_price` keep working and combine with "and".
+- **The template keeps WooCommerce's hooks.** In `woocommerce/archive-product.php` the `do_action()` calls of the original stay (`wp-woocommerce` checks it); only the grid, the filter form, the total and the pagination take the zones of the view contract. `woocommerce_pagination()` and the sort dropdown give way to `<prefix>_query_pagination()` and the `orden` filter.
+- Without a "Filtros" table (`Filtros de tienda: no`) there is nothing to connect and no definition is generated.
+
 ## Do not
 
-- Do not register content types, taxonomies or fields, and do not touch WooCommerce templates.
+- Do not register content types, taxonomies or fields, and do not touch the cart, checkout or product templates of WooCommerce: only the shop archive (`woocommerce/archive-product.php`) is connected here.
 - Do not connect a list that is not `aplicado`, and do not mark `Query: conectado` before the template loops the real query.
 - Do not let a subagent edit `functions.php`, `inc/query/`, another list's files or the main CSS.
 - Do not overwrite a definition that differs without asking.

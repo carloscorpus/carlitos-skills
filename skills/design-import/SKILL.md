@@ -2,7 +2,7 @@
 name: design-import
 description: 'Turn a folder exported by Claude Design (static HTML + CSS + JS with bad practices) into a clean WordPress theme front end: tokens, components, page sections and page templates, following the wp-vite-theme structure or the structure it detects in another project. Writes one reviewable spec per page (sections, ACF Pro field groups and tables, acceptance criteria) and applies only what the user approves. Blog, catalog and WooCommerce designs are asked about once and documented (content types, taxonomies, filters, templates), not wired. What repeats on every page (logo, menus, footer data) is documented once as site-wide settings. Use when the user adds a design folder (/add-dir) and says "importa el diseño", "reordena el diseño de Claude Design", "pasa este diseño al tema", "design import", "limpia el HTML/CSS del diseño", or a spec says `skill: design-import`. It also works from Figma links instead of a folder: "importa el diseño de Figma", "usa estos frames de Figma", or a project that already has specs/figma/enlaces/.'
 metadata:
-  version: "1.12.0"
+  version: "1.13.0"
 ---
 
 # design-import

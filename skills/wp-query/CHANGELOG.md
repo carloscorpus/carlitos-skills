@@ -2,6 +2,22 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.2.0] - 2026-11-05
+
+### Agregado
+- **Tienda de WooCommerce** (`Origen: woo`): filtros combinados, conteos, paginación y actualización sin recargar sobre la consulta que WooCommerce ya armó. La definición lleva `post_type: product` y `woo: true`; el motor corre después de WooCommerce (prioridad 20) y le suma lo suyo, en vez de reemplazarla.
+  - Filtros admitidos: `taxonomía` (`product_cat`, `product_tag` y atributos `pa_<nombre>`), `rango` sobre `precio`, `búsqueda` y `orden`. Un filtro de `opciones` o de `fecha` (campos ACF) se rechaza con el motivo: se usa un atributo.
+  - **Precio:** contra la tabla de búsqueda de WooCommerce llamando a su propio `price_filter_post_clauses` (con los impuestos), presentándole un instante los valores del motor y devolviendo `$_GET` como estaba. Sin ese método usa la misma condición escrita en el motor. Los parámetros nativos `min_price` y `max_price` siguen funcionando y se combinan con "y".
+  - **Orden:** `precio` asc/desc, `popularidad` y `valoracion` los calcula WooCommerce (`get_catalog_ordering_args`); `reciente`, `az`, etc. como siempre.
+  - **Conteos y límites del rango** solo ven lo visible del catálogo (`get_tax_query`): lo oculto y, si la tienda lo configuró, lo agotado quedan fuera, también con el conteo `fijo`.
+  - Sin tabla "Filtros" (`Filtros de tienda: no`) no hay nada que conectar: no se genera definición y `status.mjs` no lo pide ni lo deja pendiente.
+- `tests/motor-woo.php`: carga el motor con WordPress y WooCommerce simulados y ejecuta de verdad el enganche a `pre_get_posts` y el filtro del precio (con y sin `price_filter_post_clauses`): 33 comprobaciones. Con 3 pruebas nuevas del generador.
+- Probado en un sitio de Local con WooCommerce 11.2.2: tienda y archivo de categoría, los cuatro órdenes, rango de precio, búsqueda, conteos con un producto oculto y otro agotado, paginación, la respuesta parcial y la combinación con `min_price`.
+
+### Cambiado
+- `shared/specs.mjs`: `ORDER_KEYWORDS` suma `popularidad` y `valoracion` (solo valen en una tienda de WooCommerce; en otro contenido `generate.mjs` y `design-import` lo rechazan).
+- `references/filtros.md` (sección WooCommerce) y `SKILL.md`.
+
 ## [1.1.1] - 2026-11-03
 
 ### Cambiado

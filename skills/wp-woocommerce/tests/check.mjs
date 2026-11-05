@@ -215,8 +215,14 @@ await test('status: filtros de tienda y variaciones en "sí" quedan pendientes',
         change('specs/_shared.md', '- **Filtros de tienda:** no', '- **Filtros de tienda:** sí'),
     ));
     const r = run('status.mjs', ['--target', dir]);
-    assert.ok(r.json.next.some((n) => /Filtros de tienda: pendientes/.test(n)));
+    assert.ok(r.json.next.some((n) => /Filtros de tienda: sí, y wp-query no está instalada/.test(n)));
     assert.ok(r.json.next.some((n) => /Variaciones: pendientes/.test(n)));
+    // Con wp-query instalada los filtros de tienda ya no quedan pendientes.
+    const withQuery = installed(all(
+        change('specs/_shared.md', '- **Filtros de tienda:** no', '- **Filtros de tienda:** sí'),
+        put('inc/query/motor.php', '<?php\n'),
+    ));
+    assert.ok(!run('status.mjs', ['--target', withQuery]).json.next.some((n) => /Filtros de tienda/.test(n)));
 });
 
 await test('check: un tema recién instalado falla por los marcadores sin conectar y avisa que no compara con WooCommerce', () => {
@@ -321,8 +327,11 @@ await test('check: filtros de tienda y variaciones pendientes son avisos, no err
     core(dir);
     const r = run('check.mjs', ['--target', dir]);
     assert.equal(r.code, 0, messages(r));
-    assert.match(warnings(r), /Filtros de tienda: pendientes/);
+    assert.match(warnings(r), /Filtros de tienda: sí, pero wp-query no está instalada/);
     assert.match(warnings(r), /Variaciones: esta versión solo cubre productos simples/);
+    const withQuery = installed(all(connected, change('specs/_shared.md', '- **Filtros de tienda:** no', '- **Filtros de tienda:** sí'), put('inc/query/motor.php', '<?php\n')));
+    core(withQuery);
+    assert.doesNotMatch(warnings(run('check.mjs', ['--target', withQuery])), /Filtros de tienda/);
 });
 
 await test('check: --woo con una ruta sin templates/ falla con código 1', () => {

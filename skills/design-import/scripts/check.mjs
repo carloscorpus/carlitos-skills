@@ -78,6 +78,7 @@ const warn = (file, message) => warnings.push({ file, message });
 
 let sharedState = null;
 const dynamicRows = new Map(); // contenido -> fila completa (taxonomías, filtros)
+let wooInfo = null; // sección "WooCommerce" de _shared.md (parseWoo), o null
 const dynamicContent = new Map(); // contenido -> origen
 const commonCriteria = new Set(); // criterios de "Criterios comunes" de _shared.md
 let anyApplied = false; // alguna página ya está aplicada en el tema
@@ -128,6 +129,7 @@ else {
     // WooCommerce: cómo se dibuja cada pieza (plantilla PHP o bloque). Se pregunta, no se adivina.
     const hasWoo = [...dynamicContent.values()].includes('woo');
     const woo = parseWoo(sharedText);
+    wooInfo = woo;
     if (hasWoo && !woo) warn('_shared.md', 'Falta la sección "WooCommerce": cómo se dibujan carrito, checkout, mini-carrito y cuenta (clásico o bloques), variaciones y filtros de tienda.');
     if (woo) {
         if (!hasWoo) warn('_shared.md', 'La sección "WooCommerce" no hace falta: ningún contenido tiene Origen woo.');
@@ -355,13 +357,18 @@ for (const { name, content, filters } of listings) {
     const row = dynamicRows.get(content);
     if (!row) continue; // ya se informó que el contenido no existe
     if (!filters?.length) {
-        // Una tienda de WooCommerce no pasa por wp-query: sus filtros se anotan en la tabla "WooCommerce" (Filtros de tienda).
-        if (row.origin !== 'woo' && row.filters && row.filters !== 'ninguno') warn(name, `${filters ? 'La tabla "Filtros" está vacía' : 'Falta la tabla "Filtros"'} (el diseño muestra: ${row.filters}): wp-query la necesita para conectar los filtros.`);
+        // Una tienda de WooCommerce pide la tabla solo si "Filtros de tienda" es sí (wp-query conecta esos filtros).
+        const needsTable = row.origin === 'woo' ? wooInfo?.shopFilters === 'sí' : row.filters && row.filters !== 'ninguno';
+        if (needsTable) warn(name, `${filters ? 'La tabla "Filtros" está vacía' : 'Falta la tabla "Filtros"'} (el diseño muestra: ${row.filters}): wp-query la necesita para conectar los filtros.`);
         continue;
     }
+    const isWoo = row.origin === 'woo';
+    if (isWoo && wooInfo?.shopFilters === 'no') warn(name, 'La tabla "Filtros" no se usa: "Filtros de tienda" está en no en la sección WooCommerce de _shared.md.');
     const fields = detailFields.get(content) ?? new Map();
     const taxonomies = new Set([...row.taxonomies.map((t) => t.key), ...(row.origin === 'post' ? ['category', 'post_tag'] : [])]);
-    const reserved = new Set([...WP_QUERY_VARS, ...row.taxonomies.map((t) => t.key), ...dynamicRows.keys()]);
+    // En una tienda de WooCommerce: las taxonomías propias de WooCommerce (categoría, etiqueta y atributos pa_*) y el precio.
+    const wooTaxonomy = (key) => isWoo && (['product_cat', 'product_tag'].includes(key) || /^pa_[a-z0-9_-]+$/.test(key ?? ''));
+    const reserved = new Set([...WP_QUERY_VARS, ...row.taxonomies.map((t) => t.key), ...dynamicRows.keys(), ...(isWoo ? ['min_price', 'max_price', 'rating_filter', 'orderby'] : [])]);
     const seen = new Set();
     const fieldOf = (where, field, types, kind) => {
         if (!field) error(where, `Fuente: el campo ACF va entre comillas invertidas (\`${content}_<sección>_<campo>\`).`);
@@ -387,7 +394,11 @@ for (const { name, content, filters } of listings) {
 
         if (f.type === 'taxonomía') {
             const key = f.fields[0] ?? f.source;
-            if (!taxonomies.has(key)) error(where, `Fuente: la taxonomía "${key}" no está en la fila "${content}" de "Contenido dinámico".`);
+            if (!taxonomies.has(key) && !wooTaxonomy(key)) error(where, `Fuente: la taxonomía "${key}" no está en la fila "${content}" de "Contenido dinámico".`);
+        } else if (isWoo && (f.type === 'opciones' || f.type === 'fecha')) {
+            error(where, `Un filtro de ${f.type} no está disponible en una tienda de WooCommerce: usa una taxonomía (categoría, etiqueta o atributo).`);
+        } else if (isWoo && f.type === 'rango') {
+            if (f.fields[0] !== 'precio') error(where, 'Fuente: en una tienda de WooCommerce el rango es el precio: `precio`.');
         } else if (f.type === 'rango' || f.type === 'opciones') {
             fieldOf(where, f.fields[0], FILTER_FIELD_TYPES[f.type], f.type);
             if (f.type === 'opciones' && fields.get(f.fields[0]) === 'true_false' && f.multiple !== 'no') error(where, 'Un campo sí/no (true_false) no admite varios valores.');
@@ -396,7 +407,10 @@ for (const { name, content, filters } of listings) {
         } else if (f.type === 'orden') {
             if (!f.orders.length) error(where, `Fuente: las opciones de orden separadas por comas (${ORDER_KEYWORDS.join(', ')} o \`campo\` asc/desc).`);
             for (const order of f.orders) {
-                if (order.field) fieldOf(where, order.field, FILTER_FIELD_TYPES.orden, 'orden');
+                if (order.field && isWoo) {
+                    if (order.field !== 'precio') error(where, `Orden "${order.field}": en una tienda de WooCommerce solo se ordena por \`precio\` asc/desc, además de ${ORDER_KEYWORDS.join(', ')}.`);
+                } else if (order.field) fieldOf(where, order.field, FILTER_FIELD_TYPES.orden, 'orden');
+                else if (['popularidad', 'valoracion'].includes(order.key) && !isWoo) error(where, `Orden "${order.key}": solo existe en una tienda de WooCommerce.`);
                 else if (!ORDER_KEYWORDS.includes(order.key)) error(where, `Orden "${order.key}" desconocido: ${ORDER_KEYWORDS.join(', ')} o \`campo\` asc/desc.`);
             }
         }

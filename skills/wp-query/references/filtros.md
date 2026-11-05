@@ -33,3 +33,19 @@ The cache key carries a content version stored in an option (`<prefix>_query_ver
 ## SEO
 
 A page with any filter, search or sort is `noindex, follow`, and its canonical is the list without filters: the core `wp_robots`, Yoast (`wpseo_robots`, `wpseo_canonical`) and Rank Math. Pagination alone stays indexable.
+
+## WooCommerce
+
+A list of a content with `Origen: woo` is the shop archive. The definition has `post_type: product` and `woo: true`. WooCommerce builds its main query first (`WC_Query::pre_get_posts`, priority 10: product visibility, hidden stock, catalogue ordering); the engine runs at priority 20 and adds to it.
+
+| Tipo | Source in the table | URL | Query |
+|---|---|---|---|
+| `taxonomía` | `product_cat`, `product_tag` or an attribute `pa_<name>` | `?categoria=cursos,servicios` | `tax_query` on top of WooCommerce's (visibility and stock stay) |
+| `rango` | `` `precio` `` | `?precio_min=100&precio_max=300` | WooCommerce's lookup table `wc_product_meta_lookup`, by calling `WC()->query->price_filter_post_clauses` (taxes included). WooCommerce reads `min_price` / `max_price` from the URL, so the engine presents its own values for that one call and restores `$_GET`; without that method it writes the same condition itself (no tax adjustment) |
+| `búsqueda` | text | `?q=asesoria` | `s` |
+| `orden` | `reciente`, `antiguo`, `az`, `za`, `relevancia` as everywhere, plus `` `precio` `` asc / desc, `popularidad`, `valoracion` | `?orden=precio-desc` | the last three through `WC()->query->get_catalog_ordering_args()` (it adds the clauses WooCommerce uses to sort by its lookup table) |
+
+- **Not allowed:** `opciones` and `fecha` (they are ACF fields on a content type, not products): use an attribute (`pa_talla`). `generate.mjs` stops with the reason.
+- **Counts and limits see only the catalog.** A count query adds `WC()->query->get_tax_query()`: products hidden from the catalogue and, when the store is set to hide them, out-of-stock products are left out. The range's real min and max are computed from those products only. `fijo` counts use the same visible set, without the filters.
+- WooCommerce's own URL variables (`min_price`, `max_price`, `orderby`, `rating_filter`, `filter_<attribute>`) keep working because WooCommerce handles them in its own query; they combine with the engine's with "and". The table's filter names cannot be `orderby`, `min_price`, `max_price` or `rating_filter` (`design-import` stops it).
+- Verified on WooCommerce 11.2.2: shop and category archives, the four sort orders, price range, search, counts with hidden and out-of-stock products, pagination, and the partial response. The browser-side update (`query.js`) has not been run against WooCommerce's add-to-cart buttons: those use delegated events on `.add_to_cart_button`, which should survive the swap of the grid; check it by eye.
