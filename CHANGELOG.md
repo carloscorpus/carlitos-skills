@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.29.1] - 2026-11-05
+
+### Corregido
+- `wp-vite-theme` 1.3.1: `php -l` usa el mismo PHP que el sitio de Local (antes el más nuevo de `bin/win32/`, que en Windows no ve 8.3 ni 8.4) y avisa si a esa versión le quedan pocos o ningún parche de seguridad. Detalle en `skills/wp-vite-theme/CHANGELOG.md`.
+
 ## [1.29.0] - 2026-11-05
 
 ### Agregado

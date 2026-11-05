@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.3.1] - 2026-11-05
+
+### Corregido
+- `php -l` usa el mismo PHP que el sitio de Local donde está el tema (lo lee de `sites.json`), no el más nuevo instalado. Antes buscaba solo en `bin/win32/`, y en Windows las versiones nuevas de Local (8.3, 8.4) solo traen `bin/win64/`: terminaba usando 8.2 aunque el sitio usara otra.
+- Script nuevo `scripts/local-php.mjs`: busca en `win64` antes que en `win32`; en macOS prefiere la carpeta de la arquitectura de la máquina. Si el tema no está en un sitio de Local o su PHP no está instalado, usa la versión más alta que todavía recibe parches de seguridad, en su parche más nuevo, y explica por qué. Sin Local, usa el `php` del PATH.
+- Avisa cuando el PHP del sitio ya no recibe parches de seguridad o le quedan menos de 90 días (según php.net/supported-versions). La skill no cambia la versión del sitio: lo decide el usuario.
+- Pruebas nuevas en `tests/check.mjs`.
+
 ## [1.3.0] - 2026-10-21
 
 ### Agregado
