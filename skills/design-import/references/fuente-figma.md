@@ -61,6 +61,6 @@ Signals are always `propuesto`: the user confirms them in the specs. Typical evi
 - Never store a temporary download link; `figma-lectura.mjs` rejects it.
 - The reference code is a high-fidelity prototype, not code to paste: it is React and Tailwind, with absolute positioning for decoration. Rewrite it as PHP with the theme's tokens, components and helpers (stage C).
 - Figma gives one width. Responsive is decided in the spec (`Comportamiento`) with good practice, never invented as if the design had it.
-- Image conversion (webp) is not part of this skill; the specs name each image with its real format.
+- Nothing is converted while reading: the specs name each image with its real format. When the images are PNG or JPEG, `design-import` offers the separate `img-webp` skill once before the templates are written (SKILL.md, stage C). `specs/figma/lectura/` keeps describing the original download, and `img-webp` leaves it untouched.
 - Layer names such as `Frame 40` or `Vector` are never used for names in the theme.
 - The `.ref.txt` files carry Tailwind classes: when the tokens go into `src/css/input.css`, exclude `specs/` from Tailwind's scan with `@source not "../../specs";` (see `destino-wp-vite-theme.md`), or the build generates CSS for classes that are not the theme's.

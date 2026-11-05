@@ -18,9 +18,10 @@
 | [`wp-modal`](skills/wp-modal/SKILL.md)           | 1.0.3   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado; `wp-form` es opcional | Modales, confirmaciones, drawers, hojas inferiores y lightbox con el `<dialog>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento y auditoría. |
 | [`wp-accordion`](skills/wp-accordion/SKILL.md)   | 1.0.0   | Un tema WordPress con `functions.php` y Vite (pnpm); Tailwind recomendado | Acordeones y FAQ con el `<details>` nativo: el diseño sale de Figma; accesibilidad, SEO, movimiento solo con CSS, responsive y auditoría. |
 | [`wp-helper`](skills/wp-helper/SKILL.md)         | 1.3.0   | Un tema WordPress con `functions.php` (Vite no hace falta); ACF opcional | Helpers PHP con el prefijo del tema: imágenes seguras de campos ACF (array, ID, URL o vacío), enlaces seguros y accesibles, y texto con partes de otro color con marcadores configurables. |
-| [`design-import`](skills/design-import/SKILL.md) | 1.10.0  | Un tema WordPress y la carpeta de un diseño (`/add-dir`) o links de Figma; sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también lo que se repite en todo el sitio, blog, catálogo y Woo, solo documentados o maquetados) y aplica solo lo que apruebas. |
+| [`design-import`](skills/design-import/SKILL.md) | 1.11.0  | Un tema WordPress y la carpeta de un diseño (`/add-dir`) o links de Figma; sigue la estructura de `wp-vite-theme` o la que detecte | Reordena el diseño exportado por Claude Design (HTML + CSS + JS con malas prácticas) en tokens, componentes, secciones y plantillas; deja un spec por página con los grupos y campos ACF documentados (también lo que se repite en todo el sitio, blog, catálogo y Woo, solo documentados o maquetados) y aplica solo lo que apruebas. |
 | [`wp-acf`](skills/wp-acf/SKILL.md)               | 1.7.1   | Un tema WordPress con los specs de `design-import` aplicados y ACF Pro 6.2 o superior; `wp-helper` recomendado | Pasa los specs a ACF Pro administrable: campos, tipos de contenido, taxonomías y páginas de opciones como ACF JSON sincronizado con la base de datos, el contenido del diseño cargado como contenido real, menús, logo y las plantillas leyendo de ACF. |
 | [`wp-query`](skills/wp-query/SKILL.md)           | 1.1.1   | Un tema WordPress con Vite y los specs de `design-import` (tabla Filtros); los tipos de contenido y campos de `wp-acf` | Hace funcionar los listados de posts y tipos de contenido: el loop real, filtros combinados (taxonomías, opciones ACF, rangos, fechas, búsqueda y orden), conteos, paginación, relacionados, SEO de las páginas filtradas y filtrar sin recargar. El diseño pone el HTML. |
+| [`img-webp`](skills/img-webp/SKILL.md)           | 1.0.0   | Nada: cualquier carpeta con imágenes (WordPress no hace falta); necesita `sharp`, que se toma del proyecto y no se instala solo | Convierte PNG, JPG y JPEG a WebP: cada imagen conserva su tamaño (solo se reduce lo que pasa de 2000 px de ancho) y su transparencia; los originales se mueven a un respaldo; actualiza las referencias (PHP, CSS, JS, specs) y se puede deshacer. SVG, GIF, AVIF y WebP no se tocan. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -171,6 +172,7 @@ template-parts/components/<nombre>.php
 ```
 
 - **Figma en vez de carpeta:** si en lugar de una carpeta tienes el diseño en Figma, pega los links de cada página en `specs/figma/enlaces/<página>.md` (el frame de la página y sus secciones con el nombre que tú les pones); `init.mjs --figma` crea `_ejemplo.md` y `home.md`. Los links se validan (`figma-links.mjs`), se lee cada sección con el MCP de Figma a `specs/figma/lectura/` (`figma-lectura.mjs` la valida; las imágenes se bajan tal como las entrega Figma) y `figma-inventario.mjs` arma el inventario con las mismas claves de `analyze.mjs`. De ahí en adelante es igual: `_shared.md`, un spec por página, aplicar. Sin links de Figma ni `specs/figma/`, nada de esto corre: la carpeta sigue siendo lo predeterminado.
+- **Imágenes pesadas:** si el diseño trae PNG, JPG o JPEG, ofrece **una vez** la skill `img-webp` antes de escribir las plantillas (así nacen con nombres `.webp`); si ya la pediste la usa directo, y si no está instalada sigue sin ella. Nunca convierte SVG.
 - **Destino:** si el tema tiene la estructura de `wp-vite-theme`, la usa sin preguntar. Si es otro proyecto, lo analiza y confirma el mapeo una sola vez.
 - **Solo front:** los campos ACF se documentan en el spec (nombre `<página>_<sección>_<campo>` en español, tipo, descripción, valor actual); no se crean. El texto queda fijo en la plantilla y cada campo apunta a su valor actual para pasarlo a ACF después.
 - **Grupos ACF:** cada página es un grupo de campos con su regla de ubicación y cada sección es un campo `group` (`home_hero`); los nombres siguen siendo `home_hero_titulo`.
@@ -227,6 +229,28 @@ src/js/modules/query.js       filtrar sin recargar
 - **SEO:** las páginas filtradas no se indexan y su canonical apunta al listado sin filtros (WordPress, Yoast y Rank Math).
 - Comandos: `node skills/wp-query/scripts/status.mjs`, `install.mjs [--dry-run]`, `generate.mjs [--dry-run]`, `check.mjs`.
 - Prueba: `node skills/wp-query/tests/check.mjs`. Con `php` disponible también prueba el motor PHP.
+
+## img-webp
+
+En cualquier proyecto con imágenes (un tema WordPress o una carpeta suelta), pide `convierte las imágenes a webp`, `optimiza las imágenes del tema` o pásale una imagen o una carpeta: `/carlitos-skills:img-webp assets/img/hero.jpg` o `/carlitos-skills:img-webp assets/img`. Es independiente: ninguna otra skill la necesita y ella no necesita a ninguna; `design-import` solo la **ofrece** una vez cuando ve PNG o JPEG.
+
+Trabaja en pasos y te muestra el resultado antes de escribir: `--scan` (solo lectura: qué hay y qué se convertiría), `--dry-run` (codifica en memoria y muestra el ahorro real y las referencias que cambiarían, con archivo:línea) y `--apply`. Con `--restore` lo deshace todo.
+
+```text
+<nombre>.webp                              junto a cada imagen original, con el mismo nombre
+src/img-originales/ (o img-originales/)    los originales movidos, con su estructura; src/ no se sube al servidor
+img-webp.manifest.json                     dentro del respaldo: qué se convirtió y qué referencias cambiaron
+```
+
+- **Qué convierte:** PNG, JPG y JPEG, según su formato **real** (un `.png` que es un JPEG se detecta). SVG, GIF, AVIF y WebP no se tocan.
+- **Tamaño:** cada imagen conserva sus medidas. Solo si el ancho pasa de 2000 px se reduce a 2000 px, con la misma proporción; nunca se amplía. Calidad 80, conserva la transparencia y aplica la orientación Exif. Si el WebP no queda más liviano, se deja el original.
+- **Originales:** se mueven al respaldo, nunca se borran. Una segunda corrida no cambia nada.
+- **Referencias:** reemplaza el nombre del archivo en PHP, CSS, JS, HTML, MD, JSON, YAML y XML (suelto, con ruta o como URL). Si el nombre es ambiguo no lo toca y lo lista. No edita `node_modules`, `dist`, el respaldo ni `specs/figma/lectura/`. En un proyecto nuevo (sin referencias) solo convierte.
+- **Codificador:** usa `sharp`, que **no va incluido**: lo toma del proyecto o de `--sharp-from <carpeta>`. Si falta, sale con código 5 y te da el comando exacto según tu gestor (`pnpm add -D sharp`, `yarn add -D sharp` o `npm install --save-dev sharp`); no instala nada solo. `sharp` no trae script de instalación, así que no choca con las reglas de builds de pnpm.
+- Con `wp-acf`: cada imagen se identifica por su ruta, así que conviene convertir **antes** de cargar el contenido; si no, queda un adjunto viejo sin uso.
+- Comandos: `node skills/img-webp/scripts/webp.mjs --scan | --dry-run | --apply | --restore | --check-encoder [rutas…] [--max-width 2000] [--quality 80] [--backup <dir>] [--no-refs] [--force] [--sharp-from <dir>]`.
+- Prueba: `node skills/img-webp/tests/check.mjs` (sin dependencias, con un `sharp` falso; si defines `IMG_WEBP_SHARP_FROM=<carpeta con node_modules/sharp>` suma una conversión real).
+- No genera AVIF, `srcset` ni GIF animado, ni cambia cómo la página usa la imagen.
 
 ## Agregar una skill
 

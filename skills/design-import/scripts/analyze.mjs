@@ -645,6 +645,14 @@ const top = (map) => [...map.values()]
     .slice(0, TOP)
     .map(({ value, count: n, files: where }) => ({ value, count: n, files: [...where].slice(0, 5) }));
 
+// Imágenes PNG o JPEG que no son webp: la skill img-webp las convierte si el usuario quiere (se ofrece una vez).
+// Es informativo: no cambia el diseño ni bloquea nada. Los SVG y las que ya son webp no cuentan.
+for (const image of files.image) {
+    if (/\.(png|jpe?g)$/i.test(image.file)) {
+        add('raster-not-webp', 'low', 'Imagen PNG o JPEG que no es webp: se ofrece una vez la skill img-webp para convertirla (nunca los SVG).', image.file, null);
+    }
+}
+
 const severityRank = { high: 0, medium: 1, low: 2 };
 const sortedFindings = [...findings.values()].sort((a, b) => severityRank[a.severity] - severityRank[b.severity] || b.count - a.count);
 

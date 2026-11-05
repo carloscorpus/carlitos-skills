@@ -2,6 +2,12 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.26.0] - 2026-11-04
+
+### Agregado
+- `img-webp` 1.0.0: skill nueva que convierte las imágenes PNG, JPG y JPEG de un proyecto a WebP. Conserva el tamaño de cada imagen (solo reduce a 2000 px las que pasan de ese ancho) y la transparencia, mueve los originales a un respaldo, actualiza las referencias (PHP, CSS, JS, specs), tiene vista previa con el ahorro real y se puede deshacer. Independiente de las demás skills; usa `sharp`, que se toma del proyecto y no se instala solo. Detalle en `skills/img-webp/CHANGELOG.md`.
+- `design-import` 1.11.0: ofrece `img-webp` una vez cuando ve imágenes PNG o JPEG (sin depender de ella) y `analyze.mjs` suma el hallazgo informativo `raster-not-webp`. Detalle en `skills/design-import/CHANGELOG.md`.
+
 ## [1.25.0] - 2026-11-04
 
 ### Agregado

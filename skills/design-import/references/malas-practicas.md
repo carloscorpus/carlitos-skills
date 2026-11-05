@@ -22,6 +22,12 @@
 
 Also fix without a finding: layout built with `<br>` or empty elements for spacing, text inside images, `<b>`/`<i>` for emphasis (`strong`/`em`), lists made of `div`s, tables used for layout, `target="_blank"` without `rel` (the `wp-helper` links helper handles ACF links).
 
+## Images
+
+| id | Why it matters | Fix |
+|---|---|---|
+| `raster-not-webp` | PNG and JPEG weigh several times more than WebP and slow the page (design exports often hold 5 to 9 MB photos) | Not yours to fix: offer the `img-webp` skill once, before writing the templates. SVG is never converted. Informational, it blocks nothing |
+
 ## CSS
 
 | id | Why it matters | Fix |

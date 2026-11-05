@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.11.0] - 2026-11-04
+
+### Agregado
+- Ofrece la skill `img-webp` cuando ve imágenes PNG, JPG o JPEG (paso 7.4 de `SKILL.md`): se pregunta **una vez**, antes de escribir las plantillas, si se convierten a WebP. En un proyecto nuevo se convierten primero y las plantillas nacen con nombres `.webp`; en uno ya hecho, `img-webp` actualiza las referencias. Si el usuario ya lo pidió se usa directo; si la skill no está instalada se dice y se sigue con los archivos como están. Nunca se convierten los SVG. `img-webp` es independiente: `design-import` no la necesita.
+- `analyze.mjs` suma el hallazgo informativo `raster-not-webp` (severidad baja, no bloquea nada): cuenta las imágenes PNG y JPEG de la carpeta fuente con su ubicación; los SVG y los `.webp` no cuentan. Con su entrada en `references/malas-practicas.md` y una prueba.
+
+### Cambiado
+- `references/fuente-figma.md` y el mensaje de `scripts/figma/lectura.mjs` ya no dicen "no es parte de esta skill / no se convierte aquí": dicen que la conversión la hace `img-webp` si el usuario la quiere. La lectura de Figma sigue sin convertir nada y `specs/figma/lectura/` sigue describiendo la descarga original (`img-webp` no lo toca).
+
 ## [1.10.0] - 2026-11-04
 
 ### Agregado
