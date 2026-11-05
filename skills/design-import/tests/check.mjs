@@ -123,6 +123,27 @@ try {
         assert.deepEqual(analysis.json.siteWide.repeated, [], 'las cards son de una sola página');
     });
 
+    test('analyze: las imágenes PNG y JPEG que no son webp se avisan (informativo); SVG y webp no', () => {
+        const pagina = '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>x</title></head><body><h1>x</h1></body></html>';
+        const conRaster = join(tmp, 'fuente-raster');
+        mkdirSync(join(conRaster, 'img'), { recursive: true });
+        writeFileSync(join(conRaster, 'index.html'), pagina);
+        for (const name of ['foto.jpg', 'otra.JPEG', 'logo.png', 'icono.svg', 'ya.webp']) writeFileSync(join(conRaster, 'img', name), 'x');
+        const finding = run('analyze.mjs', ['--source', conRaster]).json.findings.find((f) => f.id === 'raster-not-webp');
+        assert.ok(finding, 'falta el hallazgo raster-not-webp');
+        assert.equal(finding.count, 3, 'jpg, jpeg y png; no el svg ni el webp');
+        assert.equal(finding.severity, 'low');
+        assert.deepEqual(finding.locations.map((l) => l.file).sort(), ['img/foto.jpg', 'img/logo.png', 'img/otra.JPEG']);
+
+        const sinRaster = join(tmp, 'fuente-sin-raster');
+        mkdirSync(join(sinRaster, 'img'), { recursive: true });
+        writeFileSync(join(sinRaster, 'index.html'), pagina);
+        writeFileSync(join(sinRaster, 'img', 'icono.svg'), 'x');
+        writeFileSync(join(sinRaster, 'img', 'ya.webp'), 'x');
+        assert.equal(run('analyze.mjs', ['--source', sinRaster]).json.findings.some((f) => f.id === 'raster-not-webp'), false);
+        assert.equal(analysis.json.findings.some((f) => f.id === 'raster-not-webp'), false, 'el fixture de siempre no cambia');
+    });
+
     // ---------- init ----------
     const theme = join(tmp, 'tema');
     mkdirSync(theme);

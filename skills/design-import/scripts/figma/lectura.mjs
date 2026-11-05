@@ -174,7 +174,7 @@ export function validateLectura(data, slug, { dir, enlaces = null } = {}) {
             else if (ids.has(img.id)) err(`${where}.id`, `El id "${img.id}" está repetido en la sección.`);
             ids.add(img.id);
             if (!NODE_ID_ANY.test(img.nodeId ?? '')) err(`${where}.nodeId`, 'nodeId inválido (se espera "3638:2121" o, dentro de una instancia, "I3704:18079;3704:22279").');
-            if (!TIPOS_IMAGEN.includes(img.tipo)) err(`${where}.tipo`, `"tipo" debe ser uno de: ${TIPOS_IMAGEN.join(', ')} (el formato real descargado; no se convierte aquí).`);
+            if (!TIPOS_IMAGEN.includes(img.tipo)) err(`${where}.tipo`, `"tipo" debe ser uno de: ${TIPOS_IMAGEN.join(', ')} (el formato real descargado; aquí no se convierte: pasarlas a webp lo hace la skill img-webp, si el usuario la quiere).`);
             for (const key of ['ancho', 'alto']) if (!isNum(img[key]) || img[key] <= 0) err(`${where}.${key}`, `"${key}" debe ser un número mayor que 0.`);
             if (!ROLES_IMAGEN.includes(img.rol)) err(`${where}.rol`, '"rol" debe ser "contenido" o "decorativa".');
             checkFile(`${where}.archivo`, img.archivo);
