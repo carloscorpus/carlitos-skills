@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.31.0] - 2026-11-06
+
+### Agregado
+- `wp-acf` 1.8.0: genera campos `relationship` (el cliente elige entradas de un contenido, por ejemplo productos destacados) desde `Contenido: <contenido>` en la descripción del spec, con `Máximo`/`Mínimo` opcionales, y los carga con los elementos de ejemplo (`['_item' => 'id']`). Detalle en `skills/wp-acf/CHANGELOG.md`.
+
 ## [1.30.0] - 2026-11-05
 
 ### Agregado

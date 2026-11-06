@@ -93,7 +93,8 @@ function {{PREFIX}}_acf_attachment(string $relative): int
 
 // Reemplaza los marcadores de una carga: ['_file' => 'assets/img/x.webp', 'alt' => '...'] por el ID del adjunto y
 // ['_page' => 'tarifario'] por la ruta relativa de esa página ('/tarifario/'), sin dominio: así la base de datos no
-// depende de si el sitio está en local o en producción.
+// depende de si el sitio está en local o en producción. ['_item' => 'producto-1'] (un relationship) es el ID del
+// elemento de ejemplo con ese id; si aún no existe, se quita de la lista.
 function {{PREFIX}}_acf_resolve($value, array $pages)
 {
     if (!is_array($value)) {
@@ -114,11 +115,26 @@ function {{PREFIX}}_acf_resolve($value, array $pages)
         return wp_make_link_relative($link ?: home_url('/' . trim($slug, '/') . '/'));
     }
 
+    if (isset($value['_item'])) {
+        $found = get_posts([
+            'post_type'      => 'any',
+            'post_status'    => 'any',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'meta_key'       => '_{{PREFIX}}_seed_id',
+            'meta_value'     => (string) $value['_item'],
+        ]);
+        return $found ? (int) $found[0] : null;
+    }
+
     $resolved = [];
     foreach ($value as $key => $item) {
-        $resolved[$key] = {{PREFIX}}_acf_resolve($item, $pages);
+        $item = {{PREFIX}}_acf_resolve($item, $pages);
+        if ($item !== null) {
+            $resolved[$key] = $item;
+        }
     }
-    return $resolved;
+    return array_is_list($value) ? array_values($resolved) : $resolved;
 }
 
 // ---------- 1. Sincronizar el JSON con la base de datos ----------
@@ -444,12 +460,19 @@ function {{PREFIX}}_acf_run(): array
     $pages            = {{PREFIX}}_acf_pages();
     $report['paginas'] = $pages['report'];
 
-    $report['cargas'] = [];
+    // Primero las cargas con elementos de ejemplo ('items'): así un relationship ('_item') ya los encuentra.
+    $seeds = [];
     foreach (glob(get_theme_file_path('inc/acf/seed/*.php')) ?: [] as $file) {
         $seed = require $file;
         if (is_array($seed)) {
-            $report['cargas'][basename($file)] = {{PREFIX}}_acf_seed($seed, $pages['ids']);
+            $seeds[basename($file)] = $seed;
         }
+    }
+    uksort($seeds, fn($a, $b) => [empty($seeds[$a]['items']), $a] <=> [empty($seeds[$b]['items']), $b]);
+
+    $report['cargas'] = [];
+    foreach ($seeds as $name => $seed) {
+        $report['cargas'][$name] = {{PREFIX}}_acf_seed($seed, $pages['ids']);
     }
 
     $report['menus'] = {{PREFIX}}_acf_menus($pages['ids']);

@@ -47,7 +47,7 @@ const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
 export const SUPPORTED_TYPES = new Set([
     'text', 'textarea', 'wysiwyg', 'number', 'email', 'url', 'image', 'file', 'gallery', 'oembed', 'select', 'radio',
-    'checkbox', 'button_group', 'true_false', 'link', 'date_picker', 'color_picker', 'group', 'repeater',
+    'checkbox', 'button_group', 'true_false', 'link', 'date_picker', 'color_picker', 'group', 'repeater', 'relationship',
 ]);
 
 const noBindings = { allow_in_bindings: 0 };
@@ -69,7 +69,38 @@ export function rowLimits(description) {
     return { min: min ?? 0, max: max ?? 0, errors };
 }
 
-function typeProps(row, errors) {
+// "Productos destacados. Contenido: producto" -> ['producto']. También "Contenidos: producto, post".
+export function relationContents(description) {
+    const list = /\bContenidos?:\s*([^.]+)/i.exec(description)?.[1];
+    return list ? list.split(',').map((name) => unwrap(name.trim())).filter(Boolean) : [];
+}
+
+// El tipo de WordPress de un contenido de "Contenido dinámico": cpt = su nombre, post = 'post', woo = 'product'.
+export const postTypeOf = (row) => (row.origin === 'cpt' ? row.name : row.origin === 'woo' ? 'product' : 'post');
+
+// Un relationship elige entradas de los contenidos que nombra su descripción ("Contenido: producto").
+// Devuelve IDs: la plantilla los recorre sin consultas propias. "Máximo: n" / "Mínimo: n" limitan cuántas se eligen.
+function relationshipProps(row, errors, ctx) {
+    const names = relationContents(row.description);
+    if (!names.length) errors.push(`${row.name}: un relationship necesita "Contenido: <contenido>" en la descripción (un contenido de "Contenido dinámico" de _shared.md).`);
+    const rows = [];
+    for (const name of names) {
+        const found = ctx.dynamic.find((r) => r.name === name);
+        if (!found) errors.push(`${row.name}: el contenido "${name}" no está en "Contenido dinámico" de _shared.md.`);
+        else { rows.push(found); ctx.used.add(found.name); }
+    }
+    const { min, max, errors: limitErrors } = rowLimits(row.description);
+    for (const message of limitErrors) errors.push(`${row.name}: ${message}`);
+    const filters = ['search'];
+    if (rows.length > 1) filters.push('post_type');
+    if (rows.some((r) => r.taxonomies.length)) filters.push('taxonomy');
+    return {
+        post_type: [...new Set(rows.map(postTypeOf))], post_status: ['publish'], taxonomy: '', filters, elements: ['featured_image'],
+        min, max, return_format: 'id', ...noBindings, bidirectional: 0, bidirectional_target: [],
+    };
+}
+
+function typeProps(row, errors, ctx) {
     switch (row.type) {
         case 'text': return { default_value: '', maxlength: '', ...noBindings, placeholder: '', prepend: '', append: '' };
         // new_lines vacío a propósito: <prefix>_highlight() de wp-helper convierte los saltos en <br>; si ACF
@@ -86,6 +117,7 @@ function typeProps(row, errors) {
         case 'true_false': return { message: '', default_value: 0, ...noBindings, ui_on_text: '', ui_off_text: '', ui: 1 };
         case 'oembed': return { width: '', height: '', ...noBindings };
         case 'date_picker': return { display_format: 'd/m/Y', return_format: 'd/m/Y', first_day: 1, ...noBindings };
+        case 'relationship': return relationshipProps(row, errors, ctx);
         case 'color_picker': return { default_value: '', enable_opacity: 0, return_format: 'string', ...noBindings };
         case 'select': case 'radio': case 'checkbox': case 'button_group': {
             const choices = choicesOf(row);
@@ -103,7 +135,7 @@ function typeProps(row, errors) {
 const ENTER_HINT = 'Usa Enter para pasar a otra línea.';
 
 // Un campo del spec -> un campo de ACF. `children` son las filas hijas (repeater o group).
-function buildField(row, name, children, errors) {
+function buildField(row, name, children, errors, ctx) {
     // Un textarea con varias líneas en el diseño (<br> en "valor actual") le dice al editor cómo cortar la línea.
     const multiline = row.type === 'textarea' && row.breaks && !/\benter\b/i.test(row.description);
     const field = {
@@ -116,12 +148,12 @@ function buildField(row, name, children, errors) {
         required: row.required ? 1 : 0,
         conditional_logic: 0,
         wrapper: { width: '', class: '', id: '' },
-        ...typeProps(row, errors),
+        ...typeProps(row, errors, ctx),
     };
     if (row.type === 'repeater' || row.type === 'group') {
         const subs = children.get(row.name) ?? [];
         if (!subs.length) errors.push(`${row.name}: un ${row.type} necesita subcampos (filas "${row.name}.<campo>").`);
-        const subFields = subs.map((sub) => buildField(sub, sub.name.slice(sub.name.lastIndexOf('.') + 1), children, errors));
+        const subFields = subs.map((sub) => buildField(sub, sub.name.slice(sub.name.lastIndexOf('.') + 1), children, errors, ctx));
         if (row.type === 'repeater') {
             const { min, max, errors: limitErrors } = rowLimits(row.description);
             for (const message of limitErrors) errors.push(`${row.name}: ${message}`);
@@ -134,7 +166,7 @@ function buildField(row, name, children, errors) {
 }
 
 // Una sección del spec -> un campo `group` con sus subcampos.
-function buildSection(section, errors, file) {
+function buildSection(section, errors, file, ctx) {
     const err = (message) => errors.push({ file, message: `${section.name}: ${message}` });
     const local = [];
     const byName = new Map(section.fields.map((row) => [row.name, row]));
@@ -155,7 +187,7 @@ function buildSection(section, errors, file) {
         children.get(parent).push(row);
     }
     const top = children.get('') ?? [];
-    const subFields = top.map((row) => buildField(row, row.name.slice(section.group.length + 1), children, local));
+    const subFields = top.map((row) => buildField(row, row.name.slice(section.group.length + 1), children, local, ctx));
     for (const message of local) err(message);
     return {
         key: keyOf('field', section.group),
@@ -217,7 +249,7 @@ export function buildAll({ pages, dynamic }) {
         const fields = [];
         for (const section of page.sections) {
             if (section.state === 'descartado' || !section.group || section.group === 'ninguno') continue;
-            fields.push(buildSection(section, errors, page.file));
+            fields.push(buildSection(section, errors, page.file, { dynamic, used }));
         }
         groups.push({
             page: page.slug,
@@ -392,7 +424,12 @@ export function flattenGroup(json) {
     const walk = (fields, prefix, parentPath) => {
         for (const field of fields) {
             const full = parentPath === null ? field.name : parentPath === '' ? `${prefix}_${field.name}` : `${parentPath}.${field.name}`;
-            out.set(full, { type: field.type, required: !!field.required, ...(field.type === 'repeater' && { min: Number(field.min) || 0, max: Number(field.max) || 0 }) });
+            out.set(full, {
+                type: field.type,
+                required: !!field.required,
+                ...(['repeater', 'relationship'].includes(field.type) && { min: Number(field.min) || 0, max: Number(field.max) || 0 }),
+                ...(field.type === 'relationship' && { postTypes: [...(field.post_type ?? [])].sort().join(', ') }),
+            });
             if (field.sub_fields) walk(field.sub_fields, field.name, full);
         }
     };

@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.8.0] - 2026-11-06
+
+### Agregado
+- Campos `relationship`: `generate.mjs` ya no los rechaza. La descripción del spec dice de qué contenido se eligen las entradas (`Contenido: producto` o `Contenidos: producto, post`, cada uno de la tabla "Contenido dinámico" de `_shared.md`; `cpt` = su clave, `post` = `post`, `woo` = `product`). El JSON devuelve IDs, solo entradas publicadas, con buscador (y filtro por taxonomía si el contenido tiene una, o por tipo si nombra varios). `Máximo: n` / `Mínimo: n` limitan cuántas se eligen. Sin `Contenido:` o con un contenido que no existe es un error (código 4). Un contenido `cpt` usado solo por un relationship también genera su tipo de contenido.
+- Carga inicial: `['_item' => '<id>']` en un relationship es el ID del elemento de ejemplo con ese `id`. El motor carga primero los archivos con `items` para que existan; un `_item` que no aparece se quita de la lista.
+- `check.mjs` compara el contenido y los límites del relationship con el JSON, y avisa como error un `_item` que no es el `id` de ningún elemento de ejemplo.
+- `references/plantillas.md`: cómo imprimir un relationship (IDs, saltar los no publicados, título, enlace e imagen destacada, sin `WP_Query`).
+
+### Cambiado
+- Motor `inc/acf/runner.php` 1.8.0: actualízalo en cada proyecto con `install.mjs --overwrite inc/acf/runner.php`.
+
 ## [1.7.1] - 2026-11-03
 
 ### Cambiado
