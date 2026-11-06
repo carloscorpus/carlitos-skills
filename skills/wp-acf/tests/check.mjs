@@ -188,6 +188,42 @@ try {
         assert.equal(byName.destacado.ui, 1);
     });
 
+    // Un relationship en el hero de la portada que elige productos.
+    const relRow = (text) => change('specs/home.md',
+        '| `home_hero_slides` | repeater |',
+        `| \`home_hero_destacados\` | relationship | ${text} | — | no |\n| \`home_hero_slides\` | repeater |`);
+
+    test('generate: relationship elige entradas del contenido que nombra, con límites y devuelve IDs', () => {
+        const fieldOf = (text) => {
+            const dir = theme(relRow(text));
+            const r = run('generate.mjs', ['--target', dir]);
+            assert.equal(r.code, 0, r.stdout);
+            return readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel).fields[0].sub_fields.find((f) => f.name === 'destacados');
+        };
+        const field = fieldOf('Productos destacados de la portada. Contenido: producto. Máximo: 4');
+        assert.equal(field.type, 'relationship');
+        assert.deepEqual(field.post_type, ['producto']);
+        assert.deepEqual(field.post_status, ['publish']);
+        assert.equal(field.return_format, 'id');
+        assert.deepEqual([field.min, field.max], [0, 4]);
+        assert.deepEqual(field.filters, ['search', 'taxonomy'], 'producto tiene taxonomía: se puede filtrar por ella');
+        assert.match(field.instructions, /Contenido: producto/);
+        const free = fieldOf('Productos relacionados. Contenido: `producto`');
+        assert.deepEqual([free.min, free.max], [0, 0], 'sin límite si el spec no lo dice');
+        assert.deepEqual(free.post_type, ['producto']);
+    });
+
+    test('generate: un relationship sin contenido o con un contenido que no existe es un error', () => {
+        const bad = (text) => run('generate.mjs', ['--target', theme(relRow(text)), '--dry-run']);
+        const none = bad('Productos destacados');
+        assert.equal(none.code, 4, none.stdout);
+        assert.match(messages(none), /home_hero_destacados: un relationship necesita "Contenido: <contenido>"/);
+        const unknown = bad('Servicios destacados. Contenido: servicio');
+        assert.match(messages(unknown), /home_hero_destacados: el contenido "servicio" no está en "Contenido dinámico"/);
+        const limit = bad('Productos. Contenido: producto. Máximo: 0');
+        assert.match(messages(limit), /home_hero_destacados: "Máximo" debe ser un número de 1 o más/);
+    });
+
     test('generate: claves estables y sin cambios si no cambia el spec', () => {
         const { dir, r } = generated();
         const before = Object.fromEntries(r.json.files.map((f) => [f.rel, readFileSync(join(dir, f.rel), 'utf8')]));
@@ -335,6 +371,42 @@ try {
         const { r } = checked(change('specs/home.md', row, row.replace('Fotos del slider', 'Fotos del slider. Máximo: 6')));
         assert.equal(r.code, 4);
         assert.match(messages(r), /home_hero_slides: el spec dice mínimo 0 y máximo 6 .* y el JSON 0 y 0: corre generate\.mjs/);
+    });
+
+    test('check: relationship con otro contenido o límite en el JSON, y _item de la carga', () => {
+        const relChecked = (edit = () => {}) => {
+            const dir = theme(relRow('Productos destacados. Contenido: producto. Máximo: 4'));
+            const r = run('generate.mjs', ['--target', dir]);
+            assert.equal(r.code, 0, r.stdout);
+            const rel = r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel;
+            edit(dir, rel);
+            return run('check.mjs', ['--target', dir]);
+        };
+        const ok = relChecked();
+        assert.equal(ok.code, 0, ok.stdout);
+        const mutate = (fn) => (dir, rel) => {
+            const json = readJson(dir, rel);
+            fn(json.fields[0].sub_fields.find((f) => f.name === 'destacados'));
+            writeFileSync(join(dir, rel), JSON.stringify(json, null, 4));
+        };
+        assert.match(messages(relChecked(mutate((f) => { f.post_type = ['post']; }))), /home_hero_destacados: el spec elige entre "producto" y el JSON entre "post"/);
+        assert.match(messages(relChecked(mutate((f) => { f.max = 0; }))), /home_hero_destacados: el spec dice mínimo 0 y máximo 4/);
+
+        const seedRel = (id) => (dir) => {
+            writeFileSync(join(dir, 'inc/acf/seed/producto.php'), "<?php\nreturn ['post_type' => 'producto', 'items' => [['id' => 'producto-1', 'titulo' => 'Silla']]];\n");
+            change('inc/acf/seed/home.php', "'slides' =>", `'destacados' => [['_item' => '${id}']],\n            'slides' =>`)(dir);
+        };
+        const known = relChecked(seedRel('producto-1'));
+        assert.equal(known.code, 0, known.stdout);
+        const missing = relChecked(seedRel('producto-9'));
+        assert.equal(missing.code, 4);
+        assert.match(messages(missing), /\['_item' => 'producto-9'\] no es el 'id' de ningún elemento de ejemplo/);
+    });
+
+    test('install: el motor resuelve _item y carga primero los elementos de ejemplo', () => {
+        const engine = readFileSync(join(skillDir, 'templates/inc/acf/runner.php.tpl'), 'utf8');
+        assert.match(engine, /isset\(\$value\['_item'\]\)/);
+        assert.match(engine, /uksort\(\$seeds, fn\(\$a, \$b\) => \[empty\(\$seeds\[\$a\]\['items'\]\)/);
     });
 
     test('check: claves repetidas entre archivos', () => {

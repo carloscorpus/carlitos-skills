@@ -15,7 +15,7 @@ One `group_*.json` per page spec with the state asked for (`--states`, default `
 - `title`: the page's `Grupo ACF`.
 - `fields`: one `group` field per section (`name` = the section's `Grupo`, for example `home_hero`), skipping sections with `Grupo: ninguno` or `Estado: descartado`. Its subfields are the table rows: `home_hero_titulo` is the subfield `titulo`, which ACF stores as `home_hero_titulo`.
 - A row `a_b_items` of type `repeater` with rows `a_b_items.titulo`, `a_b_items.imagen` becomes a repeater with those subfields (nested repeaters work the same, one dot per level). A `group` row works the same way. The repeater row must exist before its subfields.
-- `instructions`: the row's description (it keeps the "Recomendado: …" text). `required`: the row's "Requerido". Nothing else limits the editor: no `maxlength`, no image size limits. The one exception is the rows of a repeater: if the description of the repeater row says `Máximo: 6` and/or `Mínimo: 2` (also `Máx. 6`, `Mínimo de 2`), the repeater gets `max: 6` / `min: 2` (0 = no limit). The text stays in `instructions`. A `0` maximum or a minimum above the maximum is an error; a number-less "máximo" in prose is not a limit; the words are ignored on any row that is not a `repeater`.
+- `instructions`: the row's description (it keeps the "Recomendado: …" text). `required`: the row's "Requerido". Nothing else limits the editor: no `maxlength`, no image size limits. The one exception is the rows of a repeater: if the description of the repeater row says `Máximo: 6` and/or `Mínimo: 2` (also `Máx. 6`, `Mínimo de 2`), the repeater gets `max: 6` / `min: 2` (0 = no limit). The text stays in `instructions`. A `0` maximum or a minimum above the maximum is an error; a number-less "máximo" in prose is not a limit; the words are ignored on any row that is not a `repeater` or a `relationship` (there they limit how many entries are chosen).
 - `label`: the field name humanized in Spanish ("titulo_principal" → "Título principal"); the admin can rename it.
 - `location`, from the page's `Ubicación`:
 
@@ -30,7 +30,7 @@ Any other text is an error: fix the spec.
 
 ## Content types and taxonomies
 
-From the "Contenido dinámico" table of `_shared.md`, only for contents used by a page that is being generated:
+From the "Contenido dinámico" table of `_shared.md`, only for contents used by a page that is being generated (its `Contenido`, its `Ubicación` or a `relationship` field that picks from it):
 
 - Origin `cpt` → `post_type_*.json`: key = the content name (up to 20 characters, lowercase, digits, `_` or `-`), Spanish labels from the name (`producto` → Producto / Productos), `supports` title, editor and thumbnail, archive on, REST on, the taxonomies listed in the table. The editor can change labels, icon and supports in the ACF admin.
 - Origin `post` (the blog) registers no content type; origin `woo` is ignored.

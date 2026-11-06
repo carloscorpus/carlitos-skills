@@ -10,6 +10,7 @@
 //   - En cada sección con `ACF: conectado`: la plantilla lee su grupo (`get_field('<grupo>'`, y 'option' en las
 //     páginas de opciones), ya no trae el texto fijo (aviso) y la carga de inc/acf/seed/<página>.php trae el
 //     grupo, cada "valor actual" de texto y los archivos que usa.
+//   - Cada ['_item' => '<id>'] de una carga (relationship) es un elemento de ejemplo de alguna carga.
 //   - El motor (inc/acf/runner.php) está instalado y cargado desde functions.php.
 //
 // Sale con JSON en stdout. Códigos: 0 ok (puede haber avisos), 1 error de uso, 4 hay errores.
@@ -98,8 +99,11 @@ for (const item of built.groups) {
         if (!got) error(where, `El campo ${name} del spec no está en el JSON.`);
         else if (got.type !== exp.type) error(where, `${name}: el spec dice ${exp.type} y el JSON ${got.type}.`);
         else if (got.required !== exp.required) error(where, `${name}: "Requerido" no coincide con el JSON.`);
-        else if (exp.type === 'repeater' && (got.min !== exp.min || got.max !== exp.max)) {
+        else if (['repeater', 'relationship'].includes(exp.type) && (got.min !== exp.min || got.max !== exp.max)) {
             error(where, `${name}: el spec dice mínimo ${exp.min} y máximo ${exp.max} (0 = sin límite) y el JSON ${got.min} y ${got.max}: corre generate.mjs.`);
+        }
+        else if (exp.type === 'relationship' && got.postTypes !== exp.postTypes) {
+            error(where, `${name}: el spec elige entre "${exp.postTypes}" y el JSON entre "${got.postTypes}": corre generate.mjs.`);
         }
     }
     for (const name of actual.keys()) if (!expected.has(name)) error(where, `El campo ${name} está en el JSON pero no en el spec.`);
@@ -250,6 +254,16 @@ for (const page of pages) {
         for (const [, file] of seedText.matchAll(/['"]_file['"]\s*=>\s*['"]([^'"]+)['"]/g)) {
             if (!existsSync(join(target, file))) error(seedRel, `El archivo "${file}" de la carga no existe en el tema.`);
         }
+    }
+}
+
+// Un relationship se carga con ['_item' => '<id>']: ese id debe ser un elemento de ejemplo de alguna carga ('items').
+const seedFiles = existsSync(join(target, 'inc/acf/seed')) ? readdirSync(join(target, 'inc/acf/seed')).filter((f) => f.endsWith('.php')) : [];
+const seedTexts = new Map(seedFiles.map((name) => [name, read(join(target, 'inc/acf/seed', name))]));
+const itemIds = new Set([...seedTexts.values()].flatMap((text) => [...text.matchAll(/['"]id['"]\s*=>\s*['"]([^'"]+)['"]/g)].map((m) => m[1])));
+for (const [name, text] of seedTexts) {
+    for (const [, id] of text.matchAll(/['"]_item['"]\s*=>\s*['"]([^'"]+)['"]/g)) {
+        if (!itemIds.has(id)) error(`inc/acf/seed/${name}`, `['_item' => '${id}'] no es el 'id' de ningún elemento de ejemplo ('items') de inc/acf/seed/.`);
     }
 }
 

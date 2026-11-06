@@ -31,6 +31,7 @@ return [
 - Never write an absolute URL of the site itself (`http://copam.local/…`, `localhost`, the production domain): `check.mjs` reports it.
 - `link` values are `['title' => …, 'url' => …, 'target' => '_blank']` (`target` optional).
 - `true_false`: `1` or `0`. `number`: a number. `select`: the stored value (the slug of the option).
+- `relationship`: a list of `['_item' => '<id>']`, the `id` of sample items of a content (`'destacados' => [['_item' => 'producto-1'], ['_item' => 'producto-2']]`), in the order the design shows them. The engine loads the files with `items` first, so the items exist, and stores their IDs; an `_item` that is not found is left out. `check.mjs` reports an `_item` that is no item's `id`. If the design's entries have no sample items yet, write them first (see below).
 
 ## Taking it out of a template
 
