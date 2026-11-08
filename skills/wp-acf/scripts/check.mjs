@@ -10,7 +10,8 @@
 //   - En cada sección con `ACF: conectado`: la plantilla lee su grupo (`get_field('<grupo>'`, y 'option' en las
 //     páginas de opciones), ya no trae el texto fijo (aviso) y la carga de inc/acf/seed/<página>.php trae el
 //     grupo, cada "valor actual" de texto y los archivos que usa.
-//   - Cada ['_item' => '<id>'] de una carga (relationship) es un elemento de ejemplo de alguna carga.
+//   - Cada ['_item' => '<id>'] de una carga (relationship) es un elemento de ejemplo de alguna carga, y cada
+//     ['_term' => '<slug>'] trae su 'taxonomy'.
 //   - El motor (inc/acf/runner.php) está instalado y cargado desde functions.php.
 //
 // Sale con JSON en stdout. Códigos: 0 ok (puede haber avisos), 1 error de uso, 4 hay errores.
@@ -76,7 +77,11 @@ if (existsSync(outDir)) {
             else allKeys.set(key, name);
         };
         seen(json.key);
-        const walk = (fields) => fields.forEach((field) => { seen(field.key); walk(field.sub_fields ?? []); });
+        const walk = (fields) => fields.forEach((field) => {
+            seen(field.key);
+            walk(field.sub_fields ?? []);
+            for (const layout of Object.values(field.layouts ?? {})) { seen(layout.key); walk(layout.sub_fields ?? []); }
+        });
         walk(json.fields ?? []);
     }
 }
@@ -100,7 +105,10 @@ for (const item of built.groups) {
         if (!got) error(where, `El campo ${name} del spec no está en el JSON.`);
         else if (got.type !== exp.type) error(where, `${name}: el spec dice ${exp.type} y el JSON ${got.type}.`);
         else if (got.required !== exp.required) error(where, `${name}: "Requerido" no coincide con el JSON.`);
-        else if (['repeater', 'relationship'].includes(exp.type) && (got.min !== exp.min || got.max !== exp.max)) {
+        else if (exp.type === 'clone' && got.clone !== exp.clone) {
+            error(where, `${name}: el spec clona "${exp.clone}" y el JSON "${got.clone}": corre generate.mjs.`);
+        }
+        else if (['repeater', 'relationship', 'flexible_content'].includes(exp.type) && (got.min !== exp.min || got.max !== exp.max)) {
             error(where, `${name}: el spec dice mínimo ${exp.min} y máximo ${exp.max} (0 = sin límite) y el JSON ${got.min} y ${got.max}: corre generate.mjs.`);
         }
         else if (exp.type === 'relationship' && got.postTypes !== exp.postTypes) {
@@ -268,6 +276,13 @@ const itemIds = new Set([...seedTexts.values()].flatMap((text) => [...text.match
 for (const [name, text] of seedTexts) {
     for (const [, id] of text.matchAll(/['"]_item['"]\s*=>\s*['"]([^'"]+)['"]/g)) {
         if (!itemIds.has(id)) error(`inc/acf/seed/${name}`, `['_item' => '${id}'] no es el 'id' de ningún elemento de ejemplo ('items') de inc/acf/seed/.`);
+    }
+}
+
+// Un ['_term' => 'slug'] necesita la taxonomía: ['_term' => 'especiales', 'taxonomy' => 'category'].
+for (const [name, text] of seedTexts) {
+    for (const [, slug, rest] of text.matchAll(/\[\s*['"]_term['"]\s*=>\s*['"]([^'"]+)['"]([^\]]*)\]/g)) {
+        if (!/['"]taxonomy['"]\s*=>\s*['"][^'"]+['"]/.test(rest)) error(`inc/acf/seed/${name}`, `['_term' => '${slug}'] necesita 'taxonomy' => '<taxonomía>' (por ejemplo 'category').`);
     }
 }
 

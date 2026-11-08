@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.35.0] - 2026-11-08
+
+### Agregado
+- `wp-acf` 1.11.0: las cargas aceptan `_term` (crea el término si no existe), `_post` y `_user`, resueltos a cualquier profundidad, y `generate.mjs` ya genera `post_object`, `page_link`, `user`, `google_map`, `range`, `password`, `time_picker`, `date_time_picker`, `message`, `tab`, `accordion`, `clone` y `flexible_content`. Detalle en `skills/wp-acf/CHANGELOG.md`.
+
 ## [1.34.0] - 2026-11-08
 
 ### Agregado

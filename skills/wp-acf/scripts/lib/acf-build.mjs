@@ -48,7 +48,12 @@ const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 export const SUPPORTED_TYPES = new Set([
     'text', 'textarea', 'wysiwyg', 'number', 'email', 'url', 'image', 'file', 'gallery', 'oembed', 'select', 'radio',
     'checkbox', 'button_group', 'true_false', 'link', 'date_picker', 'color_picker', 'group', 'repeater', 'relationship', 'taxonomy',
+    'range', 'password', 'post_object', 'page_link', 'user', 'google_map', 'date_time_picker', 'time_picker', 'message',
+    'accordion', 'tab', 'flexible_content', 'clone',
 ]);
+
+// Tipos con filas hijas: un flexible_content tiene layouts (filas "campo.layout" de tipo group) y cada layout, sus subcampos.
+const PARENT_TYPES = ['repeater', 'group', 'flexible_content'];
 
 const noBindings = { allow_in_bindings: 0 };
 
@@ -124,6 +129,35 @@ function taxonomyProps(row, errors, ctx) {
     };
 }
 
+// Contenidos de un post_object / page_link: los de "Contenido: …" (de "Contenido dinámico" o las páginas y entradas
+// nativas, `page` y `post`). Sin `Contenido:` elige entre páginas.
+function pickedPostTypes(row, errors, ctx) {
+    const names = relationContents(row.description);
+    if (!names.length) return ['page'];
+    const types = [];
+    for (const name of names) {
+        const found = ctx.dynamic.find((r) => r.name === name);
+        if (found) { types.push(postTypeOf(found)); ctx.used.add(found.name); }
+        else if (name === 'page' || name === 'post') types.push(name);
+        else errors.push(`${row.name}: el contenido "${name}" no está en "Contenido dinámico" de _shared.md (ni es page o post).`);
+    }
+    return [...new Set(types)];
+}
+
+// "Múltiple" en la descripción deja elegir varios.
+const wantsMultiple = (description) => (/\bM[uú]ltiples?\b/i.test(description) ? 1 : 0);
+
+// "Rol: editor, author" -> ['editor', 'author'].
+const rolesOf = (description) => /\bRol(?:es)?:\s*([^.]+)/i.exec(description)?.[1]?.split(',').map((r) => unwrap(r.trim())).filter(Boolean) ?? [];
+
+// "Clonar: home_hero_titulo" -> la clave del campo o del grupo de ese nombre en los specs.
+function cloneProps(row, errors, ctx) {
+    const name = /\bClonar:\s*`?([a-z][a-z0-9_.]*)`?/i.exec(row.description)?.[1];
+    if (!name) errors.push(`${row.name}: un clone necesita "Clonar: <campo>" en la descripción (el nombre de un campo o de un grupo de los specs).`);
+    else if (!ctx.allNames.has(name)) errors.push(`${row.name}: "Clonar: ${name}" no es un campo ni un grupo de los specs.`);
+    return { clone: name ? [keyOf('field', name)] : [], display: 'seamless', layout: 'block', prefix_label: 0, prefix_name: 0 };
+}
+
 function typeProps(row, errors, ctx) {
     switch (row.type) {
         case 'text': return { default_value: '', maxlength: '', ...noBindings, placeholder: '', prepend: '', append: '' };
@@ -143,6 +177,28 @@ function typeProps(row, errors, ctx) {
         case 'date_picker': return { display_format: 'd/m/Y', return_format: 'd/m/Y', first_day: 1, ...noBindings };
         case 'relationship': return relationshipProps(row, errors, ctx);
         case 'taxonomy': return taxonomyProps(row, errors, ctx);
+        case 'post_object': return {
+            post_type: pickedPostTypes(row, errors, ctx), post_status: ['publish'], taxonomy: [], return_format: 'id',
+            multiple: wantsMultiple(row.description), allow_null: row.required ? 0 : 1, bidirectional: 0, ui: 1, bidirectional_target: [], ...noBindings,
+        };
+        case 'page_link': return {
+            post_type: pickedPostTypes(row, errors, ctx), post_status: ['publish'], taxonomy: [], allow_archives: 1,
+            multiple: wantsMultiple(row.description), allow_null: row.required ? 0 : 1, ...noBindings,
+        };
+        case 'user': return { role: rolesOf(row.description), return_format: 'id', multiple: wantsMultiple(row.description), allow_null: row.required ? 0 : 1, bidirectional: 0, bidirectional_target: [], ...noBindings };
+        case 'google_map': return { center_lat: '-12.0464', center_lng: '-77.0428', zoom: '14', height: '', ...noBindings };
+        case 'range': {
+            const { min, max, errors: limitErrors } = rowLimits(row.description);
+            for (const message of limitErrors) errors.push(`${row.name}: ${message}`);
+            return { default_value: '', min, max: max || 100, step: 1, prepend: '', append: '', ...noBindings };
+        }
+        case 'password': return { placeholder: '', prepend: '', append: '', ...noBindings };
+        case 'time_picker': return { display_format: 'H:i', return_format: 'H:i', ...noBindings };
+        case 'date_time_picker': return { display_format: 'd/m/Y H:i', return_format: 'd/m/Y H:i', first_day: 1, ...noBindings };
+        case 'message': return { message: row.description, new_lines: 'wpautop', esc_html: 0 };
+        case 'tab': return { placement: 'top', endpoint: 0 };
+        case 'accordion': return { open: 0, multi_expand: 0, endpoint: 0 };
+        case 'clone': return cloneProps(row, errors, ctx);
         case 'color_picker': return { default_value: '', enable_opacity: 0, return_format: 'string', ...noBindings };
         case 'select': case 'radio': case 'checkbox': case 'button_group': {
             const choices = choicesOf(row);
@@ -169,12 +225,31 @@ function buildField(row, name, children, errors, ctx) {
         name,
         'aria-label': '',
         type: row.type,
-        instructions: multiline ? `${row.description.replace(/\.?$/, '.')} ${ENTER_HINT}` : row.description,
+        instructions: row.type === 'message' ? '' : multiline ? `${row.description.replace(/\.?$/, '.')} ${ENTER_HINT}` : row.description,
         required: row.required ? 1 : 0,
         conditional_logic: 0,
         wrapper: { width: '', class: '', id: '' },
         ...typeProps(row, errors, ctx),
     };
+    if (row.type === 'flexible_content') {
+        const layoutRows = children.get(row.name) ?? [];
+        if (!layoutRows.length) errors.push(`${row.name}: un flexible_content necesita layouts (filas "${row.name}.<layout>" de tipo group).`);
+        const layouts = {};
+        for (const layoutRow of layoutRows) {
+            const layoutName = layoutRow.name.slice(layoutRow.name.lastIndexOf('.') + 1);
+            if (layoutRow.type !== 'group') { errors.push(`${layoutRow.name}: un layout de ${row.name} es una fila de tipo group.`); continue; }
+            const subs = children.get(layoutRow.name) ?? [];
+            if (!subs.length) errors.push(`${layoutRow.name}: un layout necesita subcampos (filas "${layoutRow.name}.<campo>").`);
+            const key = keyOf('layout', layoutRow.name);
+            layouts[key] = {
+                key, name: layoutName, label: humanize(layoutName), display: 'block', min: '', max: '',
+                sub_fields: subs.map((sub) => buildField(sub, sub.name.slice(sub.name.lastIndexOf('.') + 1), children, errors, ctx)),
+            };
+        }
+        const { min, max, errors: limitErrors } = rowLimits(row.description);
+        for (const message of limitErrors) errors.push(`${row.name}: ${message}`);
+        Object.assign(field, { layouts, button_label: 'Añadir bloque', min, max });
+    }
     if (row.type === 'repeater' || row.type === 'group') {
         const subs = children.get(row.name) ?? [];
         if (!subs.length) errors.push(`${row.name}: un ${row.type} necesita subcampos (filas "${row.name}.<campo>").`);
@@ -202,8 +277,8 @@ function buildSection(section, errors, file, ctx) {
         const parent = dot === -1 ? '' : row.name.slice(0, dot);
         if (parent) {
             const parentRow = byName.get(parent);
-            if (!parentRow) { local.push(`${row.name}: falta la fila del repetidor "${parent}".`); continue; }
-            if (!['repeater', 'group'].includes(parentRow.type)) { local.push(`${row.name}: "${parent}" no es un repeater ni un group.`); continue; }
+            if (!parentRow) { local.push(`${row.name}: falta la fila del campo "${parent}" (repeater, group o flexible_content).`); continue; }
+            if (!PARENT_TYPES.includes(parentRow.type)) { local.push(`${row.name}: "${parent}" no es un repeater, un group ni un flexible_content.`); continue; }
         } else if (!row.name.startsWith(`${section.group}_`)) {
             local.push(`${row.name}: debe empezar con "${section.group}_".`);
             continue;
@@ -262,6 +337,15 @@ export function buildAll({ pages, dynamic }) {
     const groups = [];
     const options = new Map();
     const used = new Set();
+    // Nombres de todos los campos y grupos de los specs: un clone apunta a uno de ellos.
+    const allNames = new Set();
+    for (const page of pages) {
+        for (const section of page.sections) {
+            if (section.state === 'descartado' || !section.group || section.group === 'ninguno') continue;
+            allNames.add(section.group);
+            for (const row of section.fields) allNames.add(row.name);
+        }
+    }
 
     for (const page of pages) {
         const location = locationFor(page.labels.Ubicación, dynamic);
@@ -274,7 +358,7 @@ export function buildAll({ pages, dynamic }) {
         const fields = [];
         for (const section of page.sections) {
             if (section.state === 'descartado' || !section.group || section.group === 'ninguno') continue;
-            fields.push(buildSection(section, errors, page.file, { dynamic, used }));
+            fields.push(buildSection(section, errors, page.file, { dynamic, used, allNames }));
         }
         groups.push({
             page: page.slug,
@@ -468,8 +552,16 @@ export function flattenGroup(json) {
                 ...(['repeater', 'relationship'].includes(field.type) && { min: Number(field.min) || 0, max: Number(field.max) || 0 }),
                 ...(field.type === 'relationship' && { postTypes: [...(field.post_type ?? [])].sort().join(', ') }),
                 ...(field.type === 'taxonomy' && { taxonomy: field.taxonomy ?? '' }),
+                ...(field.type === 'flexible_content' && { min: Number(field.min) || 0, max: Number(field.max) || 0 }),
+                ...(field.type === 'clone' && { clone: (field.clone ?? []).join(', ') }),
             });
             if (field.sub_fields) walk(field.sub_fields, field.name, full);
+            // Cada layout de un flexible_content es la fila "campo.layout" del spec, con sus subcampos debajo.
+            for (const layout of Object.values(field.layouts ?? {})) {
+                const layoutPath = `${full}.${layout.name}`;
+                out.set(layoutPath, { type: 'group', required: false });
+                walk(layout.sub_fields ?? [], layout.name, layoutPath);
+            }
         }
     };
     for (const section of json.fields ?? []) {

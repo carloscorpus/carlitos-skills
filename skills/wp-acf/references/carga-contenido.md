@@ -33,6 +33,20 @@ return [
 - `true_false`: `1` or `0`. `number`: a number. `select`: the stored value (the slug of the option).
 - `relationship`: a list of `['_item' => '<id>']`, the `id` of sample items of a content (`'destacados' => [['_item' => 'producto-1'], ['_item' => 'producto-2']]`), in the order the design shows them. The engine loads the files with `items` first, so the items exist, and stores their IDs; an `_item` that is not found is left out. `check.mjs` reports an `_item` that is no item's `id`. If the design's entries have no sample items yet, write them first (see below).
 
+- **Markers work anywhere in a value**: a single field, a repeater row, a group, a layout of a `flexible_content`, at any depth. The engine walks the whole value and replaces each marker; one that names something that does not exist is left out of its list or its keys. These are all of them:
+
+| Marker | Stored value | Use it in |
+|---|---|---|
+| `['_file' => 'assets/…', 'alt' => '…']` | attachment ID | `image`, `file`, `gallery` |
+| `['_page' => 'tarifario']` | relative path of that page | the `url` of a `link` |
+| `['_item' => 'producto-1']` | ID of the sample item with that `id` | `relationship`, `post_object`, `page_link` |
+| `['_post' => 'contacto', 'type' => 'page']` | ID of a page or post by slug (`type` is `page` by default) | `post_object`, `page_link`, `relationship` |
+| `['_term' => 'especiales', 'taxonomy' => 'category', 'nombre' => 'Especiales']` | ID of the term; **created if it does not exist** (`nombre` optional, otherwise the slug) | `taxonomy`, anywhere, even inside a repeater row |
+| `['_user' => 'admin']` | user ID by login or email | `user` |
+
+  `'categorias' => [['categoria' => ['_term' => 'especiales', 'taxonomy' => 'category']], ['categoria' => ['_term' => 'noticias', 'taxonomy' => 'category']]]` fills a repeater of categories in that order. `check.mjs` reports a `_term` without `taxonomy`.
+- `flexible_content`: a list of blocks, each with its layout name in `acf_fc_layout` (`[['acf_fc_layout' => 'texto', 'titulo' => '…'], ['acf_fc_layout' => 'foto', 'imagen' => ['_file' => 'assets/…']]]`). `google_map`: `['address' => '…', 'lat' => -12.04, 'lng' => -77.04, 'zoom' => 14]`. `range`: a number. `time_picker`: `'09:00'`. `date_time_picker`: `'2026-09-27 09:00:00'`. `tab`, `accordion`, `message` and `clone` have nothing to load (a clone loads like the field it clones).
+
 ## Taking it out of a template
 
 Every fixed text, image path and link of a connected section moves here, with the same value the spec shows as "valor actual". `check.mjs` verifies each text value of a `conectado` section is in the seed file, that the group is there, and that every `_file` exists in the theme.

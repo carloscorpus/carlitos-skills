@@ -16,10 +16,18 @@ The type column of a spec's "Campos ACF" table is the ACF field type. `generate.
 | `repeater` | block layout, button "Añadir fila" | rows `name.sub` are its subfields; `min`/`max` of rows only if its description says `Mínimo: n` / `Máximo: n`, otherwise none |
 | `group` | block layout | rows `name.sub` are its subfields |
 | `relationship` | return `id`, only published entries, search filter (plus taxonomy when the content has one, post type when it names several) | the description says which content it picks from: `Contenido: producto` (or `Contenidos: producto, post`), each a row of "Contenido dinámico" in `_shared.md` (`cpt` = its key, `post` = `post`, `woo` = `product`); `Máximo: n` / `Mínimo: n` limit how many entries are chosen. Missing or unknown content is an error |
-
 | `taxonomy` | one term picked from a taxonomy that already exists (nothing is registered), single select, returns the term `id`, does not assign the term to any post | the description says which one: `Taxonomía: category` (native), `post_tag`, `product_cat`, `product_tag` or a taxonomy of "Contenido dinámico". For several terms in a chosen order, use a `repeater` with one `taxonomy` inside (rows are dragged to reorder). Missing or unknown taxonomy is an error |
+| `post_object` | one published entry, searchable select, returns the `id` | `Contenido: producto` as in `relationship`; also `page` and `post` (the native ones). Without `Contenido:` it picks among pages. `Múltiple` in the description allows several. Empty is allowed unless `Requerido: sí` |
+| `page_link` | one published entry (archives included), returns its URL | same `Contenido:` and `Múltiple` as `post_object`; without `Contenido:` it picks among pages |
+| `user` | returns the user `id` | `Rol: editor, author` limits the roles; `Múltiple` allows several |
+| `google_map` | center Lima, zoom 14 | needs a Google Maps API key set in the site, not in the theme |
+| `range` | slider, step 1 | `Mínimo: n` / `Máximo: n` (maximum 100 if not written) |
+| `password`, `time_picker`, `date_time_picker` | the same type | time `H:i`, date and time `d/m/Y H:i` |
+| `message`, `tab`, `accordion` | layout only, they hold no value | `message` shows the description as its text; `tab` and `accordion` split the editor's screen (their name is only a label) |
+| `flexible_content` | blocks the editor adds in the order they want, button "Añadir bloque" | each layout is a row `name.<layout>` of type `group` and its subfields are `name.<layout>.<sub>`; `Mínimo: n` / `Máximo: n` limit the blocks |
+| `clone` | seamless clone of one field or group | `Clonar: home_hero_boton` (the name of a field or a section group of any spec). Missing or unknown is an error |
 
-Anything else (`post_object`, `page_link`, `user`, `google_map`, `tab`, `accordion`, `flexible_content`, `clone`, `message`, `password`, time pickers) stops `generate.mjs` with a clear error. Do not work around it in the JSON: either change the spec to a supported type or ask the user to add that field by hand in the ACF admin and tell them the regenerated group will conflict with it.
+An unknown type, or one ACF does not have, stops `generate.mjs` with a clear error.
 
 ## Naming
 

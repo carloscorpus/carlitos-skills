@@ -252,6 +252,124 @@ try {
         assert.match(messages(r), /home_hero_categoria: el spec usa la taxonomía "category" y el JSON "post_tag"/);
     });
 
+    // Tipos que reciben su configuración de la descripción del spec.
+    const rowsAfter = (rows) => change('specs/home.md', '| `home_hero_slides` | repeater |', `${rows.join('\n')}\n| \`home_hero_slides\` | repeater |`);
+    const homeFields = (rows) => {
+        const dir = theme(rowsAfter(rows));
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        const json = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel);
+        return { dir, fields: Object.fromEntries(json.fields[0].sub_fields.map((f) => [f.name, f])) };
+    };
+
+    test('generate: post_object, page_link y user eligen contenidos o roles que nombra la descripción', () => {
+        const { fields } = homeFields([
+            '| `home_hero_pagina` | page_link | Página del botón | — | no |',
+            '| `home_hero_producto` | post_object | Producto principal. Contenido: producto. Múltiple | — | sí |',
+            '| `home_hero_autor` | user | Responsable. Rol: editor, author | — | no |',
+        ]);
+        assert.deepEqual(fields.pagina.post_type, ['page'], 'sin Contenido: elige páginas');
+        assert.equal(fields.pagina.type, 'page_link');
+        assert.deepEqual(fields.producto.post_type, ['producto']);
+        assert.equal(fields.producto.multiple, 1);
+        assert.equal(fields.producto.allow_null, 0, 'requerido no admite vacío');
+        assert.equal(fields.producto.return_format, 'id');
+        assert.deepEqual(fields.autor.role, ['editor', 'author']);
+        assert.equal(fields.autor.return_format, 'id');
+    });
+
+    test('generate: google_map, range, password, selectores de hora, message, tab y accordion', () => {
+        const { fields } = homeFields([
+            '| `home_hero_tab_datos` | tab | Datos | — | no |',
+            '| `home_hero_mapa` | google_map | Ubicación de la oficina | — | no |',
+            '| `home_hero_nivel` | range | Nivel. Mínimo: 1. Máximo: 5 | — | no |',
+            '| `home_hero_clave` | password | Clave de acceso | — | no |',
+            '| `home_hero_hora` | time_picker | Hora de apertura | — | no |',
+            '| `home_hero_inicio` | date_time_picker | Inicio del evento | — | no |',
+            '| `home_hero_aviso` | message | Estas fotos salen en el slider | — | no |',
+            '| `home_hero_acordeon` | accordion | Más datos | — | no |',
+        ]);
+        assert.equal(fields.mapa.type, 'google_map');
+        assert.deepEqual([fields.nivel.min, fields.nivel.max], [1, 5]);
+        assert.equal(fields.hora.return_format, 'H:i');
+        assert.equal(fields.inicio.display_format, 'd/m/Y H:i');
+        assert.equal(fields.aviso.message, 'Estas fotos salen en el slider');
+        assert.equal(fields.aviso.instructions, '');
+        assert.equal(fields.tab_datos.type, 'tab');
+        assert.equal(fields.acordeon.type, 'accordion');
+        assert.equal(fields.clave.type, 'password');
+    });
+
+    test('generate: flexible_content con layouts, y check compara layouts y claves', () => {
+        const rows = [
+            '| `home_hero_bloques` | flexible_content | Bloques de la portada. Máximo: 6 | — | no |',
+            '| `home_hero_bloques.texto` | group | Un bloque de texto | — | no |',
+            '| `home_hero_bloques.texto.titulo` | text | Título del bloque | — | sí |',
+            '| `home_hero_bloques.foto` | group | Un bloque con foto | — | no |',
+            '| `home_hero_bloques.foto.imagen` | image | Foto del bloque | — | sí |',
+        ];
+        const { dir, fields } = homeFields(rows);
+        const flex = fields.bloques;
+        assert.equal(flex.type, 'flexible_content');
+        assert.equal(flex.max, 6);
+        const layouts = Object.values(flex.layouts);
+        assert.deepEqual(layouts.map((l) => l.name), ['texto', 'foto']);
+        assert.deepEqual(layouts[0].sub_fields.map((f) => f.name), ['titulo']);
+        assert.equal(layouts[1].sub_fields[0].type, 'image');
+        for (const [key, layout] of Object.entries(flex.layouts)) assert.equal(layout.key, key);
+        // el JSON generado pasa el check del tema (los layouts cuentan como campos del spec)
+        const ok = run('check.mjs', ['--target', dir, '--page', 'home']);
+        assert.ok(!messages(ok).includes('bloques'), messages(ok));
+        // un layout quitado del JSON se detecta
+        const rel = readdirSync(join(dir, 'acf-json')).find((n) => n.startsWith('group_') && readFileSync(join(dir, 'acf-json', n), 'utf8').includes('bloques'));
+        const json = readJson(dir, `acf-json/${rel}`);
+        const flexField = json.fields[0].sub_fields.find((f) => f.name === 'bloques');
+        delete flexField.layouts[Object.keys(flexField.layouts)[1]];
+        writeFileSync(join(dir, 'acf-json', rel), JSON.stringify(json, null, 4));
+        const broken = run('check.mjs', ['--target', dir, '--page', 'home']);
+        assert.match(messages(broken), /El campo home_hero_bloques\.foto del spec no está en el JSON/);
+    });
+
+    test('generate: un flexible_content sin layouts o con un layout que no es group es un error', () => {
+        const bad = (rows) => run('generate.mjs', ['--target', theme(rowsAfter(rows)), '--dry-run']);
+        const none = bad(['| `home_hero_bloques` | flexible_content | Bloques | — | no |']);
+        assert.equal(none.code, 4, none.stdout);
+        assert.match(messages(none), /home_hero_bloques: un flexible_content necesita layouts/);
+        const notGroup = bad([
+            '| `home_hero_bloques` | flexible_content | Bloques | — | no |',
+            '| `home_hero_bloques.texto` | text | Un bloque | — | no |',
+        ]);
+        assert.match(messages(notGroup), /home_hero_bloques\.texto: un layout de home_hero_bloques es una fila de tipo group/);
+    });
+
+    test('generate: clone apunta a un campo o grupo de los specs y falla si no existe', () => {
+        const { fields } = homeFields(['| `home_hero_copia` | clone | Repite el botón. Clonar: home_hero_boton | — | no |']);
+        assert.equal(fields.copia.type, 'clone');
+        assert.equal(fields.copia.clone.length, 1);
+        assert.equal(fields.copia.clone[0], fields.boton.key);
+        const bad = (text) => run('generate.mjs', ['--target', theme(rowsAfter([`| \`home_hero_copia\` | clone | ${text} | — | no |`])), '--dry-run']);
+        const none = bad('Repite algo');
+        assert.equal(none.code, 4, none.stdout);
+        assert.match(messages(none), /home_hero_copia: un clone necesita "Clonar: <campo>"/);
+        assert.match(messages(bad('Repite. Clonar: home_hero_nada')), /"Clonar: home_hero_nada" no es un campo ni un grupo/);
+    });
+
+    test('generate: post_object con un contenido que no existe es un error', () => {
+        const r = run('generate.mjs', ['--target', theme(rowsAfter(['| `home_hero_producto` | post_object | Producto. Contenido: servicio | — | no |'])), '--dry-run']);
+        assert.equal(r.code, 4, r.stdout);
+        assert.match(messages(r), /home_hero_producto: el contenido "servicio" no está en "Contenido dinámico"/);
+    });
+
+    test('check: un _term sin taxonomy en una carga es un error', () => {
+        const { dir } = generated();
+        const seedPath = join(dir, 'inc/acf/seed/home.php');
+        const seed = readFileSync(seedPath, 'utf8');
+        writeFileSync(seedPath, seed.replace("'fields' => [", "'fields' => [\n        'x' => ['_term' => 'especiales'],\n        'y' => ['_term' => 'noticias', 'taxonomy' => 'category'],"));
+        const r = run('check.mjs', ['--target', dir]);
+        assert.match(messages(r), /\['_term' => 'especiales'\] necesita 'taxonomy'/);
+        assert.ok(!messages(r).includes("'noticias'"), 'un _term con taxonomy pasa');
+    });
+
     test('generate: un relationship sin contenido o con un contenido que no existe es un error', () => {
         const bad = (text) => run('generate.mjs', ['--target', theme(relRow(text)), '--dry-run']);
         const none = bad('Productos destacados');
@@ -360,15 +478,15 @@ try {
 
     test('generate: errores del spec que impiden generar', () => {
         const bad = (edit) => run('generate.mjs', ['--target', theme(edit), '--dry-run']);
-        const type = bad(change('specs/producto.md', '| `producto_ficha_precio` | number |', '| `producto_ficha_precio` | post_object |'));
+        const type = bad(change('specs/producto.md', '| `producto_ficha_precio` | number |', '| `producto_ficha_precio` | holograma |'));
         assert.equal(type.code, 4);
-        assert.match(messages(type), /post_object.*aún no lo genera/);
+        assert.match(messages(type), /holograma.*aún no lo genera/);
         const choices = bad(change('specs/producto.md', ' Opciones: Madera, Metal, Tela', ''));
         assert.match(messages(choices), /necesita "Opciones: a, b, c"/);
         const location = bad(change('specs/home.md', 'página de inicio (front page)', 'en algún lado'));
         assert.match(messages(location), /Ubicación no reconocida/);
         const parent = bad(change('specs/home.md', '| `home_hero_slides` | repeater | Fotos del slider | — | sí |\n', ''));
-        assert.match(messages(parent), /falta la fila del repetidor "home_hero_slides"/);
+        assert.match(messages(parent), /falta la fila del campo "home_hero_slides"/);
         const content = bad(change('specs/producto.md', 'tipo de contenido = producto', 'tipo de contenido = servicio'));
         assert.match(messages(content), /"servicio" que no está en "Contenido dinámico"/);
         const long = bad(all(
@@ -457,7 +575,9 @@ try {
 
     test('install: el motor resuelve _item y carga primero los elementos de ejemplo', () => {
         const engine = readFileSync(join(skillDir, 'templates/inc/acf/runner.php.tpl'), 'utf8');
-        assert.match(engine, /isset\(\$value\['_item'\]\)/);
+        assert.match(engine, /case '_item':/);
+        for (const marker of ['_file', '_page', '_item', '_post', '_term', '_user']) assert.ok(engine.includes(`'${marker}'`), `el motor no resuelve ${marker}`);
+        assert.match(engine, /wp_insert_term\(\$name, \$taxonomy, \['slug' => \$slug\]\)/, '_term crea el término que no existe');
         assert.match(engine, /uksort\(\$seeds, fn\(\$a, \$b\) => \[empty\(\$seeds\[\$a\]\['items'\]\)/);
     });
 
