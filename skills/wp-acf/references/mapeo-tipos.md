@@ -17,7 +17,9 @@ The type column of a spec's "Campos ACF" table is the ACF field type. `generate.
 | `group` | block layout | rows `name.sub` are its subfields |
 | `relationship` | return `id`, only published entries, search filter (plus taxonomy when the content has one, post type when it names several) | the description says which content it picks from: `Contenido: producto` (or `Contenidos: producto, post`), each a row of "Contenido dinámico" in `_shared.md` (`cpt` = its key, `post` = `post`, `woo` = `product`); `Máximo: n` / `Mínimo: n` limit how many entries are chosen. Missing or unknown content is an error |
 
-Anything else (`post_object`, `taxonomy`, `page_link`, `user`, `google_map`, `tab`, `accordion`, `flexible_content`, `clone`, `message`, `password`, time pickers) stops `generate.mjs` with a clear error. Do not work around it in the JSON: either change the spec to a supported type or ask the user to add that field by hand in the ACF admin and tell them the regenerated group will conflict with it.
+| `taxonomy` | one term picked from a taxonomy that already exists (nothing is registered), single select, returns the term `id`, does not assign the term to any post | the description says which one: `Taxonomía: category` (native), `post_tag`, `product_cat`, `product_tag` or a taxonomy of "Contenido dinámico". For several terms in a chosen order, use a `repeater` with one `taxonomy` inside (rows are dragged to reorder). Missing or unknown taxonomy is an error |
+
+Anything else (`post_object`, `page_link`, `user`, `google_map`, `tab`, `accordion`, `flexible_content`, `clone`, `message`, `password`, time pickers) stops `generate.mjs` with a clear error. Do not work around it in the JSON: either change the spec to a supported type or ask the user to add that field by hand in the ACF admin and tell them the regenerated group will conflict with it.
 
 ## Naming
 

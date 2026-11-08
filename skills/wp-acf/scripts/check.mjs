@@ -106,6 +106,9 @@ for (const item of built.groups) {
         else if (exp.type === 'relationship' && got.postTypes !== exp.postTypes) {
             error(where, `${name}: el spec elige entre "${exp.postTypes}" y el JSON entre "${got.postTypes}": corre generate.mjs.`);
         }
+        else if (exp.type === 'taxonomy' && got.taxonomy !== exp.taxonomy) {
+            error(where, `${name}: el spec usa la taxonomía "${exp.taxonomy}" y el JSON "${got.taxonomy}": corre generate.mjs.`);
+        }
     }
     for (const name of actual.keys()) if (!expected.has(name)) error(where, `El campo ${name} está en el JSON pero no en el spec.`);
     if (JSON.stringify(json.location) !== JSON.stringify(item.json.location)) error(where, 'La ubicación del JSON no coincide con la "Ubicación" del spec.');
