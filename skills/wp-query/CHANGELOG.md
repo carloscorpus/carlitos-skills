@@ -2,6 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.2.1] - 2026-11-08
+
+### Corregido
+- **Título de la pestaña con códigos HTML al filtrar sin recargar** (por ejemplo `Especiales &#8211; Sitio` en vez de `Especiales – Sitio`). La respuesta parcial mandaba `wp_get_document_title()`, que viene escapado para HTML, y el JS lo pone en `document.title`, que no lo convierte. Ahora el motor lo manda convertido (`html_entity_decode`). Al recargar ya se veía bien y el SEO no cambia.
+- Prueba: `install` comprueba que el título va convertido.
+- En cada proyecto: `install.mjs --overwrite inc/query/motor.php` (el JS no cambia).
+
 ## [1.2.0] - 2026-11-05
 
 ### Agregado
