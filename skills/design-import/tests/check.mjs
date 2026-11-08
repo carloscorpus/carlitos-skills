@@ -293,6 +293,27 @@ try {
         assert.deepEqual(joined.json.warnings, []);
     });
 
+    test('check: avisa del campo que duplica algo nativo (título del detalle, logo de opciones, menú)', () => {
+        const precio = '| `producto_ficha_precio` | number | Precio en soles. Se muestra junto al título | 100 | sí |';
+        const row = (name, type = 'text') => `| \`${name}\` | ${type} | Dato del diseño | — | no |`;
+        const warns = (r) => r.json.warnings.map((w) => w.message).join('\n');
+
+        const titulo = broken('nativo-titulo', edit('specs/producto.md', precio, `${precio}\n${row('producto_ficha_titulo')}\n${row('producto_ficha_imagen_destacada', 'image')}`));
+        assert.equal(titulo.code, 0, titulo.stdout);
+        assert.match(warns(titulo), /producto_ficha_titulo: el título del contenido es nativo/);
+        assert.match(warns(titulo), /producto_ficha_imagen_destacada: la imagen destacada del contenido es nativo/);
+
+        const pie = '| `opciones_pie_copyright` | text | Texto de derechos del pie, en todas las páginas. Recomendado: ~20 caracteres | © Demo | sí |';
+        const logo = broken('nativo-logo', edit('specs/opciones.md', pie, `${pie}\n${row('opciones_pie_logo', 'image')}\n${row('opciones_pie_menu', 'repeater')}`));
+        assert.equal(logo.code, 0, logo.stdout);
+        assert.match(warns(logo), /opciones_pie_logo: el logo principal sale de Identidad del sitio/);
+        assert.match(warns(logo), /opciones_pie_menu: los menús son nativos/);
+
+        // El logo alternativo y los campos de una página normal no avisan.
+        const alterno = broken('nativo-alterno', edit('specs/opciones.md', pie, `${pie}\n${row('opciones_pie_logo_alternativo', 'image')}`));
+        assert.deepEqual(alterno.json.warnings, []);
+    });
+
     test('check: falta una parte de la sección y los criterios', () => {
         const r = broken('partes', (dir) => {
             edit('specs/home.md', '- **Comportamiento:** el botón lleva a la sección contacto\n', '')(dir);

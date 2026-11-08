@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.15.0] - 2026-11-08
+
+### Agregado
+- **"Native first" en `references/campos-acf.md`**: antes de escribir una fila de "Campos ACF" se pregunta si WordPress (o WooCommerce) ya guarda y edita ese dato. Una tabla de equivalencias reúne lo que estaba suelto en `sitio-global.md` y `contenido-dinamico.md`: título, contenido, imagen destacada, extracto/fecha/autor del blog, categorías y etiquetas, logo e ícono, menús y precio/stock/botón de Woo. Dice cuándo sí es un campo (secciones de una página, datos extra de un elemento, opciones del sitio, elegir algo dentro de una sección) y deja claro que el `h1` del hero de una página estática sí puede ser un campo.
+- `check.mjs` **avisa** (no falla) cuando un campo parece duplicar algo nativo: `titulo`, `nombre`, `contenido`, `imagen_destacada`, `imagen_principal` o `miniatura` en un detalle; `extracto`, `resumen`, `fecha` o `autor` en un detalle de blog; `precio`, `stock`, `sku`, `agregar_carrito`, `boton_comprar` o `descripcion_corta` en un detalle de Woo; `logo`, `logo_principal`, `favicon`, `icono_sitio`, `nombre_sitio` o `menu*` en `opciones`. El aviso dice qué es nativo y cómo renombrar el campo si es otra cosa (`logo_alternativo`).
+- La etapa B de `SKILL.md` remite a esa regla antes de escribir los campos.
+- Prueba: título e imagen destacada de un detalle, logo y menú de `opciones`, y `logo_alternativo` sin aviso.
+
 ## [1.14.0] - 2026-11-05
 
 ### Agregado

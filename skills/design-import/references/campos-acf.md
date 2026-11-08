@@ -13,6 +13,27 @@ The specs describe the fields; they do not create them. The ACF step later turns
 - This skill defines the structure (groups, names, types, descriptions, location); the ACF step only creates it from the spec.
 - Names say what the content is, not how it looks: `titulo`, `bajada`, `imagen`, `boton`, never `texto_grande` or `azul`.
 
+## Native first: what is not a field
+
+Before writing a row, ask: **does WordPress (or WooCommerce) already store and edit this?** If yes, it is not an ACF field: the template reads it with the native function and the spec says so in `Comportamiento`. A duplicated field gives the editor two places to change the same thing, and one of them is ignored.
+
+| In the design | WordPress already has | Read with | Spec |
+|---|---|---|---|
+| Title of an entry (post, own content type, detail page) | Title | `get_the_title()` | no field |
+| Body of an entry | Editor | `the_content()` | no field (`wysiwyg` only for an extra block, not the main body) |
+| Main image of an entry (card, hero of a detail) | Featured image | `get_the_post_thumbnail()` | no field |
+| Summary, date, author (blog only: an own content type has no excerpt) | Excerpt, date, author | `get_the_excerpt()`, `get_the_date()`, `get_the_author()` | no field in a blog; in an own content type a summary is a field |
+| Categories and tags of an entry | Taxonomy and its box in the editor | `get_the_terms()` | declared in "Contenido dinámico", no field |
+| Logo, site icon, site name | Customizer > Site Identity | `the_custom_logo()`, `get_bloginfo()` | no field (the alternative logo is an options field) |
+| Menus | Appearance > Menus | `wp_nav_menu()` | "Menús" table, no field |
+| Product price, stock, SKU, add to cart (`Origen: woo`) | WooCommerce | its own functions | no field |
+
+A field is right when WordPress has **no** place for it: texts of a page section, the extra data of an item (`producto_ficha_precio` in a catalog that is not WooCommerce), site data from the options page, and choosing something inside a section (the featured products of the home).
+
+Page titles are the exception that is allowed: the `h1` of a static page's hero is part of the design and may differ from the WordPress title, so it is a field.
+
+`check.mjs` warns when a row looks like one of the first rows of this table (a `titulo` or `imagen_destacada` in a detail, a `logo` in `opciones`, a WooCommerce `precio`). It is a warning, not an error: if the field really is something else, rename it so it says what it is (`logo_alternativo`, `titulo_corto`).
+
 ## Types
 
 | In the design | Type |

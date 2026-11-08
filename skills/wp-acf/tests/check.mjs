@@ -306,6 +306,19 @@ try {
         assert.match(messages(cycle), /ciclo \(.+ → .+ → .+\)/);
     });
 
+    test('generate y check: avisan de un contenido declarado que ningún spec usa', () => {
+        const full = run('generate.mjs', ['--target', theme(), '--dry-run']);
+        assert.deepEqual(full.json.warnings, [], full.stdout);
+        const partial = run('generate.mjs', ['--target', theme(), '--dry-run', '--page', 'home']);
+        assert.equal(partial.code, 0, partial.stdout);
+        assert.equal(partial.json.warnings.length, 1, partial.stdout);
+        assert.match(partial.json.warnings[0].message, /Contenido "producto": ningún spec .* no se genera su tipo de contenido ni sus taxonomías \(categoria_producto\)/);
+        assert.deepEqual(partial.json.postTypes, []);
+        const { dir } = generated();
+        const checked = run('check.mjs', ['--target', dir, '--page', 'home']);
+        assert.ok(checked.json.warnings.some((w) => /Contenido "producto": ningún spec/.test(w.message)), checked.stdout);
+    });
+
     test('generate: errores del spec que impiden generar', () => {
         const bad = (edit) => run('generate.mjs', ['--target', theme(edit), '--dry-run']);
         const type = bad(change('specs/producto.md', '| `producto_ficha_precio` | number |', '| `producto_ficha_precio` | post_object |'));

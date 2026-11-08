@@ -54,6 +54,7 @@ if (!pages.length) fail(1, `Ninguna página con estado ${states.join(' o ')}.`);
 
 const built = buildAll({ pages, dynamic });
 for (const e of built.errors) error(e.file, e.message);
+for (const w of built.warnings) warn(w.file, w.message);
 
 // ---------- acf-json/ ----------
 

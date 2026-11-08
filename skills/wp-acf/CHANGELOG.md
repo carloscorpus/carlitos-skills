@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.9.0] - 2026-11-08
+
+### Agregado
+- **Aviso de contenido sin usar.** Un contenido de "Contenido dinámico" que ningún spec de los estados pedidos usa (ni en `Contenido`, ni en `Ubicación`, ni con `Contenido:` en un relationship) no se genera, y antes se saltaba sin decir nada. Ahora `generate.mjs` (también con `--dry-run`) devuelve `warnings` y `check.mjs` los suma a los suyos: dicen qué contenido es, que no se genera su tipo de contenido ni sus taxonomías (con sus nombres) y qué revisar (su listado o detalle y su estado). Un contenido de WooCommerce y uno de blog sin taxonomías propias no avisan, porque no tienen nada que generar.
+- Prueba: el tema de ejemplo sin avisos y, con `--page home`, el aviso de `producto` y su taxonomía.
+
 ## [1.8.0] - 2026-11-06
 
 ### Agregado
