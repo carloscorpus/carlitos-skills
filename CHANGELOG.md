@@ -2,6 +2,16 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.33.0] - 2026-11-08
+
+### Agregado
+- `wp-acf` 1.9.0: avisa cuando un contenido declarado en "Contenido dinámico" no se genera porque ningún spec lo usa (tipo de contenido y taxonomías incluidos), en vez de saltarlo en silencio. Detalle en `skills/wp-acf/CHANGELOG.md`.
+
+## [1.32.0] - 2026-11-08
+
+### Agregado
+- `design-import` 1.15.0: regla "Native first" al escribir los campos de un spec (si WordPress o WooCommerce ya lo guarda, no es un campo) y `check.mjs` avisa cuando un campo parece duplicar el título, la imagen destacada, el logo, los menús o el precio de Woo. Detalle en `skills/design-import/CHANGELOG.md`.
+
 ## [1.31.0] - 2026-11-06
 
 ### Agregado

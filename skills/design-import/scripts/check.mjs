@@ -69,6 +69,35 @@ const LIST_LABELS = {
     'Filtros en móvil': ['igual', 'panel'],
 };
 
+// Campos que duplican algo que WordPress o WooCommerce ya guarda y edita (ver "Native first" en
+// references/campos-acf.md). Se compara el nombre corto del campo (sin <página>_<sección>_). Solo avisa.
+const NATIVE_ENTRY = {
+    titulo: 'el título', nombre: 'el título', contenido: 'el contenido', imagen_destacada: 'la imagen destacada',
+    imagen_principal: 'la imagen destacada', miniatura: 'la imagen destacada',
+};
+const NATIVE_POST = { extracto: 'el extracto', resumen: 'el extracto', fecha: 'la fecha', autor: 'el autor' };
+const NATIVE_WOO = {
+    precio: 'el precio', precio_oferta: 'el precio', stock: 'el stock', sku: 'el SKU', agregar_carrito: 'el botón de compra',
+    boton_comprar: 'el botón de compra', descripcion_corta: 'la descripción corta',
+};
+const NATIVE_SITE = {
+    logo: 'el logo principal', logo_principal: 'el logo principal', favicon: 'el ícono del sitio', icono_sitio: 'el ícono del sitio',
+    nombre_sitio: 'el nombre del sitio', titulo_sitio: 'el nombre del sitio',
+};
+// Devuelve el aviso de un campo que parece duplicar algo nativo, o null. `short` es el nombre sin prefijo.
+function nativeDuplicate(short, { pageType, origin, page }) {
+    if (pageType === 'detalle') {
+        if (origin === 'woo' && NATIVE_WOO[short]) return `${NATIVE_WOO[short]} lo entrega WooCommerce: no es un campo ("Native first" en campos-acf.md).`;
+        const text = NATIVE_ENTRY[short] ?? (origin === 'post' ? NATIVE_POST[short] : undefined);
+        if (text) return `${text} del contenido es nativo de WordPress: no es un campo. Si es otra cosa, dale un nombre que lo diga ("Native first" en campos-acf.md).`;
+    }
+    if (page === 'opciones') {
+        if (NATIVE_SITE[short]) return `${NATIVE_SITE[short]} sale de Identidad del sitio (Personalizador): no es un campo. Si es el logo alternativo, llámalo logo_alternativo ("Native first" en campos-acf.md).`;
+        if (/^menus?(_|$)/.test(short)) return 'los menús son nativos de WordPress (Apariencia > Menús): van en la tabla "Menús" de _shared.md, no en un campo.';
+    }
+    return null;
+}
+
 const errors = [];
 const warnings = [];
 const error = (file, message) => errors.push({ file, message });
@@ -294,6 +323,11 @@ for (const name of pageFiles) {
                 detailFields.get(pageContent).set(field, fieldType);
             }
             if (!FIELD_TYPES.has(fieldType)) error(where, `${field}: tipo "${fieldType}" no es un tipo de ACF conocido.`);
+            if (FIELD_NAME.test(field) && !field.includes('.')) {
+                const prefix = group && group !== 'ninguno' && field.startsWith(`${group}_`) ? `${group}_` : pagePrefix;
+                const duplicate = nativeDuplicate(field.slice(prefix.length), { pageType, origin: dynamicContent.get(pageContent), page });
+                if (duplicate) warn(where, `${field}: ${duplicate}`);
+            }
             if (!description) error(where, `${field}: falta la descripción.`);
             if (!['sí', 'si', 'no'].includes((required ?? '').toLowerCase())) error(where, `${field}: "Requerido" debe ser sí o no.`);
             const value = normalizeText(unwrap(current ?? ''));

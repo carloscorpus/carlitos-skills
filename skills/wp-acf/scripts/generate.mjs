@@ -176,6 +176,7 @@ const report = {
     postTypes: built.postTypes.map((item) => item.content),
     taxonomies: built.taxonomies.map((item) => item.taxonomy),
     optionsPages: built.optionsPages.map((item) => item.slug),
+    warnings: built.warnings,
     files: [...files.map(({ rel, kind, name }) => ({ rel, kind, name })), { rel: pagesFile.rel, kind: 'pages', name: 'paginas' }],
     create: pagesCurrent === null ? [...plan.create, pagesFile.rel] : plan.create,
     unchanged: pagesCurrent === pagesPhp ? [...plan.unchanged, pagesFile.rel] : plan.unchanged,

@@ -276,8 +276,21 @@ export function buildAll({ pages, dynamic }) {
 
     const postTypes = [];
     const taxonomies = [];
+    const warnings = [];
     for (const row of dynamic) {
-        if (!used.has(row.name) || row.origin === 'woo') continue;
+        if (row.origin === 'woo') continue;
+        if (!used.has(row.name)) {
+            // Sin ninguna página que lo use no se genera nada. Un contenido de blog sin taxonomías propias no tiene nada que generar.
+            const unused = row.taxonomies.filter((tax) => !tax.native).map((tax) => tax.key);
+            if (row.origin === 'cpt' || unused.length) {
+                const skipped = [row.origin === 'cpt' ? 'su tipo de contenido' : '', unused.length ? `sus taxonomías (${unused.join(', ')})` : ''].filter(Boolean).join(' ni ');
+                warnings.push({
+                    file: '_shared.md',
+                    message: `Contenido "${row.name}": ningún spec de los estados pedidos lo usa (ni en "Contenido", ni en "Ubicación", ni con "Contenido:" en un relationship), así que no se genera ${skipped}. Si debería existir, revisa que su listado o detalle tenga ese contenido y esté en el estado pedido.`,
+                });
+            }
+            continue;
+        }
         const objectType = row.origin === 'cpt' ? row.name : 'post';
         const own = row.taxonomies.filter((tax) => !tax.native);
         if (row.origin === 'cpt') {
@@ -414,7 +427,7 @@ export function buildAll({ pages, dynamic }) {
         },
     }));
 
-    return { groups, postTypes, taxonomies, optionsPages, errors };
+    return { groups, postTypes, taxonomies, optionsPages, errors, warnings };
 }
 
 // Recorre los campos de un grupo de ACF y devuelve { nombre completo del spec -> { type, required } }.
