@@ -247,6 +247,11 @@ function {{PREFIX}}_acf_pages(): array
         $front_id = get_option('show_on_front') === 'page' ? (int) get_option('page_on_front') : 0;
         $front_ok = $front_id && get_post_status($front_id) === 'publish';
 
+        // La página de entradas (Ajustes > Lectura > "Tu página de entradas"): la lista de posts del blog (home.php).
+        $posts    = !$front && !empty($page['entradas']);
+        $posts_id = $posts ? (int) get_option('page_for_posts') : 0;
+        $posts_ok = $posts_id && get_post_status($posts_id) === 'publish';
+
         $parent_key = $front ? '' : (string) ($page['padre'] ?? '');
         $parent_id  = $parent_key === '' ? 0 : (int) ($ids[$parent_key] ?? 0);
         if ($parent_key !== '' && !$parent_id) {
@@ -258,6 +263,8 @@ function {{PREFIX}}_acf_pages(): array
         $state = 'existente';
         if ($front && $front_ok) {
             $id = $front_id;
+        } elseif ($posts && $posts_ok) {
+            $id = $posts_id;
         } else {
             $existing = get_page_by_path($parent_id ? get_page_uri($parent_id) . '/' . $slug : $slug);
             if ($existing && $existing->post_status !== 'trash') {
@@ -293,6 +300,8 @@ function {{PREFIX}}_acf_pages(): array
         if ($front && !$front_ok) {
             update_option('page_on_front', $id);
             update_option('show_on_front', 'page');
+        } elseif ($posts && !$posts_ok) {
+            update_option('page_for_posts', $id);
         } elseif (!$front && !empty($page['plantilla'])) {
             $current = (string) get_post_meta($id, '_wp_page_template', true);
             if ($current === '' || $current === 'default') {

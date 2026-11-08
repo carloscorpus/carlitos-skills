@@ -20,7 +20,7 @@ import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { assertResolved, fail, planFiles, toList, writeFiles } from './lib/common.mjs';
 import { buildAll } from './lib/acf-build.mjs';
-import { hasSpecs, loadSpecs, read } from './lib/specs.mjs';
+import { hasSpecs, loadSpecs, read, unwrap } from './lib/specs.mjs';
 
 let args;
 try {
@@ -151,8 +151,11 @@ const pagesPhp = [
         const row = index.find((r) => r.file === page.file);
         const template = (row?.template || page.labels.Plantilla || '').replace(/`/g, '');
         const front = template === 'front-page.php';
+        // La página de entradas (Ajustes > Lectura) usa home.php solo: no es una plantilla de página que se elija.
+        const posts = !front && (template === 'home.php' || /^p[aá]gina de entradas/i.test(unwrap(page.labels.Ubicación ?? '')));
         const slug = front ? 'inicio' : page.slug;
-        return `    ${phpString(page.slug)} => ['titulo' => ${phpString(row?.title ?? page.slug)}, 'slug' => ${phpString(slug)}, 'frente' => ${front}, 'plantilla' => ${phpString(front ? '' : template)}, 'padre' => ${phpString(front ? '' : parentOf(page))}],`;
+        const extra = posts ? ', \'entradas\' => true' : '';
+        return `    ${phpString(page.slug)} => ['titulo' => ${phpString(row?.title ?? page.slug)}, 'slug' => ${phpString(slug)}, 'frente' => ${front}, 'plantilla' => ${phpString(front || posts ? '' : template)}, 'padre' => ${phpString(front ? '' : parentOf(page))}${extra}],`;
     }),
     '];',
     '',

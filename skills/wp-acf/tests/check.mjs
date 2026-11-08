@@ -441,6 +441,20 @@ try {
     };
     const pending = ['--states', 'aplicado,pendiente'];
 
+    test('generate: página de entradas: ubicación posts_page y paginas.php la marca con entradas', () => {
+        const dir = theme(all(
+            change('specs/home.md', 'página de inicio (front page)', 'página de entradas (posts page)'),
+            change('specs/_index.md', '| `front-page.php` | aplicado |', '| `home.php` | aplicado |'),
+        ));
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        const group = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel);
+        assert.deepEqual(group.location, [[{ param: 'page_type', operator: '==', value: 'posts_page' }]]);
+        assert.match(readFileSync(join(dir, 'inc/acf/paginas.php'), 'utf8'), /'home' => \['titulo' => 'Inicio', 'slug' => 'home', 'frente' => false, 'plantilla' => '', 'padre' => '', 'entradas' => true\]/);
+        const engine = readFileSync(join(skillDir, 'templates/inc/acf/runner.php.tpl'), 'utf8');
+        assert.match(engine, /update_option\('page_for_posts', \$id\)/);
+    });
+
     test('generate: una página hija lleva su padre y va después de él en paginas.php', () => {
         const dir = theme(child('nosotros'));
         const r = run('generate.mjs', ['--target', dir, ...pending]);

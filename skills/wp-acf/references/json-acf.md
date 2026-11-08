@@ -22,6 +22,7 @@ One `group_*.json` per page spec with the state asked for (`--states`, default `
 | `Ubicación` in the spec | ACF location rule |
 |---|---|
 | `página de inicio (front page)` | `page_type == front_page` |
+| `página de entradas (posts page)` | `page_type == posts_page` (the blog list page; the engine creates it and sets it in Settings > Reading) |
 | `plantilla pages/template-x.php` | `page_template == pages/template-x.php` |
 | `página de opciones: Ajustes del sitio` | `options_page == ajustes-del-sitio` (and the options page is generated) |
 | `tipo de contenido = producto` | `post_type == producto` (`post` when the content's origin is `post`) |
