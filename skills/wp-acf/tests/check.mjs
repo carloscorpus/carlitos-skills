@@ -213,6 +213,45 @@ try {
         assert.deepEqual(free.post_type, ['producto']);
     });
 
+    const taxRow = (text) => change('specs/home.md',
+        '| `home_hero_slides` | repeater |',
+        `| \`home_hero_categoria\` | taxonomy | ${text} | — | no |\n| \`home_hero_slides\` | repeater |`);
+
+    test('generate: taxonomy apunta a una taxonomía nativa y guarda el ID del término sin crear nada', () => {
+        const dir = theme(taxRow('Categoría de la portada. Taxonomía: category'));
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        const field = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel).fields[0].sub_fields.find((f) => f.name === 'categoria');
+        assert.equal(field.type, 'taxonomy');
+        assert.equal(field.taxonomy, 'category');
+        assert.equal(field.return_format, 'id');
+        assert.equal(field.save_terms, 0);
+        assert.equal(field.add_term, 0);
+        assert.ok(!r.json.files.some((f) => f.kind === 'taxonomy' && f.name === 'category'), 'no registra la taxonomía nativa');
+    });
+
+    test('generate: un taxonomy sin taxonomía o con una que no existe es un error', () => {
+        const bad = (text) => run('generate.mjs', ['--target', theme(taxRow(text)), '--dry-run']);
+        const none = bad('Categoría de la portada');
+        assert.equal(none.code, 4, none.stdout);
+        assert.match(messages(none), /home_hero_categoria: un taxonomy necesita "Taxonomía: <clave>"/);
+        const unknown = bad('Categoría. Taxonomía: rubro');
+        assert.match(messages(unknown), /home_hero_categoria: la taxonomía "rubro" no es nativa/);
+    });
+
+    test('check: taxonomy con otra taxonomía en el JSON', () => {
+        const dir = theme(taxRow('Categoría. Taxonomía: category'));
+        const g = run('generate.mjs', ['--target', dir]);
+        assert.equal(g.code, 0, g.stdout);
+        const rel = g.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel;
+        const json = readJson(dir, rel);
+        json.fields[0].sub_fields.find((f) => f.name === 'categoria').taxonomy = 'post_tag';
+        writeFileSync(join(dir, rel), JSON.stringify(json));
+        const r = run('check.mjs', ['--target', dir]);
+        assert.equal(r.code, 4);
+        assert.match(messages(r), /home_hero_categoria: el spec usa la taxonomía "category" y el JSON "post_tag"/);
+    });
+
     test('generate: un relationship sin contenido o con un contenido que no existe es un error', () => {
         const bad = (text) => run('generate.mjs', ['--target', theme(relRow(text)), '--dry-run']);
         const none = bad('Productos destacados');

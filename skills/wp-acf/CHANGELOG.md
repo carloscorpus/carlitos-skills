@@ -2,6 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.10.0] - 2026-11-08
+
+### Agregado
+- Campos `taxonomy`: `generate.mjs` ya no los rechaza. La descripción del spec dice qué taxonomía es (`Taxonomía: category`): una nativa (`category`, `post_tag`, `product_cat`, `product_tag`) o una de "Contenido dinámico". El campo solo elige un término que ya existe (devuelve su ID, sin crear términos ni asignarlos a ninguna entrada) y no registra ninguna taxonomía. Para elegir varias en un orden (por ejemplo las categorías de la portada del Blog) el spec usa un `repeater` con un `taxonomy` dentro. Sin `Taxonomía:` o con una que no existe es un error (código 4). Si la taxonomía es de un contenido de "Contenido dinámico", ese contenido cuenta como usado.
+- `check.mjs` compara la taxonomía del campo con la del JSON.
+- `references/mapeo-tipos.md` documenta el tipo; pruebas de generación, errores y `check`.
+
 ## [1.9.0] - 2026-11-08
 
 ### Agregado

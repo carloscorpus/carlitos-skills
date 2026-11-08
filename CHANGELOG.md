@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.34.0] - 2026-11-08
+
+### Agregado
+- `wp-acf` 1.10.0: genera campos `taxonomy` (elegir un término de una taxonomía que ya existe, como la nativa `category`) desde `Taxonomía: <clave>` en la descripción del spec, sin registrar nada. Detalle en `skills/wp-acf/CHANGELOG.md`.
+
 ## [1.33.0] - 2026-11-08
 
 ### Agregado

@@ -47,7 +47,7 @@ const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
 export const SUPPORTED_TYPES = new Set([
     'text', 'textarea', 'wysiwyg', 'number', 'email', 'url', 'image', 'file', 'gallery', 'oembed', 'select', 'radio',
-    'checkbox', 'button_group', 'true_false', 'link', 'date_picker', 'color_picker', 'group', 'repeater', 'relationship',
+    'checkbox', 'button_group', 'true_false', 'link', 'date_picker', 'color_picker', 'group', 'repeater', 'relationship', 'taxonomy',
 ]);
 
 const noBindings = { allow_in_bindings: 0 };
@@ -100,6 +100,30 @@ function relationshipProps(row, errors, ctx) {
     };
 }
 
+// "Categoría de la sección. Taxonomía: category" -> 'category'.
+export function taxonomyName(description) {
+    const name = /\bTaxonom[ií]a:\s*`?([a-z][a-z0-9_-]*)`?/i.exec(description)?.[1];
+    return name ? name.toLowerCase() : '';
+}
+
+// Un taxonomy elige UN término de una taxonomía que ya existe (la nativa `category`, `post_tag`, una de WooCommerce
+// o una de "Contenido dinámico"). No crea nada: guarda el ID del término. Para elegir varias y ordenarlas, el spec
+// usa un repeater con un taxonomy dentro.
+const BUILT_IN_TAXONOMIES = new Set(['category', 'post_tag', 'product_cat', 'product_tag']);
+function taxonomyProps(row, errors, ctx) {
+    const name = taxonomyName(row.description);
+    if (!name) errors.push(`${row.name}: un taxonomy necesita "Taxonomía: <clave>" en la descripción (category, post_tag o una taxonomía de "Contenido dinámico" de _shared.md).`);
+    else {
+        const owner = ctx.dynamic.find((r) => r.taxonomies.some((tax) => tax.key === name));
+        if (owner) ctx.used.add(owner.name);
+        else if (!BUILT_IN_TAXONOMIES.has(name)) errors.push(`${row.name}: la taxonomía "${name}" no es nativa ni está en "Contenido dinámico" de _shared.md.`);
+    }
+    return {
+        taxonomy: name, field_type: 'select', allow_null: 0, add_term: 0, save_terms: 0, load_terms: 0,
+        return_format: 'id', bidirectional: 0, bidirectional_target: [], multiple: 0, ...noBindings,
+    };
+}
+
 function typeProps(row, errors, ctx) {
     switch (row.type) {
         case 'text': return { default_value: '', maxlength: '', ...noBindings, placeholder: '', prepend: '', append: '' };
@@ -118,6 +142,7 @@ function typeProps(row, errors, ctx) {
         case 'oembed': return { width: '', height: '', ...noBindings };
         case 'date_picker': return { display_format: 'd/m/Y', return_format: 'd/m/Y', first_day: 1, ...noBindings };
         case 'relationship': return relationshipProps(row, errors, ctx);
+        case 'taxonomy': return taxonomyProps(row, errors, ctx);
         case 'color_picker': return { default_value: '', enable_opacity: 0, return_format: 'string', ...noBindings };
         case 'select': case 'radio': case 'checkbox': case 'button_group': {
             const choices = choicesOf(row);
@@ -442,6 +467,7 @@ export function flattenGroup(json) {
                 required: !!field.required,
                 ...(['repeater', 'relationship'].includes(field.type) && { min: Number(field.min) || 0, max: Number(field.max) || 0 }),
                 ...(field.type === 'relationship' && { postTypes: [...(field.post_type ?? [])].sort().join(', ') }),
+                ...(field.type === 'taxonomy' && { taxonomy: field.taxonomy ?? '' }),
             });
             if (field.sub_fields) walk(field.sub_fields, field.name, full);
         }
