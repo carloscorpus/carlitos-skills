@@ -441,16 +441,21 @@ try {
     };
     const pending = ['--states', 'aplicado,pendiente'];
 
-    test('generate: página de entradas: ubicación posts_page y paginas.php la marca con entradas', () => {
+    test('generate: el listado del blog (página de entradas) entra en paginas.php con entradas y posts_page', () => {
+        // Un listado real del blog: Origen post, Ubicación "página de entradas" y plantilla home.php.
         const dir = theme(all(
-            change('specs/home.md', 'página de inicio (front page)', 'página de entradas (posts page)'),
-            change('specs/_index.md', '| `front-page.php` | aplicado |', '| `home.php` | aplicado |'),
+            change('specs/_shared.md', '| producto | cpt |', '| producto | post |'),
+            change('specs/productos.md', 'página de opciones: archivo de producto', 'página de entradas (posts page)'),
+            change('specs/_index.md', '| `archive-producto.php` | aplicado |', '| `home.php` | aplicado |'),
         ));
         const r = run('generate.mjs', ['--target', dir]);
         assert.equal(r.code, 0, r.stdout);
-        const group = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel);
+        const group = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'productos').rel);
         assert.deepEqual(group.location, [[{ param: 'page_type', operator: '==', value: 'posts_page' }]]);
-        assert.match(readFileSync(join(dir, 'inc/acf/paginas.php'), 'utf8'), /'home' => \['titulo' => 'Inicio', 'slug' => 'home', 'frente' => false, 'plantilla' => '', 'padre' => '', 'entradas' => true\]/);
+        const php = readFileSync(join(dir, 'inc/acf/paginas.php'), 'utf8');
+        assert.match(php, /'productos' => \['titulo' => 'Productos', 'slug' => 'productos', 'frente' => false, 'plantilla' => '', 'padre' => '', 'entradas' => true\]/);
+        assert.match(php, /'home' => \[.*'frente' => true/, 'la portada sigue en la lista');
+        assert.ok(!/'producto' =>/.test(php), 'el detalle no es una página de WordPress');
         const engine = readFileSync(join(skillDir, 'templates/inc/acf/runner.php.tpl'), 'utf8');
         assert.match(engine, /update_option\('page_for_posts', \$id\)/);
     });

@@ -2,6 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.12.1] - 2026-11-08
+
+### Corregido
+- **El listado del blog no entraba en `inc/acf/paginas.php`.** `generate.mjs` solo pasaba las páginas estáticas, y el Blog es un listado (`Tipo: listado` con `Ubicación: página de entradas` o plantilla `home.php`, como lo escribe design-import 1.16.0). Por eso el motor no creaba la página Blog, no la fijaba en Ajustes > Lectura y su carga no tenía dónde guardarse. Ahora la página de entradas entra en la lista con `'entradas' => true`, sin plantilla de página y sin padre.
+- La prueba usa un listado real del blog (antes usaba la portada con otra ubicación y no detectaba el error).
+- El motor no cambia: en cada proyecto basta volver a correr `generate.mjs` y "Cargar contenido inicial".
+
 ## [1.12.0] - 2026-11-08
 
 ### Agregado

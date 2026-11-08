@@ -95,7 +95,11 @@ const files = entries.map((entry) => ({ ...fileFor(entry.json), kind: entry.kind
 const phpString = (value) => `'${String(value).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 const isStatic = (page) => (page.labels.Tipo ?? 'estática').replace('estatica', 'estática') === 'estática';
 const parentOf = (page) => (page.labels.Padre ?? '').replace(/`/g, '').trim().replace(/^ninguno$/, '');
-const listed = all.filter((page) => states.includes(page.labels.Estado)).filter(isStatic);
+const templateOf = (page) => (index.find((r) => r.file === page.file)?.template || page.labels.Plantilla || '').replace(/`/g, '');
+// La página de entradas (Ajustes > Lectura) es la lista del blog: un listado, pero también una página de WordPress.
+const isPostsPage = (page) => templateOf(page) !== 'front-page.php'
+    && (templateOf(page) === 'home.php' || /^p[aá]gina de entradas/i.test(unwrap(page.labels.Ubicación ?? '')));
+const listed = all.filter((page) => states.includes(page.labels.Estado)).filter((page) => isStatic(page) || isPostsPage(page));
 
 // Una página hija va después de su padre: el motor las crea en orden y necesita el ID del padre.
 const bySlug = new Map(listed.map((page) => [page.slug, page]));
@@ -110,7 +114,7 @@ const place = (page, path = []) => {
         path.forEach((slug) => failed.add(slug));
         return;
     }
-    const parent = parentOf(page);
+    const parent = isPostsPage(page) ? '' : parentOf(page);
     if (parent) {
         const spec = all.find((other) => other.slug === parent);
         if (!bySlug.has(parent)) {
@@ -149,13 +153,13 @@ const pagesPhp = [
     'return [',
     ...wpPages.map((page) => {
         const row = index.find((r) => r.file === page.file);
-        const template = (row?.template || page.labels.Plantilla || '').replace(/`/g, '');
+        const template = templateOf(page);
         const front = template === 'front-page.php';
-        // La página de entradas (Ajustes > Lectura) usa home.php solo: no es una plantilla de página que se elija.
-        const posts = !front && (template === 'home.php' || /^p[aá]gina de entradas/i.test(unwrap(page.labels.Ubicación ?? '')));
+        // La página de entradas usa home.php sola: no es una plantilla de página que se elija, ni cuelga de otra.
+        const posts = isPostsPage(page);
         const slug = front ? 'inicio' : page.slug;
         const extra = posts ? ', \'entradas\' => true' : '';
-        return `    ${phpString(page.slug)} => ['titulo' => ${phpString(row?.title ?? page.slug)}, 'slug' => ${phpString(slug)}, 'frente' => ${front}, 'plantilla' => ${phpString(front || posts ? '' : template)}, 'padre' => ${phpString(front ? '' : parentOf(page))}${extra}],`;
+        return `    ${phpString(page.slug)} => ['titulo' => ${phpString(row?.title ?? page.slug)}, 'slug' => ${phpString(slug)}, 'frente' => ${front}, 'plantilla' => ${phpString(front || posts ? '' : template)}, 'padre' => ${phpString(front || posts ? '' : parentOf(page))}${extra}],`;
     }),
     '];',
     '',
