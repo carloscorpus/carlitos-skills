@@ -233,6 +233,7 @@ try {
         assert.ok(motor.includes(`Versión del motor: ${engineVersion}`), 'el motor lleva la versión de la skill');
         assert.match(motor, /^<\?php\ndefined\('ABSPATH'\) \|\| exit;/);
         assert.ok(!/\bquery_posts\s*\(/.test(motor), 'el motor no usa query_posts');
+        assert.match(motor, /'titulo'\s*=> html_entity_decode\(wp_get_document_title\(\), ENT_QUOTES,/, 'el título de la respuesta parcial va sin entidades HTML (la pestaña no las convierte)');
         assert.match(readFileSync(join(dir, 'functions.php'), 'utf8'), /require_once get_theme_file_path\('\/inc\/query\/motor\.php'\);/);
         assert.match(readFileSync(join(dir, 'CLAUDE.md'), 'utf8'), /<!-- wp-query:start -->[\s\S]*demo_query_filters[\s\S]*<!-- wp-query:end -->/);
 

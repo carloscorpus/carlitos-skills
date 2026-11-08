@@ -2,7 +2,7 @@
 name: wp-query
 description: 'Make the lists of a WordPress theme work from the specs written by design-import: the real loop of posts and custom post types, combined filters (taxonomies, ACF option fields, numeric ranges, dates, search and sort), counts per option, pagination, related items and SEO-safe filtered pages, on the main query (pre_get_posts), updating without reload and still working without JavaScript. The design is kept: the engine gives the data and the theme''s HTML paints it. One generic engine, one generated definition per list, one subagent per list for the templates. Use when the user says "conecta los listados", "haz funcionar los filtros", "filtros combinados", "buscador", "paginación", "relacionados", "blog con filtros", "catálogo con filtros", or a spec says `skill: wp-query`. Runs after wp-acf. It also connects the shop of a WooCommerce store (`Origen: woo`): categories, tags, attributes, price, search and WooCommerce's own sorting, on the query WooCommerce already built; cart and checkout are wp-woocommerce.'
 metadata:
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # wp-query

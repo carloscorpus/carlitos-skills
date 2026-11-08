@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.37.2] - 2026-11-08
+
+### Corregido
+- `wp-query` 1.2.1: al filtrar sin recargar, el título de la pestaña ya no muestra códigos HTML (`&#8211;` en vez de `–`). Detalle en `skills/wp-query/CHANGELOG.md`.
+
 ## [1.37.1] - 2026-11-08
 
 ### Corregido

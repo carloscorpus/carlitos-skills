@@ -1215,7 +1215,8 @@ add_action('template_redirect', function () {
         'total'   => (int) $wp_query->found_posts,
         'pagina'  => max(1, (int) get_query_var('paged')),
         'paginas' => (int) $wp_query->max_num_pages,
-        'titulo'  => wp_get_document_title(),
+        // wp_get_document_title() viene escapado para HTML (&#8211;): el JS lo pone en document.title, que no lo convierte.
+        'titulo'  => html_entity_decode(wp_get_document_title(), ENT_QUOTES, get_option('blog_charset')),
     ];
     if (!headers_sent()) {
         header('Content-Type: application/json; charset=' . get_option('blog_charset'));
