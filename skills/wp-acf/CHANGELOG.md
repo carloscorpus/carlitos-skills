@@ -2,6 +2,18 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.11.0] - 2026-11-08
+
+### Agregado
+- **Marcador `_term` en las cargas.** `['_term' => 'especiales', 'taxonomy' => 'category', 'nombre' => 'Especiales']` es el ID de ese término; si no existe, el motor lo crea (`nombre` es opcional, si no usa el slug). Sirve para llenar un campo `taxonomy` o un repeater de categorías con la elección inicial (por ejemplo las categorías de la portada del Blog, en orden). `check.mjs` avisa como error un `_term` sin `taxonomy`.
+- **Marcadores `_post` y `_user`.** `['_post' => 'contacto', 'type' => 'page']` es el ID de una página o entrada por su slug; `['_user' => 'admin']`, el de un usuario por login o correo.
+- **Tipos de campo nuevos** (ya no paran `generate.mjs`): `post_object` y `page_link` (`Contenido: producto`, también `page` y `post`; sin `Contenido:` eligen entre páginas; `Múltiple` deja elegir varios), `user` (`Rol: editor, author`), `google_map`, `range` (`Mínimo`/`Máximo`), `password`, `time_picker`, `date_time_picker`, `message`, `tab`, `accordion`, `clone` (`Clonar: <campo o grupo de los specs>`) y `flexible_content` (cada layout es una fila `campo.layout` de tipo `group` y sus subcampos `campo.layout.sub`; `Mínimo`/`Máximo` de bloques). Un tipo que ACF no tiene sigue siendo un error.
+- `check.mjs` compara los layouts de un `flexible_content` (cada uno es un campo del spec), sus límites y el campo que clona un `clone`, y revisa que las claves de los layouts no se repitan.
+- `references/mapeo-tipos.md`, `carga-contenido.md` (tabla con todos los marcadores y cómo se cargan los tipos nuevos) y `plantillas.md` (cómo imprimir cada uno).
+
+### Cambiado
+- Motor `inc/acf/runner.php` 1.11.0: los marcadores se resuelven en una sola función que recorre la carga a cualquier profundidad (campo suelto, repeater, group, layout de un flexible); el comportamiento de `_file`, `_page` e `_item` no cambia. Actualízalo en cada proyecto con `install.mjs --overwrite inc/acf/runner.php`.
+
 ## [1.10.0] - 2026-11-08
 
 ### Agregado

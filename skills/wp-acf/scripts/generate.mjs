@@ -185,7 +185,8 @@ const report = {
 };
 
 function countFields(fields) {
-    return fields.reduce((sum, field) => sum + 1 + countFields(field.sub_fields ?? []), 0);
+    return fields.reduce((sum, field) => sum + 1 + countFields(field.sub_fields ?? [])
+        + Object.values(field.layouts ?? {}).reduce((n, layout) => n + 1 + countFields(layout.sub_fields ?? []), 0), 0);
 }
 
 if (args['dry-run']) {
