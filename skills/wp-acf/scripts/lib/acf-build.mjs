@@ -306,11 +306,12 @@ function buildSection(section, errors, file, ctx) {
 
 // ---------- Ubicación ----------
 
-// "página de inicio (front page)", "plantilla pages/template-x.php", "página de opciones: Ajustes del sitio",
+// "página de inicio (front page)", "página de entradas (posts page)", "plantilla pages/template-x.php", "página de opciones: Ajustes del sitio",
 // "tipo de contenido = comunicado".
 export function locationFor(text, dynamic) {
     const value = unwrap(text ?? '').trim();
     if (/^p[aá]gina de inicio/i.test(value)) return { rule: { param: 'page_type', operator: '==', value: 'front_page' } };
+    if (/^p[aá]gina de entradas/i.test(value)) return { rule: { param: 'page_type', operator: '==', value: 'posts_page' } };
     const template = /^plantilla\s+(\S+)/i.exec(value);
     if (template) return { rule: { param: 'page_template', operator: '==', value: template[1] } };
     const options = /^p[aá]gina de opciones:\s*(.+)$/i.exec(value);
@@ -325,7 +326,7 @@ export function locationFor(text, dynamic) {
         if (!row) return { error: `La ubicación nombra el contenido "${content}" que no está en "Contenido dinámico" de _shared.md.` };
         return { rule: { param: 'post_type', operator: '==', value: row.origin === 'cpt' ? row.name : 'post' }, content };
     }
-    return { error: `Ubicación no reconocida: "${value}". Usa página de inicio, plantilla <archivo>, página de opciones: <nombre> o tipo de contenido = <contenido>.` };
+    return { error: `Ubicación no reconocida: "${value}". Usa página de inicio, página de entradas, plantilla <archivo>, página de opciones: <nombre> o tipo de contenido = <contenido>.` };
 }
 
 // ---------- Todo junto ----------

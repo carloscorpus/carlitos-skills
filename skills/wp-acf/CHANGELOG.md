@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.12.0] - 2026-11-08
+
+### Agregado
+- **Ubicación `página de entradas`.** Un spec con `Ubicación: página de entradas (posts page)` o con la plantilla `home.php` es la página que WordPress usa para la lista de posts del blog. El grupo de campos se ubica con la regla `page_type = posts_page`; `paginas.php` la marca con `'entradas' => true` (sin plantilla de página: `home.php` la usa WordPress sola); y el motor la crea y la fija en Ajustes > Lectura > "Tu página de entradas" (`page_for_posts`). Si el sitio ya tiene una página de entradas publicada, la usa y no la cambia; sus campos se cargan ahí.
+- Prueba de la ubicación, de `paginas.php` y del motor.
+
+### Cambiado
+- Motor `inc/acf/runner.php` 1.12.0: actualízalo en cada proyecto con `install.mjs --overwrite inc/acf/runner.php`.
+
 ## [1.11.0] - 2026-11-08
 
 ### Agregado

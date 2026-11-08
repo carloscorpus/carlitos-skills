@@ -137,6 +137,7 @@ if (args.page !== undefined) {
     const location = args.location?.trim()
         || (type === 'global' ? 'página de opciones: Ajustes del sitio'
             : type === 'detalle' ? `tipo de contenido = ${content}`
+            : template === 'home.php' ? 'página de entradas (posts page)'
             : type === 'listado' ? `página de opciones: archivo de ${content}`
             : template === 'front-page.php' ? 'página de inicio (front page)' : `plantilla ${template}`);
     if (!existsSync(join(target, INDEX))) fail(1, `Falta ${INDEX}: corre primero init.mjs sin --page.`);

@@ -38,6 +38,8 @@ Taxonomy archives (`taxonomy-categoria_producto.php`) reuse the list sections an
 
 A blog follows the same shape with `Origen: post`: `home.php` (list), `single.php` (detail), `archive.php` / `category.php`. The title, excerpt, date, author and featured image are WordPress's own; document only extra fields.
 
+**The blog list is always WordPress's posts page** (Settings > Reading > "Posts page"), with or without fields of its own: `Plantilla: home.php` and `Ubicación: página de entradas (posts page)`. Do not use an options page for it. Any fields it has (heading, intro, which categories the page features) are the page's own and live in that location; if it has none, the spec still says it, so `wp-acf` creates the page and sets it in Settings > Reading. `init.mjs` writes this `Ubicación` by default when the template is `home.php`, and `check.mjs` warns when a blog list says anything else (or when another page uses it).
+
 ## Markup rules
 
 - The item is a component: `template-parts/components/<contenido>-card.php` with its data in `$args`. The list prints the design's sample items by calling it with fixed arrays, so connecting the query later is replacing the array with the loop.

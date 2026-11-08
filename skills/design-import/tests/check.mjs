@@ -199,6 +199,9 @@ try {
         assert.equal(detail.code, 0, detail.stdout);
         assert.match(readFileSync(join(theme, 'specs/producto.md'), 'utf8'), /\*\*Ubicación:\*\* tipo de contenido = producto/);
         assert.match(readFileSync(join(theme, 'specs/sobre-nosotros.md'), 'utf8'), /\*\*Ubicación:\*\* plantilla pages\/template-sobre-nosotros\.php/);
+        const blogList = run('init.mjs', [...base, '--page', 'blog', '--title', 'Blog', '--template', 'home.php', '--type', 'listado', '--content', 'post']);
+        assert.equal(blogList.code, 0, blogList.stdout);
+        assert.match(readFileSync(join(theme, 'specs/blog.md'), 'utf8'), /\*\*Ubicación:\*\* página de entradas \(posts page\)/);
         const bad = (extra) => run('init.mjs', [...base, '--page', 'otra', '--title', 'Otra', '--template', 'p.php', ...extra]).code;
         assert.equal(bad(['--type', 'listado']), 1, 'un listado exige --content');
         assert.equal(bad(['--type', 'tienda']), 1, 'tipo desconocido');
@@ -211,9 +214,9 @@ try {
         const child = run('init.mjs', [...base, '--page', 'equipo', '--title', 'Equipo', '--template', 'pages/template-equipo.php', '--parent', 'sobre-nosotros']);
         assert.equal(child.code, 0, child.stdout);
         assert.match(readFileSync(join(theme, 'specs/equipo.md'), 'utf8'), /\*\*Padre:\*\* sobre-nosotros/);
-        for (const slug of ['productos', 'producto', 'equipo']) rmSync(join(theme, `specs/${slug}.md`));
+        for (const slug of ['productos', 'producto', 'equipo', 'blog']) rmSync(join(theme, `specs/${slug}.md`));
         const indexPath = join(theme, 'specs/_index.md');
-        writeFileSync(indexPath, readFileSync(indexPath, 'utf8').split('\n').filter((line) => !/\((productos|producto|equipo)\.md\)/.test(line)).join('\n'));
+        writeFileSync(indexPath, readFileSync(indexPath, 'utf8').split('\n').filter((line) => !/\((productos|producto|equipo|blog)\.md\)/.test(line)).join('\n'));
     });
 
     test('init --page: el spec global es siempre "opciones"', () => {
@@ -261,6 +264,21 @@ try {
         writeFileSync(path, text.replace(from, to));
     };
     const messages = (r) => r.json.errors.map((e) => e.message).join('\n');
+
+    test('check: el listado del blog es la página de entradas; otra página no', () => {
+        const warnings = (r) => r.json.warnings.map((w) => w.message).join('\n');
+        const blog = edit('specs/_shared.md', '| producto | cpt |', '| producto | post |');
+        const wrong = broken('blog-opciones', blog);
+        assert.match(warnings(wrong), /El listado del blog \(Origen post\) es la página de entradas de WordPress/);
+        const right = broken('blog-entradas', (dir) => {
+            blog(dir);
+            edit('specs/productos.md', 'página de opciones: archivo de producto', 'página de entradas (posts page)')(dir);
+        });
+        assert.ok(!/El listado del blog/.test(warnings(right)), warnings(right));
+        assert.ok(!/es solo para el listado del blog/.test(warnings(right)), warnings(right));
+        const notBlog = broken('entradas-en-catalogo', edit('specs/productos.md', 'página de opciones: archivo de producto', 'página de entradas (posts page)'));
+        assert.match(warnings(notBlog), /es solo para el listado del blog/);
+    });
 
     test('check: nombre de campo fuera de la nomenclatura', () => {
         const r = broken('nombre', edit('specs/home.md', '`home_hero_titulo`', '`Titulo`'));

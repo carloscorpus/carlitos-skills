@@ -2,6 +2,16 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.37.0] - 2026-11-08
+
+### Agregado
+- `design-import` 1.16.0: el listado del blog queda siempre como "página de entradas" (`home.php`), con o sin campos propios; `init.mjs` lo escribe por defecto y `check.mjs` avisa si no. Detalle en `skills/design-import/CHANGELOG.md`.
+
+## [1.36.0] - 2026-11-08
+
+### Agregado
+- `wp-acf` 1.12.0: reconoce `Ubicación: página de entradas` (la página del blog) y el motor la crea y la fija en Ajustes > Lectura. Detalle en `skills/wp-acf/CHANGELOG.md`.
+
 ## [1.35.0] - 2026-11-08
 
 ### Agregado

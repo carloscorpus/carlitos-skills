@@ -241,6 +241,13 @@ for (const name of pageFiles) {
         else if (['listado', 'detalle'].includes(type) && !dynamicContent.has(content)) {
             error(name, `El contenido "${content}" no está en la tabla "Contenido dinámico" de _shared.md.`);
         }
+        // El listado del blog es la página de entradas de WordPress (Ajustes > Lectura), tenga o no campos propios.
+        const isPostsPage = /^p[aá]gina de entradas/i.test(unwrap(pageLabels.Ubicación ?? ''));
+        if (type === 'listado' && dynamicContent.get(content) === 'post' && !isPostsPage) {
+            warn(name, 'El listado del blog (Origen post) es la página de entradas de WordPress: Ubicación "página de entradas (posts page)" y Plantilla home.php, tenga o no campos propios.');
+        } else if (isPostsPage && !(type === 'listado' && dynamicContent.get(content) === 'post')) {
+            warn(name, 'La "página de entradas" es solo para el listado del blog (Tipo listado con un contenido de Origen post).');
+        }
     }
     // Padre (opcional): se revisa al final, cuando ya se leyeron todas las páginas.
     pageTree.set(page, {

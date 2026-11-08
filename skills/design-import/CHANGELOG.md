@@ -2,6 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.16.0] - 2026-11-08
+
+### Agregado
+- **El listado del blog es la página de entradas de WordPress**, tenga o no campos propios. `Plantilla: home.php` y `Ubicación: página de entradas (posts page)`; no una página de opciones. `init.mjs` escribe esa `Ubicación` por defecto cuando la plantilla es `home.php`, y `check.mjs` avisa (no falla) cuando un listado de un contenido con Origen `post` dice otra cosa, o cuando otra página usa "página de entradas". `wp-acf` 1.12.0 la crea y la fija en Ajustes > Lectura.
+- `references/contenido-dinamico.md`, `formato-spec.md` y `campos-acf.md` documentan la regla y la lista de ubicaciones.
+- Pruebas: la ubicación por defecto de `init.mjs` y los tres casos del aviso de `check.mjs`.
+
 ## [1.15.0] - 2026-11-08
 
 ### Agregado
