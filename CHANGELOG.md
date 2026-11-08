@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.37.1] - 2026-11-08
+
+### Corregido
+- `wp-acf` 1.12.1: el listado del blog (página de entradas) entra en `inc/acf/paginas.php`, así el motor crea la página Blog, la fija en Ajustes > Lectura y carga sus textos. Detalle en `skills/wp-acf/CHANGELOG.md`.
+
 ## [1.37.0] - 2026-11-08
 
 ### Agregado
