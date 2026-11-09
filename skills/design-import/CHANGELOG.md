@@ -2,6 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.17.0] - 2026-11-08
+
+### Cambiado
+- **Recomendaciones uniformes, sin limitar al cliente.** La descripción de un campo ya no recomienda cantidad de caracteres (antes: `Recomendado: ~N caracteres`, largo actual × 1.5). Una imagen o galería dice siempre lo mismo: `Recomendado: hasta 2000 px en el lado más largo, horizontal.` (o `vertical`, o `cuadrada`, según el bloque del diseño); ya no `W × H px (A:B), mínimo X px de ancho`. El mismo texto llega a la ayuda del campo en ACF y al manual del cliente. 2000 px es también el ancho que conserva `img-webp`.
+- `references/campos-acf.md`, `formato-spec.md`, `SKILL.md` y el bloque de `CLAUDE.md` del tema documentan la regla.
+
+### Agregado
+- `check.mjs` avisa (no falla) cuando una descripción recomienda una cantidad de caracteres o una imagen da medidas fijas en px.
+- Pruebas: el aviso con el formato anterior y ningún aviso con el nuevo.
+
 ## [1.16.0] - 2026-11-08
 
 ### Agregado

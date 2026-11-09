@@ -2,7 +2,7 @@
 name: design-import
 description: 'Turn a folder exported by Claude Design (static HTML + CSS + JS with bad practices) into a clean WordPress theme front end: tokens, components, page sections and page templates, following the wp-vite-theme structure or the structure it detects in another project. Writes one reviewable spec per page (sections, ACF Pro field groups and tables, acceptance criteria) and applies only what the user approves. Blog, catalog and WooCommerce designs are asked about once and documented (content types, taxonomies, filters, templates), not wired. What repeats on every page (logo, menus, footer data) is documented once as site-wide settings. Use when the user adds a design folder (/add-dir) and says "importa el diseño", "reordena el diseño de Claude Design", "pasa este diseño al tema", "design import", "limpia el HTML/CSS del diseño", or a spec says `skill: design-import`. It also works from Figma links instead of a folder: "importa el diseño de Figma", "usa estos frames de Figma", or a project that already has specs/figma/enlaces/.'
 metadata:
-  version: "1.16.0"
+  version: "1.17.0"
 ---
 
 # design-import
@@ -60,7 +60,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 - Text, images and links stay fixed in the templates in this version. Each one is tied to a field by the spec's "valor actual" column so the ACF step can replace them one by one.
 - Site-wide content is documented once: the logo and site icon are Customizer, menus are WordPress menus, the rest is `specs/opciones.md`. Page specs never repeat the header or the footer, and never make an ACF field out of the main logo.
 - Dynamic content is documented and laid out, never wired: no `WP_Query`, no loops, no filtering or pagination logic, no registering content types or taxonomies, no WooCommerce hooks. Lists keep their sample items fixed, rendered through a card component that takes `$args`, so connecting the query later replaces a fixed array. WooCommerce designs are only laid out, and a piece the user chose as `bloques` is not laid out at all.
-- Never impose limits on the editor: no `maxlength`, no size validation. A field description may *recommend* (`Recomendado: ~60 caracteres`). The design adapts to the content (`aspect-ratio` + `object-cover` for images), not the other way round. Do not test with long text.
+- Never impose limits on the editor: no `maxlength`, no size validation. A field description never gives a number of characters; an image or gallery recommends only `Recomendado: hasta 2000 px en el lado más largo, horizontal.` (or `vertical`, `cuadrada`), never fixed sizes ([references/campos-acf.md](references/campos-acf.md)). The design adapts to the content (`aspect-ratio` + `object-cover` for images), not the other way round. Do not test with long text.
 - Names are Spanish: specs, sections, field names (`<página>_<sección>_<campo>`, snake_case, no accents).
 - Reuse before creating: the theme's existing tokens, components and helpers come first; an existing modal, form or helper skill beats new markup.
 - Keep the design: spacing, sizes, colors and behavior must match the original. Changing structure is the job; changing the look is not.

@@ -6,7 +6,7 @@ The type column of a spec's "Campos ACF" table is the ACF field type. `generate.
 |---|---|---|
 | `text`, `textarea`, `email`, `url`, `number` | the same type | `textarea` has 4 rows and `new_lines` empty (the break is printed by `<prefix>_highlight()`); with `<br>` in "valor actual" its instructions end with "Usa Enter para pasar a otra línea."; no `maxlength`, `min` or `max` |
 | `wysiwyg` | tabs all, full toolbar, media upload on | legal text and long prose |
-| `image` | return `array`, library all, preview medium | the sizes stay in the instructions |
+| `image` | return `array`, library all, preview medium | the recommendation (`Recomendado: hasta 2000 px en el lado más largo, …`) stays in the instructions; no size limits |
 | `file` | return `array`, library all | uploaded PDFs and downloads; use `link` only for documents hosted elsewhere |
 | `gallery` | return `array`, append | |
 | `link` | return `array` | `title`, `url`, `target`; print with `<prefix>_link()` |

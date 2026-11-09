@@ -58,7 +58,7 @@ A title or paragraph the design splits with `<br>` is **one** `textarea`, not `�
 
 | Campo | Tipo | Descripción | Valor actual | Requerido |
 |---|---|---|---|---|
-| `home_hero_titulo` | textarea | Título principal de la portada, en dos líneas. Usa Enter para pasar a otra línea. Recomendado: ~40 caracteres | Terminal Portuario<br>del |Callao| | sí |
+| `home_hero_titulo` | textarea | Título principal de la portada, en dos líneas. Usa Enter para pasar a otra línea. | Terminal Portuario<br>del |Callao| | sí |
 
 A `<br>` the design shows only on some screens (a class such as `hidden md:block`) is a break on every screen too: write it as `<br>` and mobile shows the same lines as desktop. A part with its own color class is written with that style's marker; if the style does not exist yet, add it with `wp-helper` without asking (the class from the design, the name without `text-`, the first free marker). `check.mjs` warns when a section has `_linea_1`, `_linea_2`… fields.
 
@@ -66,14 +66,17 @@ A `<br>` the design shows only on some screens (a class such as `hidden md:block
 
 Direct and clear, in this order: what the field is, where it shows, and the recommendation if it has one. One to three short sentences, Spanish.
 
-> Título principal de la portada. Se muestra en grande sobre la imagen. Recomendado: ~50 caracteres.
+> Título principal de la portada. Se muestra en grande sobre la imagen.
+
+> Imagen de fondo de la portada. Se recorta para llenar el bloque. Recomendado: hasta 2000 px en el lado más largo, horizontal.
 
 ## Recommendations, never limits
 
-The user must never be blocked: no `maxlength`, no size validation, no "máximo". The description may recommend.
+The user must never be blocked: no `maxlength`, no size validation, no "máximo". The same wording reaches the ACF field help and the client's manual, so it is uniform across every project.
 
-- **Text:** `Recomendado: ~N caracteres`, where N is the current text's length × 1.5, rounded up to a multiple of 5 (titles) or 10 (paragraphs).
-- **Image:** `Recomendado: W × H px (A:B)`, where the ratio is the design box's and W is twice the box width at the widest breakpoint (sharp on dense screens); add `mínimo X px de ancho` = the box width. The image adapts to the design: the template sets `aspect-ratio` and `object-cover`, so another size or ratio crops, it never changes the layout.
+- **Text:** no length at all: no `~N caracteres`, no word count. Say what the text is and where it shows; that is enough.
+- **Image and gallery:** always the same sentence, `Recomendado: hasta 2000 px en el lado más largo, horizontal.` with the design box's orientation: `horizontal` (wider than tall), `vertical` (taller than wide) or `cuadrada` (about 1:1). No `W × H px`, no ratio, no `mínimo X px`. The image adapts to the design: the template sets `aspect-ratio` and `object-cover`, so another size or ratio crops, it never changes the layout. 2000 px is also the width `img-webp` keeps.
+- `check.mjs` warns when a description recommends a number of characters, or an image gives fixed sizes in px.
 - **Optional parts** (subtitle, secondary button): `Requerido: no`, and say in `Comportamiento` that the template hides the part when the field is empty (applied in the ACF step; in this version the text stays fixed).
 - Do not test the layout with long text. Make the container flexible (no fixed heights) and stop there.
 

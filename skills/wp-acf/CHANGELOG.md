@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.12.2] - 2026-11-08
+
+### Cambiado
+- Pruebas, fixtures y `references/mapeo-tipos.md` con la regla de design-import 1.17.0: sin cantidad de caracteres y, en imágenes, `Recomendado: hasta 2000 px en el lado más largo, …`. El generador no cambia: copia la descripción del spec a la ayuda del campo. En un proyecto que ya tiene el formato anterior, basta corregir los specs y volver a correr `generate.mjs`.
+
 ## [1.12.1] - 2026-11-08
 
 ### Corregido

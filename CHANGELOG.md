@@ -2,6 +2,12 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.38.0] - 2026-11-08
+
+### Cambiado
+- `design-import` 1.17.0: la descripción de un campo ya no recomienda cantidad de caracteres, y una imagen solo dice "Recomendado: hasta 2000 px en el lado más largo, horizontal." (o vertical, o cuadrada), sin medidas fijas; `check.mjs` avisa del formato anterior. Detalle en `skills/design-import/CHANGELOG.md`.
+- `wp-acf` 1.12.2: pruebas y documentación con la misma regla; la ayuda de cada campo la toma tal cual del spec. Detalle en `skills/wp-acf/CHANGELOG.md`.
+
 ## [1.37.2] - 2026-11-08
 
 ### Corregido

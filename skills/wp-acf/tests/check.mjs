@@ -103,7 +103,8 @@ try {
         assert.deepEqual(hero.sub_fields.map((f) => f.name), ['titulo', 'boton', 'slides']);
         const titulo = hero.sub_fields[0];
         assert.equal(titulo.required, 1);
-        assert.match(titulo.instructions, /Recomendado: ~30 caracteres/);
+        assert.equal(titulo.instructions, 'Título principal de la portada.');
+        assert.equal(hero.sub_fields[2].sub_fields[0].instructions, 'Foto del slider. Recomendado: hasta 2000 px en el lado más largo, horizontal.', 'la recomendación de imagen pasa tal cual');
         assert.equal(titulo.maxlength, '', 'sin límites impuestos');
         assert.equal(titulo.label, 'Título');
         const slides = hero.sub_fields[2];
@@ -133,7 +134,7 @@ try {
         assert.deepEqual([prose.min, prose.max], [0, 0], 'una palabra sin número no es un límite');
 
         // Fuera de un repetidor no se aplica ni da error.
-        const dir = theme(change('specs/home.md', 'Recomendado: ~30 caracteres', 'Máximo: 3'));
+        const dir = theme(change('specs/home.md', 'Título principal de la portada. |', 'Título principal de la portada. Máximo: 3 |'));
         const r = run('generate.mjs', ['--target', dir]);
         assert.equal(r.code, 0, r.stdout);
         const titulo = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel).fields[0].sub_fields[0];
@@ -655,8 +656,8 @@ try {
 
     // El título del hero en dos líneas: un textarea con <br> en el spec y "\n" en la carga.
     const multiline = all(
-        change('specs/home.md', '| `home_hero_titulo` | text | Título principal de la portada. Recomendado: ~30 caracteres | Hacemos crecer tu negocio |',
-            '| `home_hero_titulo` | textarea | Título principal de la portada. Recomendado: ~30 caracteres | Hacemos crecer<br>tu \\|negocio\\| |'),
+        change('specs/home.md', '| `home_hero_titulo` | text | Título principal de la portada. | Hacemos crecer tu negocio |',
+            '| `home_hero_titulo` | textarea | Título principal de la portada. | Hacemos crecer<br>tu \\|negocio\\| |'),
         change('inc/acf/seed/home.php', "'titulo' => 'Hacemos crecer tu negocio'", `'titulo' => "Hacemos crecer\\ntu |negocio|"`),
         change('template-parts/pages/home/hero.php', "<?= esc_html($hero['titulo'] ?? '') ?>", "<?= copam_theme_highlight($hero['titulo'] ?? '') ?>"),
     );
@@ -668,7 +669,7 @@ try {
         const titulo = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel).fields[0].sub_fields[0];
         assert.equal(titulo.type, 'textarea');
         assert.equal(titulo.new_lines, '', 'los saltos los pone wp-helper, no ACF');
-        assert.equal(titulo.instructions, 'Título principal de la portada. Recomendado: ~30 caracteres. Usa Enter para pasar a otra línea.');
+        assert.equal(titulo.instructions, 'Título principal de la portada. Usa Enter para pasar a otra línea.');
     });
 
     test('check: un textarea de varias líneas con "\\n" en la carga pasa; impreso con esc_html avisa', () => {
@@ -724,7 +725,7 @@ try {
         assert.ok(regex.json.warnings.some((w) => /cambia los marcadores a mano/.test(w.message)), JSON.stringify(regex.json.warnings));
     });
 
-    const splitTitle = change('specs/home.md', '| `home_hero_titulo` | text | Título principal de la portada. Recomendado: ~30 caracteres | Hacemos crecer tu negocio | sí |',
+    const splitTitle = change('specs/home.md', '| `home_hero_titulo` | text | Título principal de la portada. | Hacemos crecer tu negocio | sí |',
         '| `home_hero_titulo_linea_1` | text | Primera línea del título | Hacemos crecer | sí |\n| `home_hero_titulo_linea_2` | text | Segunda línea del título | tu negocio | sí |');
 
     test('check y status: un texto partido en un campo por línea avisa para unirlo', () => {
