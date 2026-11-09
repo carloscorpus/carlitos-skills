@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.39.0] - 2026-11-08
+
+### Agregado
+- `wp-manual` 1.0.0: skill nueva. Arma el manual de administración del cliente en PDF (horizontal, vertical o ambos) desde el `acf-json` y los specs: login, reglas generales, opciones, cada página con sus campos numerados, entradas y tipos de contenido, menús y logo. Capturas de solo lectura del sitio local, borradores revisables en `specs/manual/`, `.env.manual` para el login y un reporte aparte con lo que no se cubrió. Detalle en `skills/wp-manual/CHANGELOG.md`.
+
 ## [1.38.0] - 2026-11-08
 
 ### Cambiado

@@ -1,0 +1,34 @@
+{
+    "key": "group_servicio",
+    "title": "Servicio",
+    "active": true,
+    "location": [
+        [
+            {
+                "param": "page_template",
+                "operator": "==",
+                "value": "pages/template-servicio.php"
+            }
+        ]
+    ],
+    "fields": [
+        {
+            "key": "field_s1",
+            "name": "servicio_hero",
+            "label": "Hero",
+            "type": "group",
+            "required": 0,
+            "instructions": "",
+            "sub_fields": [
+                {
+                    "key": "field_s2",
+                    "name": "titulo",
+                    "label": "Título",
+                    "type": "text",
+                    "required": 0,
+                    "instructions": ""
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "key": "ui_options_page_ajustes",
+    "title": "Ajustes del sitio",
+    "active": true,
+    "page_title": "Ajustes del sitio",
+    "menu_title": "Ajustes del sitio",
+    "menu_slug": "ajustes",
+    "parent_slug": ""
+}

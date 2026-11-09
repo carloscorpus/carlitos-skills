@@ -1,0 +1,34 @@
+{
+    "key": "group_opciones",
+    "title": "Ajustes",
+    "active": true,
+    "location": [
+        [
+            {
+                "param": "options_page",
+                "operator": "==",
+                "value": "ajustes"
+            }
+        ]
+    ],
+    "fields": [
+        {
+            "key": "field_o1",
+            "name": "opciones_pie",
+            "label": "Pie",
+            "type": "group",
+            "required": 0,
+            "instructions": "",
+            "sub_fields": [
+                {
+                    "key": "field_o2",
+                    "name": "copyright",
+                    "label": "Copyright",
+                    "type": "text",
+                    "required": 0,
+                    "instructions": ""
+                }
+            ]
+        }
+    ]
+}

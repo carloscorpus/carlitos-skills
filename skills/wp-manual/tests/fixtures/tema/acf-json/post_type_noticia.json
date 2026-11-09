@@ -1,0 +1,10 @@
+{
+    "key": "post_type_noticia",
+    "title": "Noticias",
+    "active": true,
+    "post_type": "noticia",
+    "labels": {
+        "name": "Noticias",
+        "singular_name": "Noticia"
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "key": "group_inactivo",
+    "title": "Inactivo",
+    "active": false,
+    "location": [
+        [
+            {
+                "param": "options_page",
+                "operator": "==",
+                "value": "ajustes"
+            }
+        ]
+    ],
+    "fields": [
+        {
+            "key": "field_i1",
+            "name": "x",
+            "label": "X",
+            "type": "text",
+            "required": 0,
+            "instructions": ""
+        }
+    ]
+}

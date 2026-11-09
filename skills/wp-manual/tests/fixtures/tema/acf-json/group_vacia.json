@@ -1,0 +1,15 @@
+{
+    "key": "group_vacia",
+    "title": "Vacía (sin campos)",
+    "active": true,
+    "location": [
+        [
+            {
+                "param": "page_template",
+                "operator": "==",
+                "value": "pages/template-vacia.php"
+            }
+        ]
+    ],
+    "fields": []
+}
