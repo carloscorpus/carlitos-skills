@@ -103,8 +103,8 @@ The filter names cannot be `orderby`, `min_price`, `max_price` or `rating_filter
 
 | Campo | Tipo | Descripción | Valor actual | Requerido |
 |---|---|---|---|---|
-| `home_hero_titulo` | text | Título principal de la portada. Se muestra en grande sobre la imagen. Recomendado: ~50 caracteres | Hacemos crecer tu negocio | sí |
-| `home_hero_imagen` | image | Imagen de fondo del hero. Se recorta para llenar el bloque. Recomendado: 1920 × 1080 px (16:9), mínimo 1280 px de ancho | — | sí |
+| `home_hero_titulo` | text | Título principal de la portada. Se muestra en grande sobre la imagen. | Hacemos crecer tu negocio | sí |
+| `home_hero_imagen` | image | Imagen de fondo del hero. Se recorta para llenar el bloque. Recomendado: hasta 2000 px en el lado más largo, horizontal. | — | sí |
 | `home_hero_boton` | link | Botón principal: texto y destino | Cotizar | no |
 
 **Criterios de aceptación**

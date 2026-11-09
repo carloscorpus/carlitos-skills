@@ -27,7 +27,7 @@
 
 | Campo | Tipo | Descripción | Valor actual | Requerido |
 |---|---|---|---|---|
-| `opciones_pie_copyright` | text | Texto de derechos del pie. Recomendado: ~20 caracteres | © Demo | sí |
+| `opciones_pie_copyright` | text | Texto de derechos del pie. | © Demo | sí |
 
 **Criterios de aceptación**
 

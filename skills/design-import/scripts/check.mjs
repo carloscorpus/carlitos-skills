@@ -98,6 +98,17 @@ function nativeDuplicate(short, { pageType, origin, page }) {
     return null;
 }
 
+// Recomendaciones de la descripción (ver "Recommendations, never limits" en references/campos-acf.md): sin
+// cantidad de caracteres y, en imágenes, sin medidas fijas. Devuelve el aviso o null. Solo avisa.
+const IMAGE_RECOMMENDATION = 'Recomendado: hasta 2000 px en el lado más largo, horizontal (o vertical, o cuadrada)';
+function staleRecommendation(description, type) {
+    if (/\d+\s*caracteres/i.test(description)) return 'la descripción no recomienda cantidad de caracteres: quita esa parte.';
+    if (['image', 'gallery'].includes(type) && /\d+\s*(?:[×x]\s*\d+\s*)?px/i.test(description) && !/hasta 2000 px en el lado más largo/.test(description)) {
+        return `la imagen no lleva medidas fijas: usa "${IMAGE_RECOMMENDATION}".`;
+    }
+    return null;
+}
+
 const errors = [];
 const warnings = [];
 const error = (file, message) => errors.push({ file, message });
@@ -336,6 +347,8 @@ for (const name of pageFiles) {
                 if (duplicate) warn(where, `${field}: ${duplicate}`);
             }
             if (!description) error(where, `${field}: falta la descripción.`);
+            const oldRecommendation = staleRecommendation(description ?? '', fieldType);
+            if (oldRecommendation) warn(where, `${field}: ${oldRecommendation}`);
             if (!['sí', 'si', 'no'].includes((required ?? '').toLowerCase())) error(where, `${field}: "Requerido" debe ser sí o no.`);
             const value = normalizeText(unwrap(current ?? ''));
             if (TEXT_TYPES.has(fieldType) && value && value !== '—') sectionTexts.push({ field, value });

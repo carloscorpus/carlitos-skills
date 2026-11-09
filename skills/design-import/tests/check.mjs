@@ -292,14 +292,14 @@ try {
     });
 
     test('check: campo repetido, tipo desconocido y descripción vacía', () => {
-        const r = broken('tabla', edit('specs/home.md', '| `home_hero_bajada` | textarea | Frase bajo el título. Recomendado: ~120 caracteres |', '| `home_hero_titulo` | texto |  |'));
+        const r = broken('tabla', edit('specs/home.md', '| `home_hero_bajada` | textarea | Frase bajo el título. |', '| `home_hero_titulo` | texto |  |'));
         assert.match(messages(r), /ya existe/);
         assert.match(messages(r), /no es un tipo de ACF conocido/);
         assert.match(messages(r), /falta la descripción/);
     });
 
     test('check: un texto partido en un campo por línea avisa; <br> en "valor actual" no', () => {
-        const titulo = '| `home_hero_titulo` | text | Título principal de la portada. Se muestra en grande. Recomendado: ~50 caracteres | Hacemos crecer tu negocio | sí |';
+        const titulo = '| `home_hero_titulo` | text | Título principal de la portada. Se muestra en grande. | Hacemos crecer tu negocio | sí |';
         const split = broken('lineas', edit('specs/home.md', titulo, [
             '| `home_hero_titulo_linea_1` | text | Primera línea del título | Hacemos crecer | sí |',
             '| `home_hero_titulo_linea_2` | text | Segunda línea del título | tu negocio | sí |',
@@ -309,6 +309,24 @@ try {
         const joined = broken('lineas-br', edit('specs/home.md', titulo, titulo.replace('| text |', '| textarea |').replace('Hacemos crecer tu negocio', 'Hacemos crecer<br>tu negocio')));
         assert.equal(joined.code, 0, joined.stdout);
         assert.deepEqual(joined.json.warnings, []);
+    });
+
+    test('check: avisa de una recomendación con caracteres o con medidas fijas de imagen', () => {
+        const titulo = '| `home_hero_titulo` | text | Título principal de la portada. Se muestra en grande. | Hacemos crecer tu negocio | sí |';
+        const imagen = '| `home_hero_imagen` | image | Imagen de fondo. Recomendado: hasta 2000 px en el lado más largo, horizontal. | — | sí |';
+        const warns = (r) => r.json.warnings.map((w) => w.message).join('\n');
+
+        const viejo = broken('reco-vieja', (dir) => {
+            edit('specs/home.md', titulo, titulo.replace('Se muestra en grande.', 'Se muestra en grande. Recomendado: ~50 caracteres'))(dir);
+            edit('specs/home.md', imagen, imagen.replace('hasta 2000 px en el lado más largo, horizontal.', '1920 × 1080 px (16:9), mínimo 1280 px de ancho'))(dir);
+        });
+        assert.equal(viejo.code, 0, viejo.stdout);
+        assert.match(warns(viejo), /home_hero_titulo: la descripción no recomienda cantidad de caracteres/);
+        assert.match(warns(viejo), /home_hero_imagen: la imagen no lleva medidas fijas/);
+
+        // La regla nueva no avisa (el tema de prueba ya la usa).
+        const ok = broken('reco-nueva', () => {});
+        assert.deepEqual(ok.json.warnings, []);
     });
 
     test('check: avisa del campo que duplica algo nativo (título del detalle, logo de opciones, menú)', () => {
@@ -321,7 +339,7 @@ try {
         assert.match(warns(titulo), /producto_ficha_titulo: el título del contenido es nativo/);
         assert.match(warns(titulo), /producto_ficha_imagen_destacada: la imagen destacada del contenido es nativo/);
 
-        const pie = '| `opciones_pie_copyright` | text | Texto de derechos del pie, en todas las páginas. Recomendado: ~20 caracteres | © Demo | sí |';
+        const pie = '| `opciones_pie_copyright` | text | Texto de derechos del pie, en todas las páginas. | © Demo | sí |';
         const logo = broken('nativo-logo', edit('specs/opciones.md', pie, `${pie}\n${row('opciones_pie_logo', 'image')}\n${row('opciones_pie_menu', 'repeater')}`));
         assert.equal(logo.code, 0, logo.stdout);
         assert.match(warns(logo), /opciones_pie_logo: el logo principal sale de Identidad del sitio/);

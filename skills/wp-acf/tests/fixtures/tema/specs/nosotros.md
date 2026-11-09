@@ -26,7 +26,7 @@
 
 | Campo | Tipo | Descripción | Valor actual | Requerido |
 |---|---|---|---|---|
-| `nosotros_historia_titulo` | text | Título de la sección. Recomendado: ~20 caracteres | Nuestra historia | sí |
+| `nosotros_historia_titulo` | text | Título de la sección. | Nuestra historia | sí |
 
 **Criterios de aceptación**
 

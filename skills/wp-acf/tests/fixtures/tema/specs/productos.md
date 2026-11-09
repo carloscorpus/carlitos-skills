@@ -26,8 +26,8 @@
 
 | Campo | Tipo | Descripción | Valor actual | Requerido |
 |---|---|---|---|---|
-| `productos_cabecera_titulo` | text | Título del catálogo. Recomendado: ~20 caracteres | Productos | sí |
-| `productos_cabecera_bajada` | textarea | Frase bajo el título. Recomendado: ~100 caracteres | Muebles para casa y oficina | no |
+| `productos_cabecera_titulo` | text | Título del catálogo. | Productos | sí |
+| `productos_cabecera_bajada` | textarea | Frase bajo el título. | Muebles para casa y oficina | no |
 
 **Criterios de aceptación**
 

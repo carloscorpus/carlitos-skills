@@ -27,9 +27,9 @@
 
 | Campo | Tipo | Descripción | Valor actual | Requerido |
 |---|---|---|---|---|
-| `home_hero_titulo` | text | Título principal de la portada. Se muestra en grande. Recomendado: ~50 caracteres | Hacemos crecer tu negocio | sí |
-| `home_hero_bajada` | textarea | Frase bajo el título. Recomendado: ~120 caracteres | Estrategia, diseño y desarrollo en un solo equipo | no |
-| `home_hero_imagen` | image | Imagen de fondo. Recomendado: 1920 × 1080 px (16:9) | — | sí |
+| `home_hero_titulo` | text | Título principal de la portada. Se muestra en grande. | Hacemos crecer tu negocio | sí |
+| `home_hero_bajada` | textarea | Frase bajo el título. | Estrategia, diseño y desarrollo en un solo equipo | no |
+| `home_hero_imagen` | image | Imagen de fondo. Recomendado: hasta 2000 px en el lado más largo, horizontal. | — | sí |
 
 **Criterios de aceptación**
 

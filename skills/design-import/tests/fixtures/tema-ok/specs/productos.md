@@ -38,7 +38,7 @@
 
 | Campo | Tipo | Descripción | Valor actual | Requerido |
 |---|---|---|---|---|
-| `productos_catalogo_titulo` | text | Título del catálogo. Recomendado: ~20 caracteres | Productos | sí |
+| `productos_catalogo_titulo` | text | Título del catálogo. | Productos | sí |
 
 **Criterios de aceptación**
 

@@ -27,11 +27,11 @@
 
 | Campo | Tipo | Descripción | Valor actual | Requerido |
 |---|---|---|---|---|
-| `home_hero_titulo` | text | Título principal de la portada. Recomendado: ~30 caracteres | Hacemos crecer tu negocio | sí |
+| `home_hero_titulo` | text | Título principal de la portada. | Hacemos crecer tu negocio | sí |
 | `home_hero_boton` | link | Botón principal: texto y destino | Cotizar | no |
 | `home_hero_slides` | repeater | Fotos del slider | — | sí |
-| `home_hero_slides.imagen` | image | Foto del slider. Recomendado: 1920 × 1080 px (16:9) | — | sí |
-| `home_hero_slides.alt` | text | Descripción de la foto. Recomendado: ~60 caracteres | Equipo de trabajo en la oficina | sí |
+| `home_hero_slides.imagen` | image | Foto del slider. Recomendado: hasta 2000 px en el lado más largo, horizontal. | — | sí |
+| `home_hero_slides.alt` | text | Descripción de la foto. | Equipo de trabajo en la oficina | sí |
 
 **Criterios de aceptación**
 
