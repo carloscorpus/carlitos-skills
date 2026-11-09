@@ -22,6 +22,7 @@
 | [`wp-acf`](skills/wp-acf/SKILL.md)               | 1.12.2  | Un tema WordPress con los specs de `design-import` aplicados y ACF Pro 6.2 o superior; `wp-helper` recomendado | Pasa los specs a ACF Pro administrable: campos, tipos de contenido, taxonomías y páginas de opciones como ACF JSON sincronizado con la base de datos, el contenido del diseño cargado como contenido real, menús, logo y las plantillas leyendo de ACF. |
 | [`wp-query`](skills/wp-query/SKILL.md)           | 1.2.1   | Un tema WordPress con Vite y los specs de `design-import` (tabla Filtros); los tipos de contenido y campos de `wp-acf` | Hace funcionar los listados de posts y tipos de contenido: el loop real, filtros combinados (taxonomías, opciones ACF, rangos, fechas, búsqueda y orden), conteos, paginación, relacionados, SEO de las páginas filtradas y filtrar sin recargar. El diseño pone el HTML. |
 | [`wp-woocommerce`](skills/wp-woocommerce/SKILL.md) | 1.1.0 | Un tema WordPress con Vite y los specs de `design-import` con contenido `Origen: woo` y su tabla WooCommerce; el plugin WooCommerce en el Local para comparar versiones | Conecta la tienda que `design-import` maquetó sin perder el diseño ni romperse al actualizar WooCommerce: soporte del tema, los marcadores `// woo:` reemplazados por las funciones de WooCommerce con todos sus hooks, `@version` de cada plantilla igual a la original, mini-carrito que se actualiza solo, CSS de los bloques y una auditoría (sin pagos ni pedidos en el tema). Carrito, checkout, mini-carrito y cuenta: plantilla clásica o bloques, según el spec. |
+| [`wp-manual`](skills/wp-manual/SKILL.md)         | 1.0.0   | Un tema WordPress con ACF Pro y `acf-json/` (`wp-acf`); los specs de `design-import` ayudan a redactar; Edge o Chrome instalado y `playwright-core`, que se toma del proyecto o de otra carpeta y no se instala solo | Arma el manual de administración del cliente en PDF (horizontal, vertical o ambos): login, reglas generales, opciones, cada página con sus campos numerados sobre la captura del admin y la sección de la web como referencia, entradas y tipos de contenido, menús y logo. Borradores revisables, capturas de solo lectura del sitio local y un reporte aparte con lo que no se cubrió. |
 | [`img-webp`](skills/img-webp/SKILL.md)           | 1.0.0   | Nada: cualquier carpeta con imágenes (WordPress no hace falta); necesita `sharp`, que se toma del proyecto y no se instala solo | Convierte PNG, JPG y JPEG a WebP: cada imagen conserva su tamaño (solo se reduce lo que pasa de 2000 px de ancho) y su transparencia; los originales se mueven a un respaldo; actualiza las referencias (PHP, CSS, JS, specs) y se puede deshacer. SVG, GIF, AVIF y WebP no se tocan. |
 
 Las skills son independientes: cada una funciona sola y ninguna exige haber usado otra. `wp-vite-theme` es solo una forma cómoda de partir con un tema que ya cumple lo que `wp-form` necesita. Cada skill tiene su versión (`metadata.version` en su `SKILL.md`) y su `CHANGELOG.md`; el del plugin completo está en [`CHANGELOG.md`](CHANGELOG.md).
@@ -258,6 +259,31 @@ woocommerce/                     las plantillas del diseño, conectadas
 - Comandos: `node skills/wp-woocommerce/scripts/status.mjs`, `install.mjs [--dry-run]`, `check.mjs [--woo <raíz del plugin>]`.
 - Prueba: `node skills/wp-woocommerce/tests/check.mjs [--php <ruta>]`. Usa plantillas de WooCommerce falsas; con `php` revisa la sintaxis y carga la base con funciones de WordPress simuladas.
 - **Probado en Local WP** con WooCommerce 11.2.2: tienda, ficha, carrito clásico, checkout en bloques y el mini-carrito por AJAX. Queda por ver en un navegador el ancho de celular y un pago real con la pasarela del proyecto.
+
+## wp-manual
+
+Al cerrar un proyecto, pide `haz el manual de usuario`, `manual del cliente` o `manual de administración`. Sale del `acf-json/` (y de los specs, si los hay): no hace falta escribir nada a mano salvo revisar los textos.
+
+1. `init.mjs` crea `.env.manual` vacío en la raíz del proyecto (y lo agrega a `.gitignore`). Lo llenas con la URL del sitio **local** y un usuario con el rol del cliente (sin usuario, inicias sesión a mano en el navegador). Al volver a correrlo crea `specs/manual/_manual.md` y un borrador por capítulo con los campos numerados.
+2. Claude redacta los borradores en español sencillo y tú los revisas.
+3. `capture.mjs` toma las capturas en **solo lectura** (el navegador bloquea todo envío salvo el login): admin con cada campo numerado y la sección de la web como referencia.
+4. `check.mjs` revisa los textos y `build.mjs` arma `manual-horizontal.pdf`, `manual-vertical.pdf` y un `reporte.pdf` aparte para el equipo.
+5. Al terminar, borra `.env.manual`.
+
+```text
+.env.manual                       credenciales del sitio local (en .gitignore; se borra al terminar)
+specs/manual/<capítulo>.md        borradores: un capítulo por opciones, página, contenido y menús/logo
+specs/manual/capturas/            capturas al doble de resolución + mapa.json
+specs/manual/salida/              manual-horizontal.pdf, manual-vertical.pdf, reporte.pdf
+```
+
+- **Capítulos:** login, reglas generales, páginas de opciones, una parte por página (las que comparten plantilla van juntas), entradas y tipos de contenido, menús y logo. Una hoja por sección: captura del admin numerada (1, 7.1, 2.5.1) más grande que la de la web, y el texto de cada número.
+- **Textos:** sin cantidad de caracteres; imágenes con «Recomendado: hasta 2000 px en el lado más largo»; el resaltado (*asteriscos*, |barras|) solo en los campos cuya plantilla lo usa.
+- **Navegador:** usa Edge o Chrome instalados y `playwright-core` del proyecto o de `--playwright-from <carpeta>`; si falta, sale con código 5 y el comando, y no instala nada solo.
+- **Sin tocar el tema:** `--out <carpeta>` y `--env <archivo>` dejan todo fuera del proyecto.
+- Qué cubre y qué falta (WooCommerce, ayuda dentro del admin, videos): [`skills/wp-manual/COBERTURA.md`](skills/wp-manual/COBERTURA.md).
+- Comandos: `node skills/wp-manual/scripts/status.mjs | init.mjs | capture.mjs | check.mjs | build.mjs [--formato horizontal|vertical|ambos] [--out <dir>] [--env <archivo>] [--playwright-from <dir>]`.
+- Prueba: `node skills/wp-manual/tests/check.mjs` (sin navegador).
 
 ## img-webp
 

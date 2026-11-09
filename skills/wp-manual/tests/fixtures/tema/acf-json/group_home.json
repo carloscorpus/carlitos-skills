@@ -1,0 +1,146 @@
+{
+    "key": "group_home",
+    "title": "Inicio",
+    "active": true,
+    "location": [
+        [
+            {
+                "param": "page_type",
+                "operator": "==",
+                "value": "front_page"
+            }
+        ]
+    ],
+    "fields": [
+        {
+            "key": "field_h1",
+            "name": "home_hero",
+            "label": "Hero",
+            "type": "group",
+            "required": 0,
+            "instructions": "",
+            "sub_fields": [
+                {
+                    "key": "field_h2",
+                    "name": "titulo",
+                    "label": "Título",
+                    "type": "text",
+                    "required": 1,
+                    "instructions": ""
+                },
+                {
+                    "key": "field_h3",
+                    "name": "descripcion",
+                    "label": "Descripción",
+                    "type": "textarea",
+                    "required": 0,
+                    "instructions": ""
+                },
+                {
+                    "key": "field_h4",
+                    "name": "imagen",
+                    "label": "Imagen",
+                    "type": "image",
+                    "required": 1,
+                    "instructions": ""
+                },
+                {
+                    "key": "field_h5",
+                    "name": "slides",
+                    "label": "Slides",
+                    "type": "repeater",
+                    "required": 0,
+                    "instructions": "",
+                    "sub_fields": [
+                        {
+                            "key": "field_h6",
+                            "name": "imagen",
+                            "label": "Imagen",
+                            "type": "image",
+                            "required": 0,
+                            "instructions": ""
+                        },
+                        {
+                            "key": "field_h7",
+                            "name": "alt",
+                            "label": "Texto alternativo",
+                            "type": "text",
+                            "required": 0,
+                            "instructions": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "key": "field_l1",
+            "name": "home_lista",
+            "label": "Lista",
+            "type": "group",
+            "required": 0,
+            "instructions": "",
+            "sub_fields": [
+                {
+                    "key": "field_l2",
+                    "name": "",
+                    "label": "Contenido",
+                    "type": "tab",
+                    "required": 0,
+                    "instructions": ""
+                },
+                {
+                    "key": "field_l3",
+                    "name": "titulo",
+                    "label": "Título",
+                    "type": "text",
+                    "required": 0,
+                    "instructions": ""
+                },
+                {
+                    "key": "field_l4",
+                    "name": "items",
+                    "label": "Items",
+                    "type": "repeater",
+                    "required": 0,
+                    "instructions": "",
+                    "sub_fields": [
+                        {
+                            "key": "field_l5",
+                            "name": "nombre",
+                            "label": "Nombre",
+                            "type": "text",
+                            "required": 0,
+                            "instructions": ""
+                        },
+                        {
+                            "key": "field_l6",
+                            "name": "puntos",
+                            "label": "Puntos",
+                            "type": "repeater",
+                            "required": 0,
+                            "instructions": "",
+                            "sub_fields": [
+                                {
+                                    "key": "field_l7",
+                                    "name": "texto",
+                                    "label": "Texto",
+                                    "type": "text",
+                                    "required": 0,
+                                    "instructions": ""
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "field_l8",
+                    "name": "",
+                    "label": "Aviso",
+                    "type": "message",
+                    "required": 0,
+                    "instructions": ""
+                }
+            ]
+        }
+    ]
+}

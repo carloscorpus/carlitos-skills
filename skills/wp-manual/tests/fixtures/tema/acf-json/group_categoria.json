@@ -1,0 +1,24 @@
+{
+    "key": "group_categoria",
+    "title": "Categoría",
+    "active": true,
+    "location": [
+        [
+            {
+                "param": "taxonomy",
+                "operator": "==",
+                "value": "category"
+            }
+        ]
+    ],
+    "fields": [
+        {
+            "key": "field_c1",
+            "name": "color",
+            "label": "Color",
+            "type": "text",
+            "required": 0,
+            "instructions": ""
+        }
+    ]
+}

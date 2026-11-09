@@ -1,0 +1,32 @@
+{
+    "key": "group_noticia",
+    "title": "Noticia",
+    "active": true,
+    "location": [
+        [
+            {
+                "param": "post_type",
+                "operator": "==",
+                "value": "noticia"
+            }
+        ]
+    ],
+    "fields": [
+        {
+            "key": "field_n1",
+            "name": "fuente",
+            "label": "Fuente",
+            "type": "text",
+            "required": 0,
+            "instructions": ""
+        },
+        {
+            "key": "field_n2",
+            "name": "foto",
+            "label": "Foto",
+            "type": "image",
+            "required": 0,
+            "instructions": ""
+        }
+    ]
+}
