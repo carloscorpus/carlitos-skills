@@ -41,7 +41,7 @@ export function checkChapter(chapter, borrador, file, mapa = null) {
         }
         const known = new Set(fields.map((f) => f.n));
         for (const n of b.textos.keys()) if (!known.has(n)) warn(`${section.name}: el número ${n} ya no existe en el grupo de ACF; quítalo del borrador.`);
-        if (seen && section.name !== SECCION_NATIVA) {
+        if (seen && section.name !== SECCION_NATIVA && chapter.kind !== 'extra') {
             const missing = fields.map((f) => f.n).filter((n) => !seen.includes(n));
             if (missing.length) warn(`${section.name}: ${missing.join(', ')} no se ven en la captura (por ejemplo, una lista sin filas).`);
         }

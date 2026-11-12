@@ -37,7 +37,7 @@ What it is and where it shows, plus only what helps to edit it. Patterns:
 - **Never a number of characters**, never a fixed size, never "máximo". The client is never limited; the design adapts.
 - **Images and galleries** always say `Recomendado: hasta 2000 px en el lado más largo` + orientation.
 - **Highlight** (`*asteriscos*` bold, `|barras|` medium, other markers from `inc/helpers/text-styles.php` if the theme has them) **only** in the fields marked with highlight by the inventory (`highlight: true`: the template prints them with `<prefix>_highlight`). There, always explain it with an example: «Puedes resaltar palabras: entre **\*asteriscos\*** van en negrita y entre **\|barras\|** en un peso medio. Ejemplo: `*Terminal Portuario*`.» In a field without it, do not mention it.
-- `**negrita**` and `` `código` `` are the only formatting the PDF understands.
+- `**negrita**` and `` `código` `` are the only formatting the PDF understands. Markdown escapes (`*`, `|`, `~`) print the character itself: `***asteriscos***` shows ***asteriscos*** in bold, with its asterisks.
 
 ## Posts and custom post types (section `wordpress`)
 
@@ -46,4 +46,5 @@ The numbers `W1…W6` are WordPress' own boxes (title, content, excerpt, categor
 ## Shared and common parts
 
 - A chapter with several pages (same template) says so in "Cómo llegar": the user can open any of them.
-- A section that repeats on many pages (from site options) is explained in the options chapter; on a page, mention it in one line («El pie de página se edita en Ajustes del sitio»).
+- A section that repeats on many pages (from site options) is explained in the options chapter.
+- **Do not repeat on every page** that the breadcrumbs are fixed or that the header and footer are edited in the site options: the PDF already says it once, in Reglas generales («Lo que no se edita en cada página»). `check.mjs` warns when the same note of "Cómo llegar" appears in 3 chapters or more.

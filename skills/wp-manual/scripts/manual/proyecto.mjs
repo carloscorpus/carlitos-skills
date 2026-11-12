@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
-export const ENV_KEYS = ['MANUAL_URL', 'MANUAL_USER', 'MANUAL_PASS', 'MANUAL_FORMATO'];
+export const ENV_KEYS = ['MANUAL_URL', 'MANUAL_USER', 'MANUAL_PASS', 'MANUAL_FORMATO', 'MANUAL_BLOQUEAR'];
 export const FORMATOS = ['horizontal', 'vertical', 'ambos'];
 
 // Rutas de trabajo. `out` y `env` permiten escribir fuera del tema (un proyecto que no se puede tocar).
@@ -29,6 +29,9 @@ MANUAL_USER=
 MANUAL_PASS=
 # horizontal, vertical o ambos
 MANUAL_FORMATO=ambos
+# Opcional: partes de URL que no se cargan durante las capturas, separadas por comas (chat, analítica…).
+# Los captchas (reCAPTCHA, hCaptcha, Turnstile) ya se reemplazan siempre por una respuesta vacía.
+MANUAL_BLOQUEAR=
 `;
 
 export function readEnv(path) {
@@ -67,7 +70,7 @@ export function ensureGitignore(target, line) {
     return true;
 }
 
-// _manual.md: datos de la portada y del login.
+// _manual.md: datos de la portada y del login. La fecha es opcional: vacía, no se imprime.
 const DATOS_LABELS = { cliente: 'Cliente', razon: 'Razón social', panel: 'Dirección del panel', fecha: 'Fecha' };
 export function datosTemplate({ cliente = '', razon = '', panel = '', fecha = '' }) {
     return `# Manual de administración\n\nDatos de la portada y del login. Se pueden corregir a mano.\n\n${
@@ -80,5 +83,5 @@ export function readDatos(path) {
     return out;
 }
 
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-export const fechaHoy = (d = new Date()) => `${MESES[d.getMonth()]} ${d.getFullYear()}`;
+// Patrones de URL a bloquear en las capturas: los de --bloquear y los de MANUAL_BLOQUEAR.
+export const patronesBloqueo = (...listas) => listas.flatMap((l) => String(l ?? '').split(',')).map((x) => x.trim()).filter(Boolean);

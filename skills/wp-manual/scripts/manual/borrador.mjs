@@ -4,7 +4,10 @@
 import { flatten } from './acf.mjs';
 
 export const PENDIENTE = 'PENDIENTE';
-const KIND_LABEL = { opciones: 'opciones', pagina: 'página', contenido: 'contenido', sitio: 'sitio' };
+const KIND_LABEL = { opciones: 'opciones', pagina: 'página', contenido: 'contenido', sitio: 'sitio', extra: 'extra' };
+
+// `- **Incluir:** no` en la cabecera de un borrador quita ese capítulo del manual.
+export const incluido = (borrador) => !/^(no|false|0)$/i.test(borrador?.meta?.Incluir?.trim() ?? '');
 
 // Textos fijos del capítulo "Menús y logo": son pantallas de WordPress, iguales en todos los proyectos.
 export const RESUMEN_SITIO = {
@@ -30,8 +33,10 @@ function llegarDefault(chapter) {
     if (chapter.kind === 'contenido') {
         return [`En el menú de la izquierda entra a **${chapter.title}**.`, 'Para uno nuevo haz clic en **Añadir nuevo**; para cambiar uno existente, haz clic en su título.'];
     }
-    if (chapter.shared) return ['En el menú de la izquierda entra a **Páginas**.', `Abre cualquiera de estas páginas: ${chapter.pages.map((p) => `**${p}**`).join(', ')}. Todas tienen las mismas secciones.`];
-    return ['En el menú de la izquierda entra a **Páginas**.', `Abre **${chapter.title}**.`, 'Baja: debajo del editor está cada sección, en el mismo orden que en la web.'];
+    const editar = 'y haz clic en **Editar** (aparece al pasar el mouse sobre el nombre).';
+    const bajar = 'Baja: debajo del editor está cada sección, en el mismo orden que en la web.';
+    if (chapter.shared) return ['En el menú de la izquierda entra a **Páginas**.', `Busca cualquiera de estas páginas en la lista: ${chapter.pages.map((p) => `**${p}**`).join(', ')}, ${editar} Todas tienen las mismas secciones.`, bajar];
+    return ['En el menú de la izquierda entra a **Páginas**.', `Busca **${chapter.title}** en la lista ${editar}`, bajar];
 }
 
 // Esqueleto de un capítulo. Si hay un borrador anterior, conserva sus textos y solo agrega lo nuevo.
@@ -45,6 +50,7 @@ export function skeleton(chapter, previous = null) {
         ...(chapter.pages?.length ? [`- **Páginas:** ${chapter.pages.join(', ')}`] : []),
         ...(chapter.group ? [`- **Grupo ACF:** ${chapter.group} (${chapter.groupTitle})`] : []),
         `- **Estado:** ${previous?.meta.Estado ?? 'pendiente'}`,
+        ...(previous?.meta.Incluir ? [`- **Incluir:** ${previous.meta.Incluir}`] : []),
         '',
         '## Cómo llegar',
         '',
@@ -80,22 +86,36 @@ export function parseBorrador(text) {
         }
         const m = /^Sección:\s*(\S+)\s*(?:·\s*(.*))?$/.exec(first.trim());
         if (!m) continue;
+        const meta = (name) => new RegExp(`^- \\*\\*${name}:\\*\\*[ \\t]*(.*)$`, 'm').exec(body)?.[1]?.trim() ?? '';
         const textos = new Map();
-        for (const [, n, , texto] of body.matchAll(/^- \*\*([\w.]+)\*\*\s+(.+?)\s+—\s+(.*)$/gm)) textos.set(n, texto.trim());
+        const labels = new Map();
+        for (const [, n, label, texto] of body.matchAll(/^- \*\*([\w.]+)\*\*\s+(.+?)\s+—\s+(.*)$/gm)) {
+            textos.set(n, texto.trim());
+            labels.set(n, label.replace(/\s*\*$/, '').trim());
+        }
         out.sections[m[1]] = {
             titulo: (m[2] ?? '').trim(),
-            resumen: /^- \*\*Resumen:\*\*[ \t]*(.*)$/m.exec(body)?.[1]?.trim() ?? '',
-            web: /^- \*\*Web:\*\*[ \t]*(.*)$/m.exec(body)?.[1]?.trim() ?? '',
+            resumen: meta('Resumen'),
+            web: meta('Web'),
+            // Solo capítulos extra (escritos a mano): de dónde sale la captura.
+            admin: meta('Admin'),
+            selector: meta('Selector'),
+            captura: meta('Captura'),
             textos,
+            labels,
         };
     }
     return out;
 }
 
-// Texto del borrador a HTML del manual: **negrita**, `código` y nada más (se escapa lo demás).
+// Texto del borrador a HTML del manual: **negrita**, `código` y nada más (se escapa lo demás). Los escapes
+// de Markdown (\*, \|, \~, \_, \\, \`) se respetan: el carácter sale tal cual y no abre negrita ni código.
 export function inline(text) {
+    const literales = [];
     return String(text)
+        .replace(/\\([*|~_\\`])/g, (_, c) => `\u0000${literales.push(c) - 1}\u0000`)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+        .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+        .replace(/\u0000(\d+)\u0000/g, (_, i) => literales[Number(i)]);
 }

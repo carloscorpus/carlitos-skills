@@ -16,7 +16,8 @@ import { parseArgs } from 'node:util';
 import { claudeBlock, fail, skillVersion, toList } from './lib/common.mjs';
 import { parseBorrador, skeleton } from './manual/borrador.mjs';
 import { buildInventory } from './manual/inventario.mjs';
-import { createEnv, datosTemplate, ensureGitignore, envState, fechaHoy, paths } from './manual/proyecto.mjs';
+import { esqueletoEnvios } from './manual/extra.mjs';
+import { createEnv, datosTemplate, ensureGitignore, envState, paths } from './manual/proyecto.mjs';
 
 const skillDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 let args;
@@ -57,12 +58,12 @@ if (!state.url && !dry) {
 report.login = state.filled ? 'automático (.env.manual)' : 'a mano en el navegador';
 report.formato = state.formato ?? 'ambos';
 
-// 2. Datos de la portada.
+// 2. Datos de la portada (la fecha queda vacía: es opcional y Claude pregunta).
 if (!existsSync(P.datos)) {
     const index = join(target, 'specs', '_index.md');
     const cliente = (existsSync(index) && /^# Specs de (.+)$/m.exec(readFileSync(index, 'utf8'))?.[1])
         || /Theme Name:\s*(.+)/.exec(existsSync(join(target, 'style.css')) ? readFileSync(join(target, 'style.css'), 'utf8') : '')?.[1]?.trim() || '';
-    if (!dry) { mkdirSync(P.root, { recursive: true }); writeFileSync(P.datos, datosTemplate({ cliente, fecha: fechaHoy() })); }
+    if (!dry) { mkdirSync(P.root, { recursive: true }); writeFileSync(P.datos, datosTemplate({ cliente })); }
     report.created.push(relative(target, P.datos).replace(/\\/g, '/'));
 }
 
@@ -77,6 +78,17 @@ for (const chapter of inventory.chapters.filter((c) => !wanted.length || wanted.
     if (previous && readFileSync(path, 'utf8').replace(/\r\n/g, '\n') === next) { report.unchanged.push(rel); continue; }
     if (!dry) { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, next); }
     (previous ? report.updated : report.created).push(rel);
+}
+
+// 3b. Envíos guardados de wp-form: capítulo extra ya redactado (se quita con "- **Incluir:** no").
+if (inventory.envios) {
+    const path = P.borrador('extra-envios');
+    const rel = relative(target, path).replace(/\\/g, '/');
+    if (!existsSync(path)) {
+        if (!dry) { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, esqueletoEnvios(inventory.envios.postType)); }
+        report.created.push(rel);
+    }
+    report.propuestas = [`El tema guarda los envíos de wp-form (${inventory.envios.postType}): ${rel} trae el capítulo «Envíos de formularios». Pregunta si va en el manual; si no, pon "- **Incluir:** no".`];
 }
 
 // 4. Bloque en CLAUDE.md del tema (solo si el manual vive en el tema).
