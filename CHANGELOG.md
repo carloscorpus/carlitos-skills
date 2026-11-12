@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.40.0] - 2026-11-11
+
+### Agregado
+- `wp-manual` 1.1.0: correcciones del manual de Copam. Captura web sin blancos en elementos sticky o animados, selector web por plantilla, capturas lisas que se repiten y `check.mjs` marca, imagen web que nunca pisa el texto (con revisión de solapes), `--juntar` para dos secciones cortas en una hoja, capítulos extra escritos a mano (y el de envíos de `wp-form`), `Incluir: no` para quitar capítulos, fecha opcional, «Editar» en «Cómo llegar», escapes de Markdown y `playwright-core` sin capa extra. Detalle en `skills/wp-manual/CHANGELOG.md`.
+
 ## [1.39.0] - 2026-11-08
 
 ### Agregado

@@ -2,7 +2,7 @@
 name: wp-manual
 description: 'Generate the client''s administration manual (PDF) of a WordPress theme whose content is managed with ACF Pro: login, general rules, site options, every page with its numbered fields (1, 2… 7.1, 2.5.1), posts and custom post types, menus and logo. Reads acf-json/ and the design-import/wp-acf specs, Claude drafts the texts in specs/manual/ for the user to review, then it takes read-only screenshots of the local site (admin with numbered fields + the web section as reference) and builds the PDF in landscape (16:9), portrait (A4) or both, plus a separate simple coverage report for the team. Use when the user asks for "manual", "manual de usuario", "manual del cliente", "manual de administración", "manual del admin", "documenta el admin", "cómo se administra la web", or at the end of a project after wp-acf.'
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # wp-manual
@@ -13,9 +13,10 @@ The manual is for the **client**: plain Spanish, the business names (not the cod
 
 | File | Created by | Notes |
 |---|---|---|
-| `.env.manual` (project root) | `init.mjs` (empty) | `MANUAL_URL`, `MANUAL_USER`, `MANUAL_PASS`, `MANUAL_FORMATO`. Added to `.gitignore`. Local credentials only. **Remind the user to delete it at the end.** |
-| `specs/manual/_manual.md` | `init.mjs` | Cover data: client, legal name, real panel address (`https://<domain>/wp-admin`), date |
-| `specs/manual/<chapter>.md` | `init.mjs` (skeleton) + Claude (texts) | One draft per chapter; the user reviews it. Format: [references/borrador.md](references/borrador.md) |
+| `.env.manual` (project root) | `init.mjs` (empty) | `MANUAL_URL`, `MANUAL_USER`, `MANUAL_PASS`, `MANUAL_FORMATO`, optional `MANUAL_BLOQUEAR`. Added to `.gitignore`. Local credentials only. **Remind the user to delete it at the end.** |
+| `specs/manual/_manual.md` | `init.mjs` | Cover data: client, legal name, real panel address (`https://<domain>/wp-admin`), date (optional, empty by default) |
+| `specs/manual/<chapter>.md` | `init.mjs` (skeleton) + Claude (texts) | One draft per chapter; the user reviews it. `- **Incluir:** no` leaves a chapter out. Format: [references/borrador.md](references/borrador.md) |
+| `specs/manual/extra-<name>.md` | Claude or the user (`init.mjs` writes `extra-envios.md` when the theme saves `wp-form` submissions) | Hand-written chapters (`- **Tipo:** extra`) with their own sections and screenshots; they go at the end |
 | `specs/manual/capturas/` | `capture.mjs` | PNG/JPG at 2x and `mapa.json` (the numbers actually seen) |
 | `specs/manual/salida/` | `build.mjs` | `manual-horizontal.pdf`, `manual-vertical.pdf`, `reporte.pdf` (+ their `.html`) |
 
@@ -35,15 +36,20 @@ Every script runs from the theme root (`<skill>` = this skill's folder), prints 
    - `*asteriscos*` / `|barras|` only in the fields marked with highlight (the template prints them with `<prefix>_highlight`), and always explained there;
    - say what fills itself (lists of posts, counters) and what happens when an optional field is empty.
 
-   Fill `Dirección del panel` in `_manual.md` with the real domain (ask the user). With more than five chapters, give each chapter to a subagent (same rules, one draft each). **Show the drafts to the user and wait for their review.**
+   - do not repeat on every chapter that the breadcrumbs are fixed or that header and footer are edited in the options page: Reglas generales already says it once.
+
+   Ask the user, in one message: the real domain for `Dirección del panel` in `_manual.md`; whether the cover shows a date (`Fecha`, empty by default: empty is not printed); whether the client manages **«Menús y logo»** (if not, `- **Incluir:** no` in `sitio.md`); and, when `init.mjs` created `extra-envios.md` (it reports it in `propuestas`), whether the **form submissions** chapter goes in (adjust its general texts to the project's forms, or `- **Incluir:** no`). Any other part the client does not manage can be left out the same way, and a part that ACF does not describe can be added as an `extra-<name>.md` ([references/borrador.md](references/borrador.md)). With more than five chapters, give each chapter to a subagent (same rules, one draft each). **Show the drafts to the user and wait for their review.**
 
 4. **Browser tool.** `capture.mjs` and `build.mjs` need `playwright-core` (not bundled) and Edge or Chrome already installed (they never download a browser). It is taken from the project or from `--playwright-from <folder>`. If `status.mjs` says it is missing, **ask before installing**; recommend a tools folder outside the project (`npm install playwright-core` there, then `--playwright-from <that folder>`), so the theme's `package.json` is not touched. Detail: [references/capturas.md](references/capturas.md).
 
-5. **Screenshots.** `node <skill>/scripts/capture.mjs [--playwright-from <folder>]` (optionally `--chapter <id>`). Read-only. It numbers the fields on the admin screenshot like the draft, collapses extra rows of every list, hides the grey help text, and captures the web reference of each section (at most one screen, reduced motion). When a section of the web is not found (exit JSON `avisos`), add `- **Web:** <css selector>` to that section in the draft and capture that chapter again.
+5. **Screenshots.** `node <skill>/scripts/capture.mjs [--playwright-from <folder>]` (optionally `--chapter <id>`). Read-only. It numbers the fields on the admin screenshot like the draft, collapses extra rows of every list, hides the grey help text, and captures the web reference of each section (at most one screen, with animations off and sticky or hidden elements shown). Captchas get an empty answer; other third parties can be blocked with `--bloquear <part-of-url,…>`. Read the exit JSON `avisos`:
+   - a web section not found, or the same element as another section: add `- **Web:** <css selector>` to that section in the draft and capture that chapter again (`--chapter <id>`);
+   - a flat screenshot (one color) that stayed flat after the automatic retry: capture that chapter again;
+   - `extra-envios` cannot see «Envíos»: only administrators can; run `--chapter extra-envios` with an administrator in `.env.manual`, or put your own images with `- **Captura:**`.
 
-6. **Check.** `node <skill>/scripts/check.mjs`. Errors: missing texts, characters, image wording, highlight where the template does not use it. Warnings: numbers that the screenshot does not show (a list with no rows), sections that no longer exist, what is not covered. Fix the drafts and run it again.
+6. **Check.** `node <skill>/scripts/check.mjs`. Errors: missing texts, characters, image wording, highlight where the template does not use it, flat screenshots, and images over the text measured by the last `build.mjs`. Warnings: numbers that the screenshot does not show (a list with no rows), sections that no longer exist, the same note repeated in 3 chapters or more, what is not covered. Fix the drafts and run it again.
 
-7. **Build.** `node <skill>/scripts/build.mjs [--formato horizontal|vertical|ambos]` (default: `MANUAL_FORMATO` of `.env.manual`, else both). With errors it only writes the report (use `--force` only if the user asks). Look at a few pages of the PDF before handing it over.
+7. **Build.** `node <skill>/scripts/build.mjs [--formato horizontal|vertical|ambos] [--juntar]` (default: `MANUAL_FORMATO` of `.env.manual`, else both). `--juntar` puts two short consecutive sections of a chapter on one page when both stay readable (horizontal only; fewer pages). With errors it only writes the report (use `--force` only if the user asks). The exit JSON lists `solapes` (an image over the text or out of the page): there should be none. Look at a few pages of the PDF before handing it over.
 
 8. **Close.** Give the user the PDF paths and a short summary of `reporte.pdf` (what was not covered and why). **Remind them to delete `.env.manual`.** Do not commit the generated PDFs unless the user asks.
 

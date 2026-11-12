@@ -94,19 +94,52 @@ export function highlightMap(target, prefix) {
     return map;
 }
 
+// Selector CSS del elemento raíz de una sección en la web, leído de su plantilla (el PHP que llama
+// get_field('<sección>')): `#id`, luego un atributo data-, luego `etiqueta.clase`. null si no se puede.
+// Así la referencia web no depende de la posición de la sección dentro de <main>.
+export function selectorDePlantilla(files, sectionName) {
+    const llamada = new RegExp(`get_field\\(\\s*['"]${sectionName}['"]`);
+    for (const { code } of files) {
+        if (!llamada.test(code)) continue;
+        const html = code.replace(/<\?(?:php|=)[\s\S]*?(?:\?>|$)/g, ' ');
+        const tag = /<([a-z][\w-]*)\b([^>]*)>/i.exec(html);
+        if (!tag) continue;
+        const [, name, attrs] = tag;
+        const attr = (re) => re.exec(attrs)?.[1];
+        const id = attr(/\bid\s*=\s*["']([\w-]+)["']/);
+        if (id) return `#${id}`;
+        const data = /\b(data-[\w-]+)(?:\s*=\s*["']([^"'<>]*)["'])?/.exec(attrs);
+        if (data) return data[2] !== undefined ? `${name}[${data[1]}="${data[2]}"]` : `${name}[${data[1]}]`;
+        const clase = attr(/\bclass\s*=\s*["']([^"']+)["']/)?.split(/\s+/).find((c) => /^[a-z][\w-]*$/i.test(c) && !/^(relative|flex|grid|block|container|mx-auto|w-full|py-|px-)/.test(c));
+        if (clase) return `${name}.${clase}`;
+    }
+    return null;
+}
+
+// Envíos guardados de wp-form (inc/forms-entries.php): el tipo de contenido donde se guardan, o null.
+export function detectarEnvios(files) {
+    for (const { code } of files) {
+        if (!/register_post_type\(\s*\w+_ENTRY_TYPE/.test(code)) continue;
+        const type = /const\s+\w+_ENTRY_TYPE\s*=\s*['"]([\w-]+)['"]/.exec(code)?.[1] ?? /define\(\s*['"]\w+_ENTRY_TYPE['"]\s*,\s*['"]([\w-]+)['"]/.exec(code)?.[1];
+        if (type) return { postType: type };
+    }
+    return null;
+}
+
 // Capítulos del manual y lo que queda sin cubrir.
 export function buildInventory(target) {
     const theme = detectTheme(target);
     const acf = readAcfJson(join(target, 'acf-json'));
     const { pages, source } = readPages(target);
     const highlights = highlightMap(target, theme.prefix);
+    const files = phpFiles(target).map((path) => ({ path, code: readFileSync(path, 'utf8') }));
     const chapters = [];
     const uncovered = [];
 
     const withHighlights = (sections) => sections.map((section) => {
         const keys = highlights.get(section.name) ?? new Set();
         const mark = (items) => items.map((f) => ({ ...f, highlight: keys.has(f.name), sub: f.sub ? mark(f.sub) : undefined }));
-        return { ...section, fields: mark(section.fields) };
+        return { ...section, fields: mark(section.fields), webSelector: selectorDePlantilla(files, section.name) };
     });
     const chapterOf = (props, group) => {
         const sections = withHighlights(sectionsOf(group)).filter((s) => s.fields.length);
@@ -180,7 +213,7 @@ export function buildInventory(target) {
     }
 
     // Menús y logo: solo si el tema registra menús o el logo personalizado.
-    const code = phpFiles(target).filter((p) => !p.includes(`${join('template-parts')}`)).map((p) => readFileSync(p, 'utf8')).join('\n');
+    const code = files.filter((f) => !f.path.includes(`${join('template-parts')}`)).map((f) => f.code).join('\n');
     const sitio = [];
     if (/register_nav_menus?\s*\(/.test(code)) sitio.push({ name: 'menus', label: 'Menús', fields: [], admin: 'nav-menus.php' });
     if (/add_theme_support\(\s*['"]custom-logo['"]/.test(code)) sitio.push({ name: 'identidad', label: 'Logo e ícono del sitio', fields: [], admin: 'customize.php?autofocus[section]=title_tagline' });
@@ -199,7 +232,7 @@ export function buildInventory(target) {
         return Number.isFinite(i) ? i : 9999;
     };
     chapters.sort((a, b) => order[a.kind] - order[b.kind] || rank(a) - rank(b));
-    return { target, prefix: theme.prefix, pagesSource: source, chapters, uncovered };
+    return { target, prefix: theme.prefix, pagesSource: source, chapters, uncovered, envios: detectarEnvios(files) };
 }
 
 export const relativeTo = (target, path) => relative(target, path).replace(/\\/g, '/');

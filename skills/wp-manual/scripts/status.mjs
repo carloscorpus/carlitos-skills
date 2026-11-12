@@ -8,7 +8,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { fail } from './lib/common.mjs';
-import { PENDIENTE } from './manual/borrador.mjs';
+import { PENDIENTE, incluido, parseBorrador } from './manual/borrador.mjs';
+import { allChapters } from './manual/extra.mjs';
 import { buildInventory } from './manual/inventario.mjs';
 import { findPlaywright, installCommand } from './manual/navegador.mjs';
 import { envState, paths, readDatos } from './manual/proyecto.mjs';
@@ -36,24 +37,27 @@ const pw = await findPlaywright([args['playwright-from'], target, process.cwd()]
 const mapa = existsSync(P.mapa) ? JSON.parse(readFileSync(P.mapa, 'utf8')) : null;
 const datos = readDatos(P.datos);
 
-const chapters = inventory.chapters.map((c) => {
+const chapters = (acfJson ? allChapters(inventory, P.root) : []).map((c) => {
     const path = P.borrador(c.id);
     const text = existsSync(path) ? readFileSync(path, 'utf8') : null;
     return {
         id: c.id, kind: c.kind, title: c.title, sections: c.sections.length, fields: c.fields, shared: Boolean(c.shared),
+        incluido: text === null || incluido(parseBorrador(text)),
         borrador: text === null ? 'falta' : text.includes(PENDIENTE) ? `${(text.match(new RegExp(PENDIENTE, 'g')) ?? []).length} pendientes` : 'redactado',
         capturas: Boolean(mapa?.capitulos?.[c.id]),
     };
 });
 
+const activos = chapters.filter((c) => c.incluido);
 const next = [];
 if (!acfJson) next.push('El tema no tiene acf-json/: el manual necesita los campos de ACF (wp-acf).');
 else if (!env.exists || !env.url) next.push('Correr init.mjs: crea .env.manual; la persona lo llena (MANUAL_URL del sitio local).');
 else if (chapters.some((c) => c.borrador === 'falta')) next.push('Correr init.mjs para crear los borradores que faltan.');
-else if (chapters.some((c) => c.borrador !== 'redactado')) next.push('Redactar los borradores (references/redaccion.md) y que la persona los revise.');
+else if (activos.some((c) => c.borrador !== 'redactado')) next.push('Redactar los borradores (references/redaccion.md) y que la persona los revise.');
 if (acfJson && env.url && !pw) next.push(`Falta playwright-core: ${installCommand(args['playwright-from'] ?? target)} (preguntar antes; mejor en una carpeta fuera del proyecto con --playwright-from).`);
-if (acfJson && env.url && pw && chapters.some((c) => !c.capturas)) next.push('Correr capture.mjs.');
-if (mapa && chapters.every((c) => c.borrador === 'redactado')) next.push('Correr check.mjs y luego build.mjs.');
+if (acfJson && env.url && pw && activos.some((c) => !c.capturas)) next.push('Correr capture.mjs.');
+if (mapa && activos.every((c) => c.borrador === 'redactado')) next.push('Correr check.mjs y luego build.mjs.');
+if (inventory.envios && !existsSync(P.borrador('extra-envios'))) next.push(`El tema guarda los envíos de wp-form (${inventory.envios.postType}): correr init.mjs crea el capítulo extra-envios.md; preguntar si va en el manual.`);
 if (!datos.panel) next.push('Completar "Dirección del panel" en _manual.md (dominio real del sitio + /wp-admin).');
 
 console.log(JSON.stringify({
@@ -67,6 +71,8 @@ console.log(JSON.stringify({
     carpeta: P.root,
     datos,
     chapters,
+    omitidos: chapters.filter((c) => !c.incluido).map((c) => c.id),
+    envios: inventory.envios ?? null,
     uncovered: inventory.uncovered,
     salida: ['manual-horizontal.pdf', 'manual-vertical.pdf', 'reporte.pdf'].filter((f) => existsSync(join(P.salida, f))),
     next,
