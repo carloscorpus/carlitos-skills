@@ -80,8 +80,20 @@ export function relationContents(description) {
     return list ? list.split(',').map((name) => unwrap(name.trim())).filter(Boolean) : [];
 }
 
-// El tipo de WordPress de un contenido de "Contenido dinámico": cpt = su nombre, post = 'post', woo = 'product'.
-export const postTypeOf = (row) => (row.origin === 'cpt' ? row.name : row.origin === 'woo' ? 'product' : 'post');
+// El tipo de WordPress de un contenido de "Contenido dinámico": cpt y plugin = su nombre, post = 'post', woo = 'product'.
+// `plugin`: el tipo lo registra un plugin (cursos, lecciones): sirve para relationship y Ubicación, pero no se genera.
+export const postTypeOf = (row) => (['cpt', 'plugin'].includes(row.origin) ? row.name : row.origin === 'woo' ? 'product' : 'post');
+
+// Los orígenes cuyo tipo de contenido y taxonomías no genera wp-acf: los registra WooCommerce o un plugin.
+const EXTERNAL_ORIGINS = new Set(['woo', 'plugin']);
+
+const isNone = (value) => /^ningun[oa]$/i.test(unwrap(value ?? ''));
+
+// Secciones de una página que son un grupo de ACF.
+export const groupedSections = (page) => page.sections.filter((s) => s.state !== 'descartado' && s.group && s.group !== 'ninguno');
+
+// Una página sin campos ("Grupo ACF: ninguno", "Ubicación: ninguna" o ninguna sección con grupo) no tiene grupo de ACF.
+export const hasFields = (page) => !isNone(page.labels['Grupo ACF']) && !isNone(page.labels.Ubicación) && groupedSections(page).length > 0;
 
 // Un relationship elige entradas de los contenidos que nombra su descripción ("Contenido: producto").
 // Devuelve IDs: la plantilla los recorre sin consultas propias. "Máximo: n" / "Mínimo: n" limitan cuántas se eligen.
@@ -310,6 +322,7 @@ function buildSection(section, errors, file, ctx) {
 // "tipo de contenido = comunicado".
 export function locationFor(text, dynamic) {
     const value = unwrap(text ?? '').trim();
+    if (isNone(value)) return { none: true };
     if (/^p[aá]gina de inicio/i.test(value)) return { rule: { param: 'page_type', operator: '==', value: 'front_page' } };
     if (/^p[aá]gina de entradas/i.test(value)) return { rule: { param: 'page_type', operator: '==', value: 'posts_page' } };
     const template = /^plantilla\s+(\S+)/i.exec(value);
@@ -324,16 +337,43 @@ export function locationFor(text, dynamic) {
     if (content) {
         const row = dynamic.find((r) => r.name === content);
         if (!row) return { error: `La ubicación nombra el contenido "${content}" que no está en "Contenido dinámico" de _shared.md.` };
-        return { rule: { param: 'post_type', operator: '==', value: row.origin === 'cpt' ? row.name : 'post' }, content };
+        return { rule: { param: 'post_type', operator: '==', value: postTypeOf(row) }, content };
     }
-    return { error: `Ubicación no reconocida: "${value}". Usa página de inicio, página de entradas, plantilla <archivo>, página de opciones: <nombre> o tipo de contenido = <contenido>.` };
+    return { error: `Ubicación no reconocida: "${value}". Usa página de inicio, página de entradas, plantilla <archivo>, página de opciones: <nombre>, tipo de contenido = <contenido> o ninguna (página sin campos).` };
 }
 
 // ---------- Todo junto ----------
 
 const OPTIONS_PARENT = 'ajustes-del-sitio';
 
-export function buildAll({ pages, dynamic }) {
+// "URL: /soluciones-de-sueno/" (listado) o "URL: /soluciones-de-sueno/<slug>/" (detalle) -> { archive } o { single }.
+export function contentUrl(text) {
+    const value = unwrap(text ?? '').trim();
+    const single = /^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/<slug>\/?$/.exec(value);
+    if (single) return { single: single[1] };
+    const archive = /^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/.exec(value);
+    if (archive) return { archive: archive[1] };
+    return { error: `URL "${value}" no válida: usa /<base>/ en el listado o /<base>/<slug>/ en el detalle (minúsculas, números y guiones, un solo segmento).` };
+}
+
+// Las URL de un contenido, de los specs que lo tienen como "Contenido" y traen "URL" (de cualquier estado: la URL
+// del tipo de contenido es una sola). Devuelve { archive, single } (vacíos = la de WordPress).
+function urlsOf(name, specs, errors) {
+    const out = { archive: '', single: '' };
+    for (const page of specs) {
+        if (unwrap(page.labels.Contenido ?? '') !== name || !page.labels.URL) continue;
+        const url = contentUrl(page.labels.URL);
+        if (url.error) { errors.push({ file: page.file, message: url.error }); continue; }
+        for (const kind of ['archive', 'single']) {
+            if (!url[kind]) continue;
+            if (out[kind] && out[kind] !== url[kind]) errors.push({ file: page.file, message: `URL: otro spec de "${name}" ya usa /${out[kind]}/.` });
+            else out[kind] = url[kind];
+        }
+    }
+    return out;
+}
+
+export function buildAll({ pages, dynamic, all = pages }) {
     const errors = [];
     const groups = [];
     const options = new Map();
@@ -349,6 +389,16 @@ export function buildAll({ pages, dynamic }) {
     }
 
     for (const page of pages) {
+        if (!hasFields(page)) {
+            // "ninguna" con secciones que tienen grupo perdería esos campos en silencio.
+            const grouped = groupedSections(page);
+            if (grouped.length && (isNone(page.labels['Grupo ACF']) || isNone(page.labels.Ubicación))) {
+                errors.push({ file: page.file, message: `La página dice "Grupo ACF: ninguno" o "Ubicación: ninguna" pero tiene secciones con grupo (${grouped.map((s) => s.group).join(', ')}): pon "Grupo: ninguno" en ellas o una Ubicación.` });
+            }
+            const content = unwrap(page.labels.Contenido ?? '');
+            if (content && content !== 'ninguno') used.add(content);
+            continue;
+        }
         const location = locationFor(page.labels.Ubicación, dynamic);
         if (location.error) { errors.push({ file: page.file, message: location.error }); continue; }
         if (location.options) options.set(location.options.slug, location.options);
@@ -356,11 +406,7 @@ export function buildAll({ pages, dynamic }) {
         const content = unwrap(page.labels.Contenido ?? '');
         if (content && content !== 'ninguno') used.add(content);
 
-        const fields = [];
-        for (const section of page.sections) {
-            if (section.state === 'descartado' || !section.group || section.group === 'ninguno') continue;
-            fields.push(buildSection(section, errors, page.file, { dynamic, used, allNames }));
-        }
+        const fields = groupedSections(page).map((section) => buildSection(section, errors, page.file, { dynamic, used, allNames }));
         groups.push({
             page: page.slug,
             json: {
@@ -388,7 +434,7 @@ export function buildAll({ pages, dynamic }) {
     const taxonomies = [];
     const warnings = [];
     for (const row of dynamic) {
-        if (row.origin === 'woo') continue;
+        if (EXTERNAL_ORIGINS.has(row.origin)) continue;
         if (!used.has(row.name)) {
             // Sin ninguna página que lo use no se genera nada. Un contenido de blog sin taxonomías propias no tiene nada que generar.
             const unused = row.taxonomies.filter((tax) => !tax.native).map((tax) => tax.key);
@@ -409,8 +455,10 @@ export function buildAll({ pages, dynamic }) {
                 continue;
             }
             const { singular, plural } = labelsEs(row.name);
+            const urls = urlsOf(row.name, all, errors);
             postTypes.push({
                 content: row.name,
+                urls,
                 json: {
                     key: keyOf('post_type', row.name),
                     title: plural,
@@ -448,8 +496,8 @@ export function buildAll({ pages, dynamic }) {
                     supports: ['title', 'editor', 'thumbnail'],
                     taxonomies: own.map((tax) => tax.key),
                     has_archive: true,
-                    has_archive_slug: '',
-                    rewrite: { permalink_rewrite: 'post_type_key', slug: '', feeds: false, pages: true, with_front: true },
+                    has_archive_slug: urls.archive,
+                    rewrite: { permalink_rewrite: urls.single ? 'custom_permalink' : 'post_type_key', slug: urls.single, feeds: false, pages: true, with_front: true },
                     query_var: 'post_type_key',
                     query_var_name: '',
                     can_export: true,

@@ -25,16 +25,18 @@ One `group_*.json` per page spec with the state asked for (`--states`, default `
 | `página de entradas (posts page)` | `page_type == posts_page` (the blog list page; the engine creates it and sets it in Settings > Reading) |
 | `plantilla pages/template-x.php` | `page_template == pages/template-x.php` |
 | `página de opciones: Ajustes del sitio` | `options_page == ajustes-del-sitio` (and the options page is generated) |
-| `tipo de contenido = producto` | `post_type == producto` (`post` when the content's origin is `post`) |
+| `tipo de contenido = producto` | `post_type == producto` (`post` when the content's origin is `post`, `product` when `woo`) |
+| `ninguna` (with `Grupo ACF: ninguno`) | no group: the page has no fields (login, account, cart) |
 
-Any other text is an error: fix the spec.
+Any other text is an error: fix the spec. A page with `Grupo ACF: ninguno`, `Ubicación: ninguna` or no section with a group gets no `group_*.json`; saying `ninguna` while a section has a group is an error (its fields would be lost).
 
 ## Content types and taxonomies
 
 From the "Contenido dinámico" table of `_shared.md`, only for contents used by a page that is being generated (its `Contenido`, its `Ubicación` or a `relationship` field that picks from it):
 
 - Origin `cpt` → `post_type_*.json`: key = the content name (up to 20 characters, lowercase, digits, `_` or `-`), Spanish labels from the name (`producto` → Producto / Productos), `supports` title, editor and thumbnail, archive on, REST on, the taxonomies listed in the table. The editor can change labels, icon and supports in the ACF admin.
-- Origin `post` (the blog) registers no content type; origin `woo` is ignored.
+- The spec's `URL` sets the addresses: `URL: /soluciones-de-sueno/` in the list → `has_archive_slug`, `URL: /soluciones-de-sueno/<slug>/` in the detail → `rewrite.slug` (with `permalink_rewrite: custom_permalink`). It is read from every spec with that `Contenido`, whatever its state. Without it, the content's key is the address. An invalid URL is exit code `4`; `check.mjs` warns when the JSON has other addresses.
+- Origin `post` (the blog) registers no content type; origins `woo` and `plugin` (a type a plugin registers, such as `curso`) are not generated, nor their taxonomies, but they work in `relationship`, `post_object` and `Ubicación` with the content's name as `post_type`.
 - Each taxonomy named between backticks in the "Taxonomías" cell → `taxonomy_*.json` (hierarchical when the cell says "jerárquica"; `category` and `post_tag` are native and are not generated). The terms listed after the colon are the example terms: the seed file creates them.
 
 ## Options pages
@@ -45,8 +47,12 @@ Every `página de opciones: <Name>` in a `Ubicación` produces `ui_options_page_
 
 The WordPress pages the engine creates: every static page (`Tipo: estática`) with the state asked for. The page whose template is `front-page.php` is `inicio` and becomes the front page; the others use their slug and `pages/template-<slug>.php`. Lists, details and the options spec are not pages. The file is regenerated whole each time, never a conflict.
 
+- `Página WP: ninguna`: the spec is not a page (a view of `/cuenta/`, `/administrador/`).
+- `Página WP: <slug>`: the page is created with that slug (`'slug' => 'cuenta'`); the key stays the spec's slug, so seeds (`'page'`) and menus (`'pagina'`) still name the spec. Two specs with the same final slug are exit code `4`.
+- A template under `woocommerce/` (cart, checkout, thank-you) is not a page unless `Página WP` says a slug: WooCommerce creates those pages.
+
 A page with `Padre: <slug>` gets `'padre' => '<slug>'` and is listed after its parent. The engine creates it under the parent (`/servicios/diseno-web/`); if a page with that slug already sits at the top level (made by an engine before 1.3.0), it is moved under the parent without touching its content, and the report says `ahora cuelga de <slug>`. A parent that is not generated with the same states (`--states`) or a cycle is exit code `4`.
 
 ## Conflicts
 
-A file in `acf-json/` that already exists and is different (usually saved from the ACF admin, which rewrites it) is a conflict: ask the user, then `--overwrite <file>` or `--skip <file>`. `orphans` lists JSON files that no spec produces; they are never deleted.
+A file equal to the new one except for line endings (CRLF from git on Windows) is `unchanged`: not a conflict and not rewritten. A file in `acf-json/` that already exists and is different (usually saved from the ACF admin, which rewrites it) is a conflict: ask the user, then `--overwrite <file>` or `--skip <file>`. `orphans` lists JSON files that no spec produces; they are never deleted.

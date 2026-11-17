@@ -2,6 +2,12 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.41.0] - 2026-11-17
+
+### Agregado
+- `wp-acf` 1.13.0: páginas sin campos (`Ubicación: ninguna`), `Página WP` (`ninguna` o un slug) para decidir qué páginas se crean, `Origen: plugin` para tipos que registra un plugin, `URL` del listado y del detalle en el tipo de contenido; las plantillas de `woocommerce/` ya no son páginas, sin conflictos falsos por CRLF y el motor respeta el `custom-logo` del tema. Detalle en `skills/wp-acf/CHANGELOG.md`.
+- `design-import` 1.18.0: acepta `Origen: plugin` y documenta `Ubicación: ninguna`, `Página WP` y `URL`. Detalle en `skills/design-import/CHANGELOG.md`.
+
 ## [1.40.0] - 2026-11-11
 
 ### Agregado

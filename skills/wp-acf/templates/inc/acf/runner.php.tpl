@@ -38,11 +38,13 @@ function {{PREFIX}}_acf_setup_site()
         register_nav_menus($locations);
     }
 
-    if (!empty($site['logo'])) {
+    // Si el tema ya declaró custom-logo (con sus medidas, en inc/setup.php) no se vuelve a declarar: lo pisaría.
+    if (!empty($site['logo']) && !current_theme_supports('custom-logo')) {
         add_theme_support('custom-logo');
     }
 }
-add_action('after_setup_theme', '{{PREFIX}}_acf_setup_site');
+// Prioridad 20: corre después del setup del tema (10), así ve su custom-logo.
+add_action('after_setup_theme', '{{PREFIX}}_acf_setup_site', 20);
 
 // ---------- Utilidades ----------
 

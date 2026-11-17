@@ -37,7 +37,7 @@ const STATES = ['pendiente', 'aprobado', 'descartado', 'aplicado'];
 const ACF_STATES = ['pendiente', 'conectado'];
 const PAGE_LABELS = ['Resumen', 'Fuente', 'Plantilla', 'Secciones (en orden)', 'Skills usadas', 'Notas de página', 'Estado'];
 const PAGE_TYPES = ['estática', 'listado', 'detalle', 'global'];
-const ORIGINS = ['post', 'cpt', 'woo'];
+const ORIGINS = ['post', 'cpt', 'woo', 'plugin'];
 const SCOPES = ['estática', 'blog', 'catálogo', 'woocommerce', 'otro'];
 const SECTION_LABELS = ['Origen', 'Destino', 'Skill', 'Comportamiento', 'Estado'];
 const FIELD_TYPES = new Set([
@@ -147,7 +147,7 @@ else {
         if (!/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/.test(rawName)) error('_shared.md', `${where}: el nombre va en snake_case, sin tildes.`);
         else if (dynamicContent.has(rawName)) error('_shared.md', `${where}: contenido repetido.`);
         else dynamicContent.set(rawName, origin);
-        if (!ORIGINS.includes(origin)) error('_shared.md', `${where}: Origen "${origin}" debe ser post, cpt o woo.`);
+        if (!ORIGINS.includes(origin)) error('_shared.md', `${where}: Origen "${origin}" debe ser post, cpt, woo o plugin.`);
         for (const [label, value] of [['Filtros', filters], ['Plantillas', templates], ['Acción', action]]) {
             if (!value) error('_shared.md', `${where}: falta "${label}" (usa "ninguno" si no aplica).`);
         }

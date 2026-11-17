@@ -441,6 +441,7 @@ try {
         assert.match(messages(broken('tipo', edit('specs/productos.md', '**Tipo:** listado', '**Tipo:** tienda'))), /Tipo inválido/);
         assert.match(messages(broken('estatica', edit('specs/home.md', '**Contenido:** ninguno', '**Contenido:** producto'))), /lleva "Contenido: ninguno"/);
         assert.match(messages(broken('origen', edit('specs/_shared.md', '| cpt |', '| tienda |'))), /Origen "tienda"/);
+        assert.ok(!/Origen/.test(messages(broken('origen-plugin', edit('specs/_shared.md', '| cpt |', '| plugin |')))), 'un tipo de contenido de un plugin es un origen válido');
         assert.match(messages(broken('accion', edit('specs/_shared.md', '| WhatsApp con "Hola, me interesa {producto}"; número en un campo global |', '|  |'))), /falta "Acción"/);
         assert.match(messages(broken('alcance', edit('specs/_shared.md', '| productos.html | catálogo | producto |', '| productos.html | catálogo | ninguno |'))), /necesita un Contenido/);
         assert.match(messages(broken('alcance-2', edit('specs/_shared.md', '| productos.html | catálogo | producto |', '| productos.html | tienda | producto |'))), /"Qué es" debe ser/);

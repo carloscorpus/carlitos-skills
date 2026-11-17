@@ -20,7 +20,7 @@ For each non-static answer, ask the rest of the row: content type and its name (
 
 | Documented in the spec | Not done by this skill |
 |---|---|
-| Content type name and origin (`post`, `cpt`, `woo`), existing or new | Registering the content type or taxonomies |
+| Content type name and origin (`post`, `cpt`, `woo`, or `plugin` when a plugin already registers it, such as `curso`), existing or new | Registering the content type or taxonomies |
 | Taxonomies, hierarchy, example terms | Creating the terms |
 | Fields per item (as an ACF group located on the content type) | Creating the fields |
 | Filters the design shows, as markup, and the list's "Filtros" table (type, source, multiple values, counts, view) | Filtering (query vars, updating without reload), search, sort, pagination logic: that is wp-query |
@@ -33,6 +33,10 @@ One content type usually needs two specs, named after the content so the field p
 
 - **List** (`productos.md`): `Tipo: listado`, `Contenido: producto`, template `archive-producto.php` (or `home.php` / `archive.php` for posts, the shop template for Woo). Sections: heading/intro, filters, grid, pagination. `Ubicación`: where the page's own fields live; an archive has no editing screen, so the default is `página de opciones: archivo de <contenido>`, or the real page if the project uses one as the shop page. Fields describe the page text (title, intro), never the items.
 - **Detail** (`producto.md`): `Tipo: detalle`, same `Contenido`, template `single-producto.php`. `Ubicación: tipo de contenido = producto`. Fields are what each item stores (`producto_ficha_precio`, `producto_galeria_imagenes`). The title, content and featured image are WordPress's own and are not fields.
+
+When the address is not the content's key (`/soluciones-de-sueno/` for `solucion`), the list says `URL: /soluciones-de-sueno/` and the detail `URL: /soluciones-de-sueno/<slug>/` (see `formato-spec.md`).
+
+`Origen: plugin` is a content type a plugin registers (courses, lessons of an LMS): it is used by `relationship` fields, `Ubicación: tipo de contenido = <contenido>` and lists, but wp-acf generates neither it nor its taxonomies.
 
 Taxonomy archives (`taxonomy-categoria_producto.php`) reuse the list sections and need no spec of their own; note them in `Notas de página`.
 
