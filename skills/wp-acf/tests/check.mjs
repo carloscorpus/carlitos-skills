@@ -774,6 +774,109 @@ try {
         assert.match(messages(bad), /Ubicación no reconocida/);
     });
 
+    // ---------- 1.13.0: páginas sin campos, Página WP, Origen plugin, CRLF y URL ----------
+
+    // Una página estática aplicada sin campos (acceso, carrito…): `labels` se agregan al resumen.
+    const plainPage = (slug, template, extra = '') => (dir) => {
+        writeFileSync(join(dir, `specs/${slug}.md`), [
+            `# Página: ${slug}`, '', `- **Plantilla:** \`${template}\``, '- **Tipo:** estática', '- **Contenido:** ninguno',
+            '- **Grupo ACF:** ninguno', '- **Ubicación:** ninguna', ...(extra ? [extra] : []), '- **Estado:** aplicado', '',
+        ].join('\n'));
+        change('specs/_index.md', '<!-- design-import:paginas:fin -->', `| ${slug} | [${slug}.md](${slug}.md) | \`${template}\` | aplicado |\n<!-- design-import:paginas:fin -->`)(dir);
+    };
+
+    test('generate y check: una página sin campos (Ubicación: ninguna) no tiene grupo pero sí es página', () => {
+        const dir = theme(plainPage('acceso', 'pages/template-acceso.php'));
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        assert.ok(!r.json.files.some((f) => f.kind === 'group' && f.name === 'acceso'));
+        assert.match(readFileSync(join(dir, 'inc/acf/paginas.php'), 'utf8'), /'acceso' => \[.*'slug' => 'acceso'/);
+        const c = run('check.mjs', ['--target', dir]);
+        assert.ok(!/acceso/.test(messages(c)), c.stdout);
+        const mixed = run('generate.mjs', ['--target', theme(change('specs/home.md', 'página de inicio (front page)', 'ninguna')), '--dry-run']);
+        assert.equal(mixed.code, 4, mixed.stdout);
+        assert.match(messages(mixed), /tiene secciones con grupo \(home_hero/);
+    });
+
+    test('generate: Página WP ninguna, otro slug y las plantillas de woocommerce/ en paginas.php', () => {
+        const dir = theme(all(
+            plainPage('usuario-panel', 'pages/template-cuenta.php', '- **Página WP:** cuenta'),
+            plainPage('usuario-pedidos', 'pages/template-cuenta.php', '- **Página WP:** ninguna'),
+            plainPage('carrito', 'woocommerce/cart/cart.php'),
+        ));
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        const php = readFileSync(join(dir, 'inc/acf/paginas.php'), 'utf8');
+        assert.match(php, /'usuario-panel' => \[.*'slug' => 'cuenta', .*'plantilla' => 'pages\/template-cuenta\.php'/);
+        assert.ok(!php.includes("'usuario-pedidos'"), 'Página WP: ninguna no es página');
+        assert.ok(!php.includes("'carrito'"), 'WooCommerce crea el carrito');
+        const twice = run('generate.mjs', ['--target', theme(all(
+            plainPage('usuario-panel', 'pages/template-cuenta.php', '- **Página WP:** cuenta'),
+            plainPage('usuario-datos', 'pages/template-cuenta.php', '- **Página WP:** cuenta'),
+        )), '--dry-run']);
+        assert.equal(twice.code, 4, twice.stdout);
+        assert.match(messages(twice), /el slug "cuenta" ya lo usa usuario-(?:panel|datos)\.md/);
+        const orphan = run('generate.mjs', ['--target', theme(all(
+            plainPage('usuario-pedidos', 'pages/template-cuenta.php', '- **Página WP:** ninguna'),
+            plainPage('usuario-detalle', 'pages/template-cuenta.php', '- **Padre:** usuario-pedidos'),
+        )), '--dry-run']);
+        assert.equal(orphan.code, 4, orphan.stdout);
+        assert.match(messages(orphan), /Padre "usuario-pedidos": no se crea como página de WordPress/);
+    });
+
+    test('generate: un contenido de Origen plugin sirve al relationship pero no genera su tipo ni sus taxonomías', () => {
+        const dir = theme(all(
+            change('specs/_shared.md', '| producto | cpt |', '| curso | plugin | `nivel` (jerárquica: Básico) | — | ninguno | — | — |\n| producto | cpt |'),
+            relRow('Cursos de la portada. Contenido: curso'),
+        ));
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        const field = readJson(dir, r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel).fields[0].sub_fields.find((f) => f.name === 'destacados');
+        assert.deepEqual(field.post_type, ['curso']);
+        assert.deepEqual(r.json.postTypes, ['producto']);
+        assert.ok(!r.json.taxonomies.includes('nivel'));
+        assert.ok(!r.json.warnings.some((w) => /curso/.test(w.message)), 'tampoco avisa');
+    });
+
+    test('generate: un JSON igual pero con CRLF no es conflicto ni se reescribe', () => {
+        const { dir, r } = generated();
+        const rel = r.json.files.find((f) => f.kind === 'group' && f.name === 'home').rel;
+        const crlf = readFileSync(join(dir, rel), 'utf8').replace(/\n/g, '\r\n');
+        writeFileSync(join(dir, rel), crlf);
+        const again = run('generate.mjs', ['--target', dir]);
+        assert.equal(again.code, 0, again.stdout);
+        assert.ok(again.json.unchanged.includes(rel));
+        assert.equal(readFileSync(join(dir, rel), 'utf8'), crlf, 'no se toca');
+    });
+
+    test('generate y check: URL del listado y del detalle van al tipo de contenido', () => {
+        const withUrls = all(
+            change('specs/productos.md', '- **Grupo ACF:** Productos', '- **Grupo ACF:** Productos\n- **URL:** /tienda/'),
+            change('specs/producto.md', '- **Grupo ACF:** Producto', '- **Grupo ACF:** Producto\n- **URL:** /tienda/<slug>/'),
+        );
+        const dir = theme(withUrls);
+        const r = run('generate.mjs', ['--target', dir]);
+        assert.equal(r.code, 0, r.stdout);
+        const json = readJson(dir, r.json.files.find((f) => f.kind === 'post_type').rel);
+        assert.equal(json.has_archive_slug, 'tienda');
+        assert.deepEqual([json.rewrite.permalink_rewrite, json.rewrite.slug], ['custom_permalink', 'tienda']);
+        const plain = generated();
+        const before = readJson(plain.dir, plain.r.json.files.find((f) => f.kind === 'post_type').rel);
+        assert.deepEqual([before.has_archive_slug, before.rewrite.permalink_rewrite, before.rewrite.slug], ['', 'post_type_key', ''], 'sin URL, como antes');
+        withUrls(plain.dir);
+        const c = run('check.mjs', ['--target', plain.dir]);
+        assert.match((c.json?.warnings ?? []).map((w) => w.message).join('\n'), /Las URL de "producto" no coinciden/);
+        const bad = run('generate.mjs', ['--target', theme(change('specs/producto.md', '- **Grupo ACF:** Producto', '- **Grupo ACF:** Producto\n- **URL:** /Tienda/x/<slug>/')), '--dry-run']);
+        assert.equal(bad.code, 4, bad.stdout);
+        assert.match(messages(bad), /URL "\/Tienda\/x\/<slug>\/" no válida/);
+    });
+
+    test('install: el motor no vuelve a declarar custom-logo si el tema ya lo hizo', () => {
+        const engine = readFileSync(join(skillDir, 'templates/inc/acf/runner.php.tpl'), 'utf8');
+        assert.match(engine, /!current_theme_supports\('custom-logo'\)/);
+        assert.match(engine, /add_action\('after_setup_theme', '\{\{PREFIX\}\}_acf_setup_site', 20\)/);
+    });
+
     // ---------- install ----------
     const bare = () => theme((dir) => {
         rmSync(join(dir, 'inc'), { recursive: true });

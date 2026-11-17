@@ -34,7 +34,7 @@ return [
 
 ## Logo
 
-`'logo'` is a file of the theme (`assets/img/…`). The engine uploads it once and sets it as the Customizer logo, and the theme declares `add_theme_support('custom-logo')`. Print it in the header with `the_custom_logo()` or `wp_get_attachment_image(get_theme_mod('custom_logo'), …)`, through the image helper when the design needs a specific markup. An SVG is rejected by WordPress unless a plugin allows it: the engine reports it and the client uploads it in Customizer; tell the user.
+`'logo'` is a file of the theme (`assets/img/…`). The engine uploads it once and sets it as the Customizer logo, and declares `add_theme_support('custom-logo')` only when the theme has not (it runs after the theme's setup, priority 20): the sizes the theme gives in `inc/setup.php` are kept. Print it in the header with `the_custom_logo()` or `wp_get_attachment_image(get_theme_mod('custom_logo'), …)`, through the image helper when the design needs a specific markup. An SVG is rejected by WordPress unless a plugin allows it: the engine reports it and the client uploads it in Customizer; tell the user.
 
 The alternative logo of the footer, if the design has one, is a field of the `opciones` spec (`opciones_pie_logo`, type `image`), not Customizer.
 

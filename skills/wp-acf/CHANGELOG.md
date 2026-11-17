@@ -2,6 +2,22 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.13.0] - 2026-11-17
+
+Correcciones que pidió un proyecto con cursos, cuenta de usuario, administrador y WooCommerce, que usaba atajos a mano mientras tanto.
+
+### Agregado
+- **Páginas sin campos.** `Grupo ACF: ninguno` o `Ubicación: ninguna` (acceso, cuenta, carrito, checkout) ya no son error: la página no tiene `group_*.json`, pero sigue siendo página de WordPress. Decir `ninguna` con secciones que tienen grupo sí es error, para no perder esos campos.
+- **`Página WP` en el spec.** `ninguna`: la vista no es página de WordPress (pestañas de `/cuenta/`, `/administrador/`). `<slug>`: la página se crea con ese slug; la clave en `paginas.php` sigue siendo el slug del spec, así las cargas y los menús no cambian. Dos specs con el mismo slug, o una hija de una página que no se crea, son código `4`.
+- **`Origen: plugin`** en "Contenido dinámico": un tipo que registra un plugin (`curso`, `leccion`). Sirve en `relationship`, `post_object` y `Ubicación` con su nombre como `post_type`, pero no genera `post_type_*.json` ni sus taxonomías.
+- **`URL` en el listado y el detalle.** `URL: /soluciones-de-sueno/` va a `has_archive_slug` y `URL: /soluciones-de-sueno/<slug>/` a `rewrite.slug` del tipo de contenido. Se lee de los specs de cualquier estado; `check.mjs` avisa si el JSON tiene otras URL.
+
+### Corregido
+- **Páginas de WooCommerce en `paginas.php`.** Una página con plantilla en `woocommerce/` (carrito, checkout, gracias) ya no se crea con esa plantilla como plantilla de página: esas páginas las crea WooCommerce.
+- **Conflictos falsos por CRLF.** `generate.mjs` toma como igual un archivo que solo cambia en los saltos de línea (git en Windows con `core.autocrlf`): no es conflicto ni se reescribe.
+- **El logo pisaba las medidas del tema.** El motor ya no vuelve a declarar `custom-logo` si el tema lo hizo (corre con prioridad 20, después del setup). En un proyecto: `install.mjs --overwrite inc/acf/runner.php`.
+- `Ubicación: tipo de contenido = <contenido>` de origen `woo` apunta a `product` (antes `post`).
+
 ## [1.12.2] - 2026-11-08
 
 ### Cambiado

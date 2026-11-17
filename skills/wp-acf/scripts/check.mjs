@@ -50,10 +50,10 @@ const error = (file, message) => errors.push({ file, message });
 const warn = (file, message) => warnings.push({ file, message });
 
 const states = toList(args.states);
-const { pages, dynamic } = loadSpecs(specsDir, { states, wanted: args.page === undefined ? null : toList(args.page) });
+const { pages, dynamic, all } = loadSpecs(specsDir, { states, wanted: args.page === undefined ? null : toList(args.page) });
 if (!pages.length) fail(1, `Ninguna página con estado ${states.join(' o ')}.`);
 
-const built = buildAll({ pages, dynamic });
+const built = buildAll({ pages, dynamic, all });
 for (const e of built.errors) error(e.file, e.message);
 for (const w of built.warnings) warn(w.file, w.message);
 
@@ -124,6 +124,9 @@ for (const item of built.groups) {
 for (const item of built.postTypes) {
     const json = find(item, `el tipo de contenido ${item.content}`);
     if (json && json.post_type !== item.content) error(`${args.out}/${item.json.key}.json`, `post_type "${json.post_type}" no coincide con "${item.content}".`);
+    if (json && ((json.has_archive_slug ?? '') !== item.urls.archive || (json.rewrite?.slug ?? '') !== item.urls.single)) {
+        warn(`${args.out}/${item.json.key}.json`, `Las URL de "${item.content}" no coinciden con la "URL" de sus specs (listado /${item.urls.archive || item.content}/, detalle /${item.urls.single || item.content}/<slug>/): corre generate.mjs.`);
+    }
 }
 for (const item of built.taxonomies) {
     const json = find(item, `la taxonomía ${item.taxonomy}`);

@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.18.0] - 2026-11-17
+
+### Agregado
+- `Origen: plugin` en "Contenido dinámico": un tipo de contenido que ya registra un plugin (cursos, lecciones). `check.mjs` lo acepta.
+- `formato-spec.md` y `contenido-dinamico.md` documentan `Ubicación: ninguna` (página sin campos), `Página WP` (`ninguna` o un slug) y `URL` del listado y del detalle, que usa wp-acf 1.13.0.
+
 ## [1.17.0] - 2026-11-08
 
 ### Cambiado

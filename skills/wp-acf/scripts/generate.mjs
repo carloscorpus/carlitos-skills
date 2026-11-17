@@ -56,7 +56,7 @@ if (wanted) {
 
 if (!pages.length) fail(1, `Ninguna página con estado ${states.join(' o ')}${wanted ? ` entre ${wanted.join(', ')}` : ''}.`, { hint: 'Usa --states aprobado,aplicado para adelantarte o --page <slug>.' });
 
-const built = buildAll({ pages, dynamic });
+const built = buildAll({ pages, dynamic, all });
 if (built.errors.length) {
     console.log(JSON.stringify({ ok: false, error: 'Los specs tienen errores que impiden generar el JSON.', errors: built.errors }, null, 2));
     process.exit(4);
@@ -99,7 +99,17 @@ const templateOf = (page) => (index.find((r) => r.file === page.file)?.template 
 // La página de entradas (Ajustes > Lectura) es la lista del blog: un listado, pero también una página de WordPress.
 const isPostsPage = (page) => templateOf(page) !== 'front-page.php'
     && (templateOf(page) === 'home.php' || /^p[aá]gina de entradas/i.test(unwrap(page.labels.Ubicación ?? '')));
-const listed = all.filter((page) => states.includes(page.labels.Estado)).filter((page) => isStatic(page) || isPostsPage(page));
+// "Página WP: ninguna" (una vista que no es página de WordPress) o "Página WP: <slug>" (otro slug que el del spec).
+// Sin la etiqueta, una plantilla de woocommerce/ no es página del tema: carrito, checkout y cuenta los crea WooCommerce.
+const wpLabel = (page) => unwrap(page.labels['Página WP'] ?? '').replace(/^\/+|\/+$/g, '');
+const createsPage = (page) => {
+    const label = wpLabel(page);
+    if (/^ningun[oa]$/i.test(label)) return false;
+    return label ? true : !templateOf(page).startsWith('woocommerce/');
+};
+const candidates = all.filter((page) => states.includes(page.labels.Estado)).filter((page) => isStatic(page) || isPostsPage(page));
+const listed = candidates.filter(createsPage);
+const notCreated = new Set(candidates.filter((page) => !createsPage(page)).map((page) => page.slug));
 
 // Una página hija va después de su padre: el motor las crea en orden y necesita el ID del padre.
 const bySlug = new Map(listed.map((page) => [page.slug, page]));
@@ -120,7 +130,9 @@ const place = (page, path = []) => {
         if (!bySlug.has(parent)) {
             pageErrors.push({
                 file: page.file,
-                message: spec && isStatic(spec)
+                message: notCreated.has(parent)
+                    ? `Padre "${parent}": no se crea como página de WordPress (Página WP: ninguna o plantilla de woocommerce/).`
+                    : spec && isStatic(spec)
                     ? `Padre "${parent}": está ${spec.labels.Estado ?? 'sin estado'}; aplícala primero o inclúyela en --states.`
                     : `Padre "${parent}": no es una página estática de specs/.`,
             });
@@ -137,6 +149,20 @@ const place = (page, path = []) => {
     wpPages.push(page);
 };
 listed.forEach((page) => place(page));
+
+// El slug con el que se crea cada página: inicio, el de "Página WP" o el del spec. Dos páginas no comparten slug.
+const wpSlug = (page) => (templateOf(page) === 'front-page.php' ? 'inicio' : wpLabel(page) || page.slug);
+const slugOwner = new Map();
+for (const page of wpPages) {
+    const label = wpLabel(page);
+    if (label && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(label)) {
+        pageErrors.push({ file: page.file, message: `Página WP "${label}": usa ninguna o un slug (minúsculas, números y guiones).` });
+        continue;
+    }
+    const slug = wpSlug(page);
+    if (slugOwner.has(slug)) pageErrors.push({ file: page.file, message: `Página WP: el slug "${slug}" ya lo usa ${slugOwner.get(slug)}; las demás vistas llevan "Página WP: ninguna".` });
+    else slugOwner.set(slug, page.file);
+}
 if (pageErrors.length) {
     console.log(JSON.stringify({ ok: false, error: 'Los specs tienen errores que impiden generar inc/acf/paginas.php.', errors: pageErrors }, null, 2));
     process.exit(4);
@@ -157,7 +183,7 @@ const pagesPhp = [
         const front = template === 'front-page.php';
         // La página de entradas usa home.php sola: no es una plantilla de página que se elija, ni cuelga de otra.
         const posts = isPostsPage(page);
-        const slug = front ? 'inicio' : page.slug;
+        const slug = wpSlug(page);
         const extra = posts ? ', \'entradas\' => true' : '';
         return `    ${phpString(page.slug)} => ['titulo' => ${phpString(row?.title ?? page.slug)}, 'slug' => ${phpString(slug)}, 'frente' => ${front}, 'plantilla' => ${phpString(front || posts ? '' : template)}, 'padre' => ${phpString(front || posts ? '' : parentOf(page))}${extra}],`;
     }),
@@ -168,7 +194,14 @@ const pagesPhp = [
 const pagesFile = { rel: 'inc/acf/paginas.php', dest: join(target, 'inc/acf/paginas.php'), content: pagesPhp };
 const pagesCurrent = existsSync(pagesFile.dest) ? readFileSync(pagesFile.dest, 'utf8').replace(/\r\n/g, '\n') : null;
 
-const plan = planFiles(files, args, { skipIdentical: true });
+// Un archivo igual salvo los saltos de línea (CRLF de git en Windows) no es un conflicto ni se reescribe.
+const sameButEol = new Set(files.filter((file) => {
+    if (!existsSync(file.dest)) return false;
+    const current = readFileSync(file.dest, 'utf8');
+    return current !== file.content && current.replace(/\r\n/g, '\n') === file.content;
+}).map((file) => file.rel));
+const plan = planFiles(files.filter((file) => !sameButEol.has(file.rel)), args, { skipIdentical: true });
+plan.unchanged.push(...sameButEol);
 const known = new Set(files.map((file) => file.rel));
 const orphans = existsSync(outDir)
     ? readdirSync(outDir).filter((name) => name.endsWith('.json')).map((name) => `${args.out}/${name}`).filter((rel) => !known.has(rel))
