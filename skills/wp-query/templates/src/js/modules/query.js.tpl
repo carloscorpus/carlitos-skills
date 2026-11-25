@@ -4,8 +4,10 @@
  *
  * Es genérico: sirve para todos los listados del tema. Sin este módulo el listado funciona igual (el formulario de
  * filtros es un <form method="get"> normal y la paginación son enlaces). Con él:
- *   - al cambiar un filtro (o al enviar, con "Al filtrar: botón aplicar") pide la misma URL con el encabezado
- *     X-WP-Query: 1 y reemplaza solo las zonas [data-query] (filtros, resultados, paginacion, total...);
+ *   - al cambiar un filtro (o al enviar, con "Al filtrar: botón aplicar") pide la URL del listado con el parámetro
+ *     reservado _wpq=1 (y el encabezado X-WP-Query: 1) y reemplaza solo las zonas [data-query] (filtros,
+ *     resultados, paginacion, total...). El parámetro le da al pedido parcial una URL propia: una caché de páginas
+ *     que guarda una copia por URL no mezcla el JSON con el HTML. Nunca llega a la barra del navegador;
  *   - la URL se actualiza (history) y el botón atrás vuelve al filtro anterior;
  *   - "cargar más" e "infinito" agregan los resultados de la página siguiente;
  *   - mientras carga, la zona de resultados tiene aria-busy y al terminar se anuncia el total;
@@ -16,6 +18,7 @@
  */
 
 const HEADER = 'X-WP-Query';
+const PARAM = '_wpq';
 const DEBOUNCE = 300;
 const MAX_ITEMS = 50;
 
@@ -33,7 +36,7 @@ export function queryParams(entries, limits = {}) {
         if (typeof rawValue !== 'string') continue;
         const value = rawValue.trim();
         const name = rawName.endsWith('[]') ? rawName.slice(0, -2) : rawName;
-        if (!value || name === 'paged') continue;
+        if (!value || name === 'paged' || name === PARAM) continue;
         if (limits[name] !== undefined && Number(value) === Number(limits[name])) continue;
         const list = grouped.get(name) ?? [];
         if (!list.includes(value) && list.length < MAX_ITEMS) list.push(value);
@@ -50,6 +53,23 @@ export function buildUrl(base, params) {
     url.search = params.toString().replace(/%2C/gi, ',');
     url.hash = '';
     return url.toString();
+}
+
+// La URL sin el parámetro reservado (la que ve el usuario).
+export function cleanUrl(url) {
+    const target = new URL(url);
+    if (!target.searchParams.has(PARAM)) return target.toString();
+    target.searchParams.delete(PARAM);
+    target.search = target.searchParams.toString().replace(/%2C/gi, ',');
+    return target.toString();
+}
+
+// La URL del pedido parcial: la del listado más _wpq=1 (al final, sin tocar los demás parámetros).
+export function partialUrl(url) {
+    const target = new URL(cleanUrl(url));
+    target.hash = '';
+    target.search = target.search ? `${target.search}&${PARAM}=1` : `?${PARAM}=1`;
+    return target.toString();
 }
 
 // Zonas de un HTML completo (respuesta que no fue JSON, por ejemplo servida por una caché de páginas).
@@ -113,9 +133,11 @@ function urlFromForm(target) {
 async function fetchZones(url) {
     controller?.abort();
     controller = new AbortController();
-    const response = await fetch(url, {
+    const response = await fetch(partialUrl(url), {
         headers: { [HEADER]: '1', Accept: 'application/json, text/html' },
         credentials: 'same-origin',
+        // Tampoco la caché del navegador: el JSON no se guarda ni se mezcla al ir atrás o adelante.
+        cache: 'no-store',
         signal: controller.signal,
     });
     if (!response.ok && response.status !== 404) throw new Error(`HTTP ${response.status}`);
@@ -182,7 +204,8 @@ function done(url, data) {
  * Carga una URL del listado y reemplaza sus zonas. history: 'push' (un filtro nuevo), 'replace' (mientras se
  * escribe) o 'none' (botón atrás).
  */
-async function load(url, { history = 'push', scroll = false } = {}) {
+async function load(rawUrl, { history = 'push', scroll = false } = {}) {
+    const url = cleanUrl(rawUrl); // la barra, el historial y el respaldo usan siempre la URL limpia
     setBusy(true);
     try {
         const data = await fetchZones(url);
@@ -222,9 +245,9 @@ async function loadMore(link) {
             first.focus({ preventScroll: reducedMotion() });
         }
         watchInfinite();
-        done(link.href, data);
+        done(cleanUrl(link.href), data);
     } catch (error) {
-        if (error.name !== 'AbortError') window.location.assign(link.href);
+        if (error.name !== 'AbortError') window.location.assign(cleanUrl(link.href));
     }
 }
 

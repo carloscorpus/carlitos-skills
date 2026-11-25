@@ -15,6 +15,15 @@ function add_filter(...$args) {}
 function get_theme_file_path($path = '') { return sys_get_temp_dir() . '/wp-query-sin-definiciones/' . ltrim($path, '/'); }
 function wp_unslash($value) { return is_string($value) ? stripslashes($value) : $value; }
 function sanitize_text_field($value) { return trim(preg_replace('/[\r\n\t ]+/', ' ', strip_tags((string) $value))); }
+// Como el de WordPress para una clave: quita el parámetro y el "?" que sobre, conserva el resto y el ancla.
+function remove_query_arg($key, $url) {
+    [$url, $frag] = array_pad(explode('#', $url, 2), 2, null);
+    [$base, $query] = array_pad(explode('?', $url, 2), 2, '');
+    $parts = array_values(array_filter($query === '' ? [] : explode('&', $query), function ($pair) use ($key) {
+        return explode('=', $pair, 2)[0] !== $key;
+    }));
+    return $base . ($parts ? '?' . implode('&', $parts) : '') . ($frag !== null ? '#' . $frag : '');
+}
 
 [, $motorFile, $productoFile, $postFile] = $argv;
 require $motorFile;
@@ -110,6 +119,30 @@ check('conteo dinámico mantiene los demás', $args['meta_query'][0]['key'] ?? n
 
 check('URL con varios valores separados por coma', demo_query_url_args($producto, $activos), ['categoria' => 'sillas', 'material' => 'madera']);
 check('URL de rango', demo_query_url_args($producto, $request($producto, ['precio' => '10-20'])), ['precio_min' => '10', 'precio_max' => '20']);
+
+// ---------- Pedido parcial: parámetro reservado ----------
+
+check('el parámetro reservado es _wpq', demo_query_param(), '_wpq');
+check('el parámetro reservado no es un filtro', $request($producto, ['_wpq' => '1', 'categoria' => 'sillas']), ['categoria' => ['sillas']]);
+$_GET = [];
+$_SERVER['HTTP_X_WP_QUERY'] = '';
+check('una página normal no es parcial', demo_query_is_partial(), false);
+$_GET = ['_wpq' => '1'];
+check('con _wpq es parcial', demo_query_is_partial(), true);
+$_GET = [];
+$_SERVER['HTTP_X_WP_QUERY'] = '1';
+check('con el encabezado solo es parcial (JS anterior)', demo_query_is_partial(), true);
+unset($_SERVER['HTTP_X_WP_QUERY']);
+check('URL sin el parámetro', demo_query_clean_url('https://demo.test/productos/?categoria=sillas,mesas&_wpq=1'), 'https://demo.test/productos/?categoria=sillas,mesas');
+check('URL con el parámetro primero', demo_query_clean_url('https://demo.test/productos/page/2/?_wpq=1&q=silla'), 'https://demo.test/productos/page/2/?q=silla');
+check('URL con el parámetro solo', demo_query_clean_url('https://demo.test/productos/?_wpq=1'), 'https://demo.test/productos/');
+check('URL sin el parámetro no cambia', demo_query_clean_url('https://demo.test/productos/?q=_wpq'), 'https://demo.test/productos/?q=_wpq');
+$zona = '<nav><a class="page-numbers" href="https://demo.test/productos/page/2/?categoria=sillas&#038;_wpq=1">2</a>'
+    . "<a href='/productos/?_wpq=1&amp;q=x'>x</a><form action=\"/productos/?_wpq=1\"></form><a href=\"/otra/\">o</a></nav>";
+check('HTML de una zona sin el parámetro', demo_query_clean_html($zona),
+    '<nav><a class="page-numbers" href="https://demo.test/productos/page/2/?categoria=sillas">2</a>'
+    . "<a href='/productos/?q=x'>x</a><form action=\"/productos/\"></form><a href=\"/otra/\">o</a></nav>");
+check('HTML con varios parámetros conserva el &#038;', demo_query_clean_html('<a href="/p/?a=1&#038;_wpq=1&#038;b=2">p</a>'), '<a href="/p/?a=1&#038;b=2">p</a>');
 
 // ---------- Zonas de la respuesta parcial ----------
 

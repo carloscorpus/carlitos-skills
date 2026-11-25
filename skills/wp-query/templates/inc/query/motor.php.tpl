@@ -15,6 +15,8 @@ defined('ABSPATH') || exit;
  *   - entrega datos a la vista ({{PREFIX}}_query_filters, _active, _total, _pagination, _related): el HTML
  *     es del diseño;
  *   - marca noindex las páginas filtradas y apunta su canonical a la página sin filtros;
+ *   - responde el pedido parcial del JS (parámetro reservado _wpq) con un JSON que ninguna caché guarda; el
+ *     parámetro no es un filtro y no aparece en ninguna URL que el motor entregue;
  *   - en una tienda de WooCommerce (def `woo`) se engancha a la consulta que WooCommerce ya armó: suma el precio
  *     contra su tabla wc_product_meta_lookup y el orden con get_catalog_ordering_args, y cuenta solo lo visible.
  */
@@ -1187,13 +1189,51 @@ function {{PREFIX}}_query_zones(string $html): array
     return $zones;
 }
 
-// ¿El pedido viene del JS del motor? (encabezado X-WP-Query: 1)
-function {{PREFIX}}_query_is_partial(): bool
+/*
+ * Parámetro reservado del pedido parcial. El JS pide `<url del listado>&_wpq=1`: una URL propia, así una caché de
+ * páginas (de servidor, CDN o plugin) que guarda una copia por URL e ignora el Vary nunca mezcla el JSON con el
+ * HTML. No es un filtro (los nombres de filtro empiezan con letra y la lista blanca lo ignora) y nunca se ve: el
+ * JS no lo pone en la barra y el motor lo quita de los enlaces que arma WordPress desde la URL del pedido.
+ */
+function {{PREFIX}}_query_param(): string
 {
-    return ($_SERVER['HTTP_X_WP_QUERY'] ?? '') === '1';
+    return '_wpq';
 }
 
-// Los listados cambian según el encabezado: una caché de páginas no debe servir el JSON como HTML ni al revés.
+// ¿El pedido viene del JS del motor? Por el parámetro o, por compatibilidad, por el encabezado X-WP-Query: 1.
+function {{PREFIX}}_query_is_partial(): bool
+{
+    return isset($_GET[{{PREFIX}}_query_param()]) || ($_SERVER['HTTP_X_WP_QUERY'] ?? '') === '1';
+}
+
+// Una URL sin el parámetro reservado.
+function {{PREFIX}}_query_clean_url($url)
+{
+    if (!is_string($url) || strpos($url, {{PREFIX}}_query_param()) === false) {
+        return $url;
+    }
+    return remove_query_arg({{PREFIX}}_query_param(), $url);
+}
+
+// Quita el parámetro de los href y action de un HTML: red de seguridad para enlaces que la plantilla arme desde
+// la URL del pedido (por ejemplo add_query_arg() sin URL).
+function {{PREFIX}}_query_clean_html(string $html): string
+{
+    $param = {{PREFIX}}_query_param();
+    if (strpos($html, $param) === false) {
+        return $html;
+    }
+    return (string) preg_replace_callback('/\b(href|action)=(["\'])([^"\']*' . preg_quote($param, '/') . '[^"\']*)\2/i', static function ($m) {
+        $url = str_replace(['&#038;', '&amp;'], '&', $m[3]);
+        return $m[1] . '=' . $m[2] . str_replace('&', '&#038;', (string) {{PREFIX}}_query_clean_url($url)) . $m[2];
+    }, $html);
+}
+
+// paginate_links() y los enlaces de página copian la query string del pedido: sin el parámetro.
+add_filter('get_pagenum_link', '{{PREFIX}}_query_clean_url');
+add_filter('paginate_links', '{{PREFIX}}_query_clean_url');
+
+// El HTML y el JSON de un listado cambian según el encabezado (las cachés que respetan Vary los separan también así).
 add_action('send_headers', function () {
     if (!is_admin() && {{PREFIX}}_query_current()) {
         header('Vary: X-WP-Query', false);
@@ -1201,9 +1241,15 @@ add_action('send_headers', function () {
 });
 
 /*
- * Con X-WP-Query: 1 el listado se arma con su plantilla de siempre (una sola fuente de HTML) y se responde un JSON
- * con sus zonas: { ok, url, zonas: { filtros, resultados, paginacion, total, ... }, total, pagina, paginas, titulo }.
- * Si la plantilla no tiene zonas, ok es false y el JS abre la página completa.
+ * Con _wpq (o X-WP-Query: 1) el listado se arma con su plantilla de siempre (una sola fuente de HTML) y se responde
+ * un JSON con sus zonas: { ok, url, zonas: { filtros, resultados, paginacion, total, ... }, total, pagina, paginas,
+ * titulo }. `url` es la del listado, sin el parámetro. Si la plantilla no tiene zonas, ok es false y el JS abre la
+ * página completa.
+ *
+ * La respuesta no se guarda en ninguna caché (no-store, private y DONOTCACHEPAGE para los plugins de caché) y no
+ * se indexa. Quien abra a mano una URL con _wpq ve ese mismo JSON con noindex: no se redirige, porque el motor
+ * no puede distinguir al JS de una persona sin confiar en el encabezado, que es justo lo que algunas cachés y
+ * proxies quitan; y ningún enlace del sitio lleva el parámetro.
  */
 add_action('template_redirect', function () {
     if (!{{PREFIX}}_query_is_partial() || !{{PREFIX}}_query_current()) {
@@ -1218,13 +1264,19 @@ add_action('template_redirect', function () {
         // wp_get_document_title() viene escapado para HTML (&#8211;): el JS lo pone en document.title, que no lo convierte.
         'titulo'  => html_entity_decode(wp_get_document_title(), ENT_QUOTES, get_option('blog_charset')),
     ];
+    if (!defined('DONOTCACHEPAGE')) {
+        define('DONOTCACHEPAGE', true);
+    }
     if (!headers_sent()) {
+        nocache_headers();
+        // Antes de WordPress 6.3 nocache_headers() no trae no-store ni private.
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
         header('Content-Type: application/json; charset=' . get_option('blog_charset'));
         header('X-Robots-Tag: noindex');
         header('Vary: X-WP-Query', false);
     }
     ob_start(function ($html) use ($meta) {
-        $zones = {{PREFIX}}_query_zones((string) $html);
+        $zones = array_map('{{PREFIX}}_query_clean_html', {{PREFIX}}_query_zones((string) $html));
         return wp_json_encode(array_merge(['ok' => (bool) $zones, 'zonas' => (object) $zones], $meta));
     });
 }, 99);

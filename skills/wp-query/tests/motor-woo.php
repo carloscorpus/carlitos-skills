@@ -97,7 +97,7 @@ function check(string $name, $actual, $expected): void
     }
     $failures[] = ['test' => $name, 'expected' => $expected, 'actual' => $actual];
 }
-$hook = function (string $name, int $priority = null) {
+$hook = function (string $name, ?int $priority = null) {
     foreach ($GLOBALS['hooks'][$name] ?? [] as [$callback, $p]) {
         if ($priority === null || $p === $priority) {
             return $callback;

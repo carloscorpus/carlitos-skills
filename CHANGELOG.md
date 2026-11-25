@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.41.1] - 2026-11-25
+
+### Corregido
+- `wp-query` 1.2.2: filtrar sin recargar pide su propia URL (`_wpq=1`, que nunca se ve ni filtra) y la respuesta parcial sale con `no-store` y `noindex`, así una caché de páginas que ignora `Vary` ya no sirve el JSON como la página. Detalle en `skills/wp-query/CHANGELOG.md`.
+
 ## [1.41.0] - 2026-11-17
 
 ### Agregado

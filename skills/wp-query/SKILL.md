@@ -2,7 +2,7 @@
 name: wp-query
 description: 'Make the lists of a WordPress theme work from the specs written by design-import: the real loop of posts and custom post types, combined filters (taxonomies, ACF option fields, numeric ranges, dates, search and sort), counts per option, pagination, related items and SEO-safe filtered pages, on the main query (pre_get_posts), updating without reload and still working without JavaScript. The design is kept: the engine gives the data and the theme''s HTML paints it. One generic engine, one generated definition per list, one subagent per list for the templates. Use when the user says "conecta los listados", "haz funcionar los filtros", "filtros combinados", "buscador", "paginación", "relacionados", "blog con filtros", "catálogo con filtros", or a spec says `skill: wp-query`. Runs after wp-acf. It also connects the shop of a WooCommerce store (`Origen: woo`): categories, tags, attributes, price, search and WooCommerce's own sorting, on the query WooCommerce already built; cart and checkout are wp-woocommerce.'
 metadata:
-  version: "1.2.1"
+  version: "1.2.2"
 ---
 
 # wp-query
@@ -30,15 +30,16 @@ The design rules the look. The engine never prints filter markup: it returns dat
 
 6. **Check.** `node <skill>/scripts/check.mjs` (add `--php <path>` when `php` is not in the PATH): engine and its JS import, definitions equal to the specs, zones, the `name` of every filter, no `query_posts`, no `new WP_Query` replacing the archive, escaped output, `php -l`. Then `pnpm build` and design-import's `check.mjs`. When `php` is not available, say so instead of claiming it passed.
 
-7. **Tell the user how to try it.** In Local WP: open the list, combine filters and check the URL (`?categoria=sillas,mesas&precio_min=100`), the counts, the pagination with filters, a category archive with more filters, the back button, "cargar más", the view source (`noindex` on filtered pages), and the same with JavaScript disabled.
+7. **Tell the user how to try it.** In Local WP: open the list, combine filters and check the URL (`?categoria=sillas,mesas&precio_min=100`), the counts, the pagination with filters, a category archive with more filters, the back button, "cargar más", the view source (`noindex` on filtered pages), and the same with JavaScript disabled. On a site with a page cache (hosting, CDN or plugin), run the curl check of [references/vista.md](references/vista.md) ("Page caches") after deploying and purging the cache.
 
 ## Rules
 
 - The specs are the source of truth. A definition is never edited by hand: change the spec and generate again.
 - A correction that changes a filter (name in the URL, type, source, several values, count, view), the pagination or the items per page goes to the "Filtros" table or the labels of the spec first, then `generate.mjs`. Say which spec lines changed.
-- The engine (`inc/query/motor.php`, `src/js/modules/query.js`) is never edited per project; it is updated with `install.mjs --overwrite inc/query/motor.php,src/js/modules/query.js`.
+- The engine (`inc/query/motor.php`, `src/js/modules/query.js`) is never edited per project; it is updated with `install.mjs --overwrite inc/query/motor.php,src/js/modules/query.js` (both files: the PHP and the JS change together), then `pnpm build`, deploy and purge the page cache.
 - Filters always act on the main query. Never `query_posts`, never a `new WP_Query` that replaces the archive's loop. A secondary loop (related items) ends with `wp_reset_postdata()`.
 - The URL names are the table's: `categoria[]` (several values), `precio_min` / `precio_max`, `q`, `orden`. Never WordPress's own query vars (`s`, `p`, `cat`, `year`…).
+- `_wpq` is the engine's reserved parameter: the JS adds it only to its own partial request, so a page cache that keeps one copy per URL never mixes the JSON with the page. Never use it in a template, a link, a form or a URL of your own; the engine keeps it out of every URL it gives and answers that request with `no-store` and `noindex` ([references/vista.md](references/vista.md), "Page caches").
 - Escape all output (`esc_html`, `esc_attr`, `esc_url`), start files with `defined('ABSPATH') || exit;` and use the theme prefix.
 - The design decides counts, views and the mobile panel: follow the table, do not add filters the design does not show.
 
@@ -62,4 +63,4 @@ A list whose content has `Origen: woo` (the spec's "WooCommerce" table says `Fil
 ## Reference
 
 - [references/filtros.md](references/filtros.md): each filter type, how ACF stores it, how it is queried and its URL.
-- [references/vista.md](references/vista.md): the view contract: zones, helpers and their data, empty state, pagination, and how the page updates without reload.
+- [references/vista.md](references/vista.md): the view contract: zones, helpers and their data, empty state, pagination, how the page updates without reload, and page caches (with the curl check).

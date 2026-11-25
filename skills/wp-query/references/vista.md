@@ -69,8 +69,42 @@ The template keeps the design's HTML. It replaces fixed sample data with the eng
 The main JS imports the module only on pages with `[data-query="resultados"]`. It needs nothing from the template beyond the zones; the list's settings (`Al filtrar`, `Paginación`) come in `<script id="wp-query-config">`, printed by the engine.
 
 - **Filtering.** With `Al filtrar: sin recargar`, any change in the form loads the new URL; a search, number or range field waits 300 ms after the last key. With `botón aplicar`, only submitting does. Empty values, `paged` and a range end equal to its input's `min`/`max` are left out of the URL; several values become `categoria=sillas,mesas`.
-- **The request.** The same URL with the header `X-WP-Query: 1`. The engine renders the page with its normal template and answers JSON with the HTML of every `data-query` zone. The module replaces each zone it receives (any name, not only the four of the table), keeps the focus and the caret of the field being typed in, sets `aria-busy` on `resultados`, updates the title and announces the new total. A response that is HTML (a page cache) is read the same way; any error opens the URL as a normal page.
+- **The request.** The list's URL plus the engine's reserved parameter `_wpq=1`, with the header `X-WP-Query: 1` and `cache: 'no-store'`. The engine renders the page with its normal template and answers JSON with the HTML of every `data-query` zone (see "Page caches" below). The module replaces each zone it receives (any name, not only the four of the table), keeps the focus and the caret of the field being typed in, sets `aria-busy` on `resultados`, updates the title and announces the new total. A response that is HTML (a page cache) is read the same way; any error opens the URL as a normal page.
 - **History.** Each filter is a new history entry (typing replaces it). The back button reloads the zones of that URL.
 - **Links.** Links inside a zone (chips, "Limpiar", pagination numbers) load without reload; links inside `resultados` (the cards) and links with `data-query-ignorar` are normal links. A pagination number scrolls to the results (instantly with `prefers-reduced-motion`).
 - **Load more / infinite.** The `data-query-mas` link of `<prefix>_query_pagination()` appends the next page's items. When the grid is an inner element of the zone, mark it `data-query-items` (the items are its children); otherwise the zone's children are the items. `cargar más` moves the focus to the first new item; `infinito` loads when the link comes into view and keeps the link as a fallback.
 - **Event.** After each update `document` receives `wp-query:update` (`detail`: `url`, `total`, `zonas`), for example to close the mobile filters drawer or re-run an animation.
+
+## Page caches
+
+Many page caches (on the server, the CDN or a plugin) keep one copy per URL and ignore or drop a custom `Vary`. If the partial request used the same URL as the page, the first request after a purge could store the JSON, and every visitor of that URL would then see JSON instead of the page (or the JS would get the cached HTML). So the partial request has a URL of its own:
+
+- **The JS** asks for `<list URL>&_wpq=1` (`?_wpq=1` without other parameters), keeps the `X-WP-Query: 1` header and fetches with `cache: 'no-store'`, so the browser cache does not keep the JSON either.
+- **The parameter is never seen.** It never goes to the address bar (`pushState`/`replaceState`), to the JSON's `url`, to the pagination links, to the form's `action`, to the canonical, to the chips' links or to `<prefix>_query_url()`. It is not a filter: filter names start with a letter and the engine only reads the filters of the definition. The engine also removes it from the links WordPress builds from the request's URL (`get_pagenum_link`, `paginate_links`) and, as a safety net, from every `href` and `action` of the zones.
+- **The engine** treats a request with `_wpq` (or, for an older JS, with the header) as partial and answers with `Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private` (`nocache_headers()`), `X-Robots-Tag: noindex`, `Vary: X-WP-Query` and `DONOTCACHEPAGE` (cache plugins honor it).
+- **Someone opens a `_wpq` URL by hand:** they get that same JSON, with `noindex` and `no-store`. It is not redirected to the clean URL, because telling the JS from a person would mean trusting the header again, which is exactly what some caches and proxies drop; and no link of the site carries the parameter, so nothing leads there.
+- Without JavaScript nothing changes: the form is a normal GET to the clean URL and the pagination is normal links.
+
+### Check it in production
+
+After updating the engine, run `pnpm build`, deploy and **purge the page cache** (the server's, the CDN's and the plugin's). Then, with the URL of a list (`https://site/list/`, an invented parameter so the URL is new to the cache):
+
+```bash
+# 1. Purge the cache. Then the request the JS makes (parameter + header):
+curl -s -D - -o /dev/null -H "X-WP-Query: 1" "https://site/list/?prueba=1&_wpq=1"
+#    Expect: Content-Type: application/json, Cache-Control with no-store and private,
+#            X-Robots-Tag: noindex, Vary: X-WP-Query.
+
+# 2. The clean URL must still be the page:
+curl -s -D - "https://site/list/?prueba=1" | head -n 40
+#    Expect: Content-Type: text/html and the page's HTML (<!doctype html>), not {"ok":...}.
+
+# 3. The original reproduction (header only, as an older JS did), on a new URL:
+curl -s -o /dev/null -H "X-WP-Query: 1" "https://site/list/?prueba=2"
+curl -s -D - "https://site/list/?prueba=2" | head -n 40
+#    Expect HTML again: the partial answer carries no-store, so a cache that honors it does not keep it.
+```
+
+Then open `https://site/list/?prueba=1` in the browser (and reload): it must show the page. Filter, clear the filters and paginate: the address bar never shows `_wpq`.
+
+If step 3 shows JSON, that cache ignores `Cache-Control` as well. The current JS always sends `_wpq`, so it only matters while an older JS is still in a visitor's browser or in a cached page: purge the cache after deploying. Report it, because that hosting needs a cache exclusion for requests with the `X-WP-Query` header.
