@@ -2,6 +2,19 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.2.2] - 2026-11-25
+
+### Corregido
+- **Una caché de páginas podía servir el JSON del motor como si fuera la página.** El JS pedía la misma URL que ve el usuario con el encabezado `X-WP-Query: 1`, y el motor separaba las dos respuestas solo con `Vary: X-WP-Query`. Muchas cachés (de servidor, CDN o plugin; comprobado en la Dynamic Cache de SiteGround) guardan una copia por URL e ignoran ese `Vary`: si el primer pedido tras vaciar la caché era del JS (filtrar, limpiar filtros, paginar), todos los que abrían esa URL veían el JSON. También al revés: el JS recibía el HTML cacheado.
+  - **URL propia para el pedido parcial:** el JS agrega el parámetro reservado `_wpq=1` a la URL que pide (y mantiene el encabezado), y pide con `cache: 'no-store'` para que la caché del navegador tampoco lo guarde.
+  - **El parámetro nunca se ve:** no va a la barra (`pushState`/`replaceState`), a la `url` del JSON, a la paginación, al `action` del form, al canonical, a los chips ni a `<prefijo>_query_url()`. No es un filtro (los nombres de filtro empiezan con letra y la lista blanca lo ignora). El motor lo quita de `get_pagenum_link` y `paginate_links` (que copian la query string del pedido) y, como red de seguridad, de los `href` y `action` de las zonas.
+  - **El motor** detecta el pedido parcial por `_wpq` y, por compatibilidad con un JS anterior, por el encabezado. La respuesta sale con `Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private` (`nocache_headers()`), `X-Robots-Tag: noindex`, `Vary: X-WP-Query` y `DONOTCACHEPAGE` para los plugins de caché.
+  - **Quien abre a mano una URL con `_wpq`** recibe ese mismo JSON con `noindex` y `no-store`, sin redirección: distinguir al JS de una persona exigiría volver a confiar en el encabezado, que es lo que algunas cachés y proxies quitan; y ningún enlace del sitio lleva el parámetro.
+- Sin JavaScript, la paginación, los relacionados y el canonical de las páginas filtradas no cambian.
+- Documentación: `references/vista.md` ("Page caches") con la prueba con curl para producción, `SKILL.md` y el bloque de `CLAUDE.md`.
+- Pruebas: `cleanUrl`, `partialUrl` y `queryParams` sin `_wpq` en el JS; la detección, la limpieza de URLs y de HTML y la lista blanca en `tests/motor.php`; los encabezados de la respuesta parcial y el `cache: 'no-store'` en `install`; la actualización de un motor anterior lleva el JS, el PHP y el bloque de `CLAUDE.md`.
+- En cada proyecto: `install.mjs --overwrite inc/query/motor.php,src/js/modules/query.js` (cambian los dos), `pnpm build`, publicar y **vaciar la caché** de página (servidor, CDN y plugin). Después, la prueba con curl de `references/vista.md`.
+
 ## [1.2.1] - 2026-11-08
 
 ### Corregido

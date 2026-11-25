@@ -7,3 +7,4 @@
 - Relacionados: `{{PREFIX}}_query_related()` devuelve un `WP_Query`; después del loop va `wp_reset_postdata()`.
 - En una tienda de WooCommerce (definición con `woo`) el motor se engancha a la consulta que WooCommerce ya armó (precio contra su tabla de búsqueda y orden con sus funciones) y los conteos solo ven lo visible del catálogo; la plantilla de la tienda conserva los `do_action()` de WooCommerce.
 - Las páginas filtradas salen con `noindex` y su canonical apunta al listado sin filtros.
+- Filtrar sin recargar pide la URL del listado con el parámetro reservado `_wpq=1` (y el encabezado `X-WP-Query: 1`): así una caché de páginas nunca mezcla el JSON con el HTML. `_wpq` no es un filtro ni se usa en enlaces, formularios ni URLs propias; la respuesta parcial sale con `no-store` y `noindex`. Después de actualizar el motor: `pnpm build`, publicar y vaciar la caché. Prueba con curl en `wp-query/references/vista.md` ("Page caches").

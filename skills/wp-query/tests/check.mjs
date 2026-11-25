@@ -234,6 +234,20 @@ try {
         assert.match(motor, /^<\?php\ndefined\('ABSPATH'\) \|\| exit;/);
         assert.ok(!/\bquery_posts\s*\(/.test(motor), 'el motor no usa query_posts');
         assert.match(motor, /'titulo'\s*=> html_entity_decode\(wp_get_document_title\(\), ENT_QUOTES,/, 'el título de la respuesta parcial va sin entidades HTML (la pestaña no las convierte)');
+        // Respuesta parcial: URL propia (_wpq) y nada que una caché guarde.
+        assert.match(motor, /return isset\(\$_GET\[demo_query_param\(\)\]\) \|\| \(\$_SERVER\['HTTP_X_WP_QUERY'\] \?\? ''\) === '1';/, 'detecta el pedido parcial por _wpq y por el encabezado');
+        const partial = motor.slice(motor.indexOf("add_action('template_redirect'"), motor.indexOf('// Ajustes del listado para el JS'));
+        assert.match(partial, /nocache_headers\(\);/, 'la respuesta parcial llama a nocache_headers()');
+        assert.match(partial, /header\('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private'\);/, 'la respuesta parcial no se guarda en ninguna caché');
+        assert.match(partial, /header\('X-Robots-Tag: noindex'\);/);
+        assert.match(partial, /header\('Vary: X-WP-Query', false\);/);
+        assert.match(partial, /define\('DONOTCACHEPAGE', true\);/, 'los plugins de caché no guardan la respuesta parcial');
+        assert.match(partial, /array_map\('demo_query_clean_html', demo_query_zones\(/, 'las zonas salen sin el parámetro');
+        assert.match(motor, /add_filter\('get_pagenum_link', 'demo_query_clean_url'\);/);
+        assert.match(motor, /add_filter\('paginate_links', 'demo_query_clean_url'\);/);
+        const queryJs = readFileSync(join(dir, 'src/js/modules/query.js'), 'utf8');
+        assert.match(queryJs, /fetch\(partialUrl\(url\), \{[\s\S]*?cache: 'no-store',/, 'el JS pide la URL con _wpq y sin caché del navegador');
+        assert.match(readFileSync(join(dir, 'CLAUDE.md'), 'utf8'), /_wpq=1/, 'el bloque de CLAUDE.md explica el parámetro');
         assert.match(readFileSync(join(dir, 'functions.php'), 'utf8'), /require_once get_theme_file_path\('\/inc\/query\/motor\.php'\);/);
         assert.match(readFileSync(join(dir, 'CLAUDE.md'), 'utf8'), /<!-- wp-query:start -->[\s\S]*demo_query_filters[\s\S]*<!-- wp-query:end -->/);
 
@@ -258,6 +272,22 @@ try {
         assert.match(old.json.hints.join(' '), /--overwrite inc\/query\/motor\.php,src\/js\/modules\/query\.js/);
         assert.equal(run('install.mjs', ['--target', dir]).code, 2);
         assert.equal(run('install.mjs', ['--target', dir, '--overwrite', 'inc/query/motor.php']).code, 0);
+
+        // Actualizar un proyecto con el motor anterior: el PHP, el JS y el bloque de CLAUDE.md llegan juntos.
+        const viejo = theme((d) => writeFileSync(join(d, 'CLAUDE.md'), '# Tema\n'));
+        assert.equal(run('install.mjs', ['--target', viejo]).code, 0);
+        for (const rel of ['inc/query/motor.php', 'src/js/modules/query.js']) {
+            writeFileSync(join(viejo, rel), readFileSync(join(viejo, rel), 'utf8').replace(`Versión del motor: ${engineVersion}`, 'Versión del motor: 1.2.1').replaceAll('_wpq', 'X'));
+        }
+        writeFileSync(join(viejo, 'CLAUDE.md'), readFileSync(join(viejo, 'CLAUDE.md'), 'utf8').replace(/\n- Filtrar sin recargar pide[^\n]*/, ''));
+        const hint = run('install.mjs', ['--target', viejo, '--check']);
+        assert.match(hint.json.hints.join(' '), /1\.2\.1[\s\S]*--overwrite inc\/query\/motor\.php,src\/js\/modules\/query\.js/);
+        const up = run('install.mjs', ['--target', viejo, '--overwrite', 'inc/query/motor.php,src/js/modules/query.js']);
+        assert.equal(up.code, 0, up.stdout);
+        assert.match(readFileSync(join(viejo, 'inc/query/motor.php'), 'utf8'), /return '_wpq';/);
+        assert.match(readFileSync(join(viejo, 'src/js/modules/query.js'), 'utf8'), /const PARAM = '_wpq';/);
+        assert.match(readFileSync(join(viejo, 'CLAUDE.md'), 'utf8'), /_wpq=1/, 'el bloque de CLAUDE.md se actualiza con el motor');
+        assert.equal(run('install.mjs', ['--target', viejo, '--check']).code, 0);
     });
 
     await test('install: copia el JS y lo importa una sola vez en el JS principal de Vite', () => {
@@ -293,6 +323,19 @@ try {
         assert.equal(params.toString(), 'categoria=sillas%2Cmesas&precio_max=300&q=silla');
         assert.equal(buildUrl('https://demo.test/productos/page/2/?x=1#a', params), 'https://demo.test/productos/page/2/?categoria=sillas,mesas&precio_max=300&q=silla');
         assert.equal(buildUrl('https://demo.test/productos/', queryParams([])), 'https://demo.test/productos/');
+    });
+
+    await test('JS: el pedido parcial usa su propia URL (_wpq) y la barra nunca la ve', async () => {
+        const dir = theme();
+        assert.equal(run('install.mjs', ['--target', dir]).code, 0);
+        const { queryParams, cleanUrl, partialUrl } = await import(pathToFileURL(join(dir, 'src/js/modules/query.js')).href);
+        assert.equal(partialUrl('https://demo.test/productos/'), 'https://demo.test/productos/?_wpq=1');
+        assert.equal(partialUrl('https://demo.test/productos/page/2/?categoria=sillas,mesas&q=silla#r'), 'https://demo.test/productos/page/2/?categoria=sillas,mesas&q=silla&_wpq=1');
+        assert.equal(partialUrl('https://demo.test/productos/?_wpq=1&q=x'), 'https://demo.test/productos/?q=x&_wpq=1', 'no lo repite');
+        assert.equal(cleanUrl('https://demo.test/productos/?categoria=sillas,mesas&_wpq=1'), 'https://demo.test/productos/?categoria=sillas,mesas');
+        assert.equal(cleanUrl('https://demo.test/productos/?_wpq=1'), 'https://demo.test/productos/');
+        assert.equal(cleanUrl('https://demo.test/productos/?q=a%20b'), 'https://demo.test/productos/?q=a%20b', 'una URL sin el parámetro no cambia');
+        assert.equal(queryParams([['_wpq', '1'], ['q', 'silla']]).toString(), 'q=silla', 'el parámetro no es un filtro');
     });
 
     // ---------- check ----------
