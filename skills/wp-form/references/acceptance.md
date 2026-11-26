@@ -17,7 +17,7 @@ Copy these into the form's spec; the verifier checks each one. Used in step 11 o
 - [ ] Filling the honeypot (`<prefix>_hp`) returns success and sends nothing; browser autofill on the real fields still sends.
 - [ ] Sending under 3 s after the token is issued returns "Espera unos segundos…"; reusing a token after a successful submission returns "expired".
 - [ ] Rate limit: with a **different message each time** (identical content is treated as a double submit), the 11th submission in an hour from one IP is refused by default (a form may configure a different `rate_limit`).
-- [ ] Behind Cloudflare or a proxy: the `<prefix>_form_client_ip` filter is in place, so two different visitors do not share the limit.
+- [ ] Behind Cloudflare or a proxy: two different visitors do not share the limit (the engine reads the real IP; a proxy with public IPs that is not Cloudflare has its ranges in `<prefix>_form_trusted_proxies`), and no old `<prefix>_form_client_ip` filter returns `CF-Connecting-IP` unconditionally.
 - [ ] Keyboard only: every field reachable with Tab; labels, the legend of each radio or checkbox group, errors and the status are announced by a screen reader.
 - [ ] Page source has no nonce (it is fetched on view); the form works with the page cached.
 - [ ] Saved submissions (if `store` ≠ `none`): appear under "Envíos" with status Enviado / Correo no enviado; an Editor cannot see the menu; Tools → Export Personal Data finds them by email.

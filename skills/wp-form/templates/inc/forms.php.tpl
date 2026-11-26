@@ -475,15 +475,142 @@ function {{PREFIX}}_validate_form(array $form, array $input)
  * Antispam
  * ---------------------------------------------------------------------- */
 
+/*
+ * IP de la visitante para el límite de envíos y los duplicados.
+ *
+ * Detrás de Cloudflare o de un proxy del hosting, REMOTE_ADDR es la IP del proxy y todas las
+ * visitantes compartirían un solo límite. El motor lo resuelve solo, sin configurar el servidor:
+ *   - si REMOTE_ADDR no es un proxy de confianza, se usa tal cual y se ignora toda cabecera (nadie
+ *     cambia su IP mandando cabeceras);
+ *   - si es de Cloudflare y CF-Connecting-IP trae una IP válida, se usa esa;
+ *   - si no, X-Forwarded-For se lee de derecha a izquierda saltando los proxies de confianza: la
+ *     primera que no lo es la agregó el último proxy. La de la izquierda la manda el cliente y nunca
+ *     se toma sola. Un valor inválido corta la lectura y queda REMOTE_ADDR.
+ * Con la constante {{PREFIX_UPPER}}_FORM_TRUST_PROXIES en false (wp-config.php) vuelve a ser solo
+ * REMOTE_ADDR. El filtro {{PREFIX}}_form_client_ip se aplica al final, como siempre.
+ */
 function {{PREFIX}}_form_client_ip()
 {
-    $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+    $remote = isset($_SERVER['REMOTE_ADDR']) ? {{PREFIX}}_form_ip(sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']))) : '';
+    $ip = $remote;
 
-    // Detrás de Cloudflare o un proxy, REMOTE_ADDR es la IP del proxy y todos los visitantes
-    // compartirían el límite. Ahí se filtra este valor (ver SKILL.md, paso 8).
+    $enabled = !defined('{{PREFIX_UPPER}}_FORM_TRUST_PROXIES') || constant('{{PREFIX_UPPER}}_FORM_TRUST_PROXIES');
+    if ($remote !== '' && $enabled) {
+        $trusted = (array) apply_filters('{{PREFIX}}_form_trusted_proxies', {{PREFIX}}_form_default_proxies());
+        if ({{PREFIX}}_form_ip_in($remote, $trusted)) {
+            $ip = {{PREFIX}}_form_forwarded_ip($remote, $trusted);
+        }
+    }
+
     $ip = (string) apply_filters('{{PREFIX}}_form_client_ip', $ip);
 
     return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '';
+}
+
+// La IP de un proxy de confianza: la de Cloudflare o la que trae X-Forwarded-For.
+function {{PREFIX}}_form_forwarded_ip($remote, array $trusted)
+{
+    if ({{PREFIX}}_form_ip_in($remote, {{PREFIX}}_form_cloudflare_ips()) && isset($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        $cf = {{PREFIX}}_form_ip(sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_CONNECTING_IP'])));
+        if ($cf !== '') {
+            return $cf;
+        }
+    }
+
+    if (empty($_SERVER['HTTP_X_FORWARDED_FOR']) || !is_string($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        return $remote;
+    }
+    // Cada proxy agrega a la derecha la IP que le habló; se mira como mucho las últimas 20.
+    $hops = array_slice(explode(',', sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']))), -20);
+    foreach (array_reverse($hops) as $hop) {
+        $hop = {{PREFIX}}_form_ip(trim($hop));
+        if ($hop === '') {
+            return $remote;
+        }
+        if (!{{PREFIX}}_form_ip_in($hop, $trusted)) {
+            return $hop;
+        }
+    }
+
+    return $remote;
+}
+
+// Una IP válida (IPv4 o IPv6) o ''. Una IPv4 escrita como IPv6 (::ffff:1.2.3.4) se pasa a IPv4.
+function {{PREFIX}}_form_ip($ip)
+{
+    if (!is_string($ip) || !filter_var($ip, FILTER_VALIDATE_IP)) {
+        return '';
+    }
+    $bin = inet_pton($ip);
+    if (strlen($bin) === 16 && substr($bin, 0, 12) === str_repeat("\0", 10) . "\xff\xff") {
+        return inet_ntop(substr($bin, 12));
+    }
+
+    return $ip;
+}
+
+// ¿La IP está en alguno de los rangos CIDR? IPv4 e IPv6, comparando bits; un rango mal escrito no coincide.
+function {{PREFIX}}_form_ip_in($ip, array $ranges)
+{
+    $ip_bin = filter_var($ip, FILTER_VALIDATE_IP) ? inet_pton($ip) : false;
+    if ($ip_bin === false) {
+        return false;
+    }
+    foreach ($ranges as $range) {
+        $parts = explode('/', (string) $range, 2);
+        $net_bin = filter_var($parts[0], FILTER_VALIDATE_IP) ? inet_pton($parts[0]) : false;
+        if ($net_bin === false || strlen($net_bin) !== strlen($ip_bin)) {
+            continue;
+        }
+        $max = strlen($ip_bin) * 8;
+        $bits = isset($parts[1]) ? (ctype_digit($parts[1]) ? (int) $parts[1] : -1) : $max;
+        if ($bits < 0 || $bits > $max) {
+            continue;
+        }
+        $bytes = intdiv($bits, 8);
+        $rest = $bits % 8;
+        if (substr($ip_bin, 0, $bytes) !== substr($net_bin, 0, $bytes)) {
+            continue;
+        }
+        if ($rest === 0) {
+            return true;
+        }
+        $mask = (0xff << (8 - $rest)) & 0xff;
+        if ((ord($ip_bin[$bytes]) & $mask) === (ord($net_bin[$bytes]) & $mask)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/*
+ * Rangos publicados de Cloudflare, copiados el 2026-11-26 de https://www.cloudflare.com/ips-v4 y
+ * https://www.cloudflare.com/ips-v6. Cambian poco, pero hay que revisarlos de vez en cuando (al
+ * actualizar la skill); un rango nuevo se puede sumar antes con el filtro {{PREFIX}}_form_trusted_proxies.
+ */
+function {{PREFIX}}_form_cloudflare_ips()
+{
+    return [
+        '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18',
+        '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20', '197.234.240.0/22', '198.41.128.0/17',
+        '162.158.0.0/15', '104.16.0.0/13', '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+        '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32', '2405:8100::/32',
+        '2a06:98c0::/29', '2c0f:f248::/32',
+    ];
+}
+
+/*
+ * Proxies de confianza por defecto: Cloudflare más las IP privadas, loopback y reservadas (lo que
+ * FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE rechaza), que es lo que se ve cuando el hosting
+ * pone un proxy delante. ::ffff:0:0/96 no va: esas IP se pasan a IPv4 antes de comparar.
+ */
+function {{PREFIX}}_form_default_proxies()
+{
+    return array_merge({{PREFIX}}_form_cloudflare_ips(), [
+        '0.0.0.0/8', '10.0.0.0/8', '127.0.0.0/8', '169.254.0.0/16', '172.16.0.0/12', '192.168.0.0/16', '240.0.0.0/4',
+        '::/128', '::1/128', 'fc00::/7', 'fe80::/10',
+    ]);
 }
 
 function {{PREFIX}}_form_sign($time)

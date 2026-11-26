@@ -2,7 +2,7 @@
 name: wp-form
 description: 'Build a secure, accessible form in a WordPress theme with Vite and pnpm (contact, quote, newsletter, lead): Zod in the front and the same rules in PHP, nonce, anti-spam, double-submit protection, wp_mail and optional saved submissions. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.'
 metadata:
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # wp-form
@@ -19,7 +19,7 @@ The engine files are generic and are **not edited per project**. A new form only
 | wp-form block in `CLAUDE.md` | `scripts/install.mjs` (from `claude-block.md.tpl`) | No: do not edit it by hand, the next install replaces it |
 | `inc/forms/<id>.php` | you, from `examples/` | Yes: fields, recipients, store, redirect |
 | `template-parts/forms/<id>.php` | you, from `examples/` + Figma | Yes: the markup and classes |
-| `tests/` (stays in the skill) | — | Run against the theme to check front/back parity |
+| `tests/` (stays in the skill) | — | Run against the theme to check front/back parity; `tests/ip.php` checks the client IP behind proxies without a site |
 
 If the engine needs a change, change the template in this skill, bump `metadata.version` in its SKILL.md and note it in its CHANGELOG.md; never the copy in a theme.
 
@@ -34,7 +34,7 @@ Detail lives in `references/` and is read only by the step that points to it.
    - **Thank-you page:** yes (its URL, goes in `redirect`) | no (success text under the button).
    - **Saved submissions in the admin:** no | all, with status sent or failed | only failed. Maps to `store`: `none` | `all` | `failed`.
    - **CRM or other integration:** none | which one and its endpoint/docs.
-   - **Cloudflare or a proxy in front of the site:** yes | no. If yes, step 8 applies; without it, every visitor shares one IP and the rate limit becomes site-wide.
+   - **A proxy in front of the site that is not Cloudflare and uses public IPs** (rare: a CDN or load balancer of its own): yes | no. If yes, step 8 applies. Cloudflare and a hosting proxy on private IPs need nothing: the engine finds the visitor's real IP by itself.
    - **Channel without JavaScript:** the email or phone shown in the form's `<noscript>` (see the view contract). Never invent one.
    - **Privacy policy page:** check `get_privacy_policy_url()` in WP. If empty, ask for the page; the consent checkbox needs that link.
    - **Fields:** only if neither spec nor Figma list them: name, type, required, limits.
@@ -64,7 +64,7 @@ Detail lives in `references/` and is read only by the step that points to it.
 
 7. **Place it** where the spec says: `get_template_part('template-parts/forms/<id>');`.
 
-8. **Behind Cloudflare or a proxy** (only if the answer in step 2 was yes). Add the `<prefix>_form_client_ip` filter to `inc/forms/<id>.php`; the exact code and its caveat are in the "Behind Cloudflare" section of [references/integrations.md](references/integrations.md). Skip otherwise.
+8. **Proxy with public IPs** (only if the answer in step 2 was yes). The rate limit already uses the visitor's real IP behind Cloudflare or a hosting proxy on private IPs; another proxy's ranges are added with the `<prefix>_form_trusted_proxies` filter. Code in the "Behind Cloudflare or a proxy" section of [references/integrations.md](references/integrations.md). Skip otherwise. If an older form has a `<prefix>_form_client_ip` filter that returns `CF-Connecting-IP`, remove it: the engine does it safely now.
 
 9. **CRM / integrations** (only if asked). Use the `<prefix>_form_submitted` hook; see the "CRM" section of [references/integrations.md](references/integrations.md).
 
@@ -75,6 +75,8 @@ Detail lives in `references/` and is read only by the step that points to it.
     php <skill>/tests/check.php <path to wp-load.php> <prefix> > forms-php.json
     node <skill>/tests/check.mjs <theme folder> forms-php.json
     ```
+    The client IP behind proxies has its own test, without a site: `php <skill>/tests/ip.php` (run it when the engine changes).
+
     Run the PHP half from the site's shell (Local → site → "Open site shell"), where the database is reachable; from a plain terminal `wp-load.php` usually cannot connect to Local's MySQL. It runs `tests/cases.json` through PHP and through the theme's Zod schema; every case must give the same result on both sides and match what is expected. Delete `forms-php.json` afterwards. When a rule or field type changes in the engine, add cases to `tests/cases.json`.
 
 ## Reference
