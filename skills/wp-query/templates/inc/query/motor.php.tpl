@@ -1200,10 +1200,14 @@ function {{PREFIX}}_query_param(): string
     return '_wpq';
 }
 
-// ¿El pedido viene del JS del motor? Por el parámetro o, por compatibilidad, por el encabezado X-WP-Query: 1.
+/*
+ * ¿El pedido viene del JS del motor? Solo por el parámetro: la URL normal del listado responde HTML siempre. El
+ * encabezado X-WP-Query: 1 solo no basta (ya no se acepta "por compatibilidad"): con él cualquiera podía pedir la
+ * URL normal y recibir el JSON, y una caché que ignore Vary y Cache-Control lo guardaría para todas las visitas.
+ */
 function {{PREFIX}}_query_is_partial(): bool
 {
-    return isset($_GET[{{PREFIX}}_query_param()]) || ($_SERVER['HTTP_X_WP_QUERY'] ?? '') === '1';
+    return isset($_GET[{{PREFIX}}_query_param()]);
 }
 
 // Una URL sin el parámetro reservado.
@@ -1233,15 +1237,8 @@ function {{PREFIX}}_query_clean_html(string $html): string
 add_filter('get_pagenum_link', '{{PREFIX}}_query_clean_url');
 add_filter('paginate_links', '{{PREFIX}}_query_clean_url');
 
-// El HTML y el JSON de un listado cambian según el encabezado (las cachés que respetan Vary los separan también así).
-add_action('send_headers', function () {
-    if (!is_admin() && {{PREFIX}}_query_current()) {
-        header('Vary: X-WP-Query', false);
-    }
-});
-
 /*
- * Con _wpq (o X-WP-Query: 1) el listado se arma con su plantilla de siempre (una sola fuente de HTML) y se responde
+ * Con _wpq el listado se arma con su plantilla de siempre (una sola fuente de HTML) y se responde
  * un JSON con sus zonas: { ok, url, zonas: { filtros, resultados, paginacion, total, ... }, total, pagina, paginas,
  * titulo }. `url` es la del listado, sin el parámetro. Si la plantilla no tiene zonas, ok es false y el JS abre la
  * página completa.

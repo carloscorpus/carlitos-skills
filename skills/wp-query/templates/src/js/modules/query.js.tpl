@@ -7,7 +7,8 @@
  *   - al cambiar un filtro (o al enviar, con "Al filtrar: botón aplicar") pide la URL del listado con el parámetro
  *     reservado _wpq=1 (y el encabezado X-WP-Query: 1) y reemplaza solo las zonas [data-query] (filtros,
  *     resultados, paginacion, total...). El parámetro le da al pedido parcial una URL propia: una caché de páginas
- *     que guarda una copia por URL no mezcla el JSON con el HTML. Nunca llega a la barra del navegador;
+ *     que guarda una copia por URL no mezcla el JSON con el HTML. Solo el parámetro dispara el JSON (el encabezado
+ *     solo, sin _wpq, recibe la página: se leen sus zonas con DOMParser). Nunca llega a la barra del navegador;
  *   - la URL se actualiza (history) y el botón atrás vuelve al filtro anterior;
  *   - "cargar más" e "infinito" agregan los resultados de la página siguiente;
  *   - mientras carga, la zona de resultados tiene aria-busy y al terminar se anuncia el total;

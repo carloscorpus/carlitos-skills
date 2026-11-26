@@ -2,6 +2,18 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.2.3] - 2026-11-26
+
+### Corregido
+- **El encabezado `X-WP-Query: 1` solo ya no dispara el JSON.** Hasta 1.2.2 el motor aceptaba el pedido parcial por `_wpq` o, "por compatibilidad" con un JS anterior, por el encabezado solo. Así cualquiera podía pedir la URL normal del listado (sin `_wpq`) con ese encabezado y recibir el JSON; una caché que ignore `Vary` y también `Cache-Control`/`no-store` (hay hostings así) lo guardaría y todas las visitas verían el JSON en vez de la página. La seguridad no debe depender de la caché del hosting: ahora `<prefijo>_query_is_partial()` mira solo `_wpq` y la URL normal responde HTML siempre. Lo marcó una auditoría de seguridad de un proyecto que usa la skill (sin confirmar en producción).
+  - La respuesta parcial mantiene `no-store`, `noindex`, `Vary: X-WP-Query` y `DONOTCACHEPAGE` como defensa extra.
+  - **La página normal ya no envía `Vary: X-WP-Query`**: su respuesta no cambia con el encabezado, así que el `Vary` solo partía la caché en dos copias iguales.
+  - **Un JS anterior** (solo encabezado, sin `_wpq`) sigue funcionando: recibe el HTML y saca las zonas con `DOMParser`; si no hay zonas, abre la URL como página normal. El JS nuevo no cambia de comportamiento (ya mandaba `_wpq`); solo su comentario y la versión.
+  - `install.mjs --check` y `status.mjs` avisan como urgente si el motor instalado es 1.2.2 o anterior.
+- Documentación: `references/vista.md` ("Page caches"): el paso 3 de la prueba con curl ahora espera HTML con el encabezado solo; `SKILL.md` y el bloque de `CLAUDE.md`.
+- Pruebas: en `tests/motor.php`, el encabezado solo ya no es parcial, con `_wpq` y el encabezado sí, y el encabezado solo en la URL normal no; en `check.mjs`, el motor sin `HTTP_X_WP_QUERY` ni `Vary` en la página, y el aviso de `install --check` y `status` para un motor 1.2.2.
+- En cada proyecto: `install.mjs --overwrite inc/query/motor.php,src/js/modules/query.js` (el JS solo cambia la versión y un comentario), `pnpm build`, publicar y **vaciar la caché**. Después, la prueba con curl de `references/vista.md` (el paso 3 debe dar HTML).
+
 ## [1.2.2] - 2026-11-25
 
 ### Corregido

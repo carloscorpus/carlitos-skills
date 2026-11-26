@@ -39,6 +39,14 @@ if (!theme.isTheme) fail(1, 'No parece un tema WordPress (ejecuta desde la raíz
 
 const skillDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const skill = skillVersion(skillDir);
+// Motores hasta 1.2.2 responden el JSON a la URL normal del listado con solo el encabezado X-WP-Query: 1.
+const HEADER_ONLY_FIXED = '1.2.3';
+const olderThan = (v, ref) => {
+    const a = v.split('.').map(Number);
+    const b = ref.split('.').map(Number);
+    for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] < b[i];
+    return false;
+};
 const enginePath = join(target, 'inc/query/motor.php');
 const engineText = existsSync(enginePath) ? readFileSync(enginePath, 'utf8') : '';
 const engine = {
@@ -57,9 +65,11 @@ engine.js = {
     imported: jsEntry ? readFileSync(join(target, jsEntry), 'utf8').includes('modules/query.js') : null,
 };
 engine.upToDate = engine.installed && engine.version === skill && engine.js.version === skill;
+engine.headerOnlyPartial = Boolean(engine.version && olderThan(engine.version, HEADER_ONLY_FIXED));
 
 const next = [];
 if (!engine.installed || !engine.requireLine || !engine.js.installed || engine.js.imported === false) next.push('Instalar el motor: install.mjs');
+else if (engine.headerOnlyPartial) next.push(`Urgente: actualizar el motor ${engine.version} (hasta 1.2.2 la URL normal del listado responde JSON con solo el encabezado X-WP-Query): install.mjs --overwrite inc/query/motor.php,src/js/modules/query.js, pnpm build, publicar y vaciar la caché`);
 else if (!engine.upToDate) next.push(`Actualizar el motor (instalado ${engine.version ?? 'sin versión'}, JS ${engine.js.version ?? 'sin versión'}, skill ${skill}): install.mjs --overwrite inc/query/motor.php,src/js/modules/query.js`);
 
 let listados = [];

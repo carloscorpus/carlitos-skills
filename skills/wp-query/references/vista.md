@@ -81,7 +81,8 @@ Many page caches (on the server, the CDN or a plugin) keep one copy per URL and 
 
 - **The JS** asks for `<list URL>&_wpq=1` (`?_wpq=1` without other parameters), keeps the `X-WP-Query: 1` header and fetches with `cache: 'no-store'`, so the browser cache does not keep the JSON either.
 - **The parameter is never seen.** It never goes to the address bar (`pushState`/`replaceState`), to the JSON's `url`, to the pagination links, to the form's `action`, to the canonical, to the chips' links or to `<prefix>_query_url()`. It is not a filter: filter names start with a letter and the engine only reads the filters of the definition. The engine also removes it from the links WordPress builds from the request's URL (`get_pagenum_link`, `paginate_links`) and, as a safety net, from every `href` and `action` of the zones.
-- **The engine** treats a request with `_wpq` (or, for an older JS, with the header) as partial and answers with `Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private` (`nocache_headers()`), `X-Robots-Tag: noindex`, `Vary: X-WP-Query` and `DONOTCACHEPAGE` (cache plugins honor it).
+- **The engine** treats a request as partial **only** when it has `_wpq`, and answers with `Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private` (`nocache_headers()`), `X-Robots-Tag: noindex`, `Vary: X-WP-Query` and `DONOTCACHEPAGE` (cache plugins honor it). Those headers are an extra defense; the real one is the URL.
+- **The header alone is not enough.** A request to the list's normal URL with `X-WP-Query: 1` and no `_wpq` gets the page's HTML, like any visitor. Until 1.2.2 the engine accepted the header alone (for an older JS): anyone could ask the normal URL with it and get JSON, and a cache that ignores `Vary` and `Cache-Control` would serve that JSON to every visitor. The safety of the page must not depend on the hosting's cache. An older JS (header only) still works: it receives the HTML and reads the zones from it with `DOMParser`; without zones it opens the URL as a normal page. The normal page no longer sends `Vary: X-WP-Query`, because its answer no longer changes with the header.
 - **Someone opens a `_wpq` URL by hand:** they get that same JSON, with `noindex` and `no-store`. It is not redirected to the clean URL, because telling the JS from a person would mean trusting the header again, which is exactly what some caches and proxies drop; and no link of the site carries the parameter, so nothing leads there.
 - Without JavaScript nothing changes: the form is a normal GET to the clean URL and the pagination is normal links.
 
@@ -99,12 +100,13 @@ curl -s -D - -o /dev/null -H "X-WP-Query: 1" "https://site/list/?prueba=1&_wpq=1
 curl -s -D - "https://site/list/?prueba=1" | head -n 40
 #    Expect: Content-Type: text/html and the page's HTML (<!doctype html>), not {"ok":...}.
 
-# 3. The original reproduction (header only, as an older JS did), on a new URL:
-curl -s -o /dev/null -H "X-WP-Query: 1" "https://site/list/?prueba=2"
+# 3. The header alone (as an older JS did, or anyone with curl) on the normal URL, on a new URL:
+curl -s -D - -H "X-WP-Query: 1" "https://site/list/?prueba=2" | head -n 40
+#    Expect HTML: Content-Type: text/html and <!doctype html>, never {"ok":...}. The header alone is not partial.
 curl -s -D - "https://site/list/?prueba=2" | head -n 40
-#    Expect HTML again: the partial answer carries no-store, so a cache that honors it does not keep it.
+#    Expect HTML again (the copy a cache may have kept is the page).
 ```
 
 Then open `https://site/list/?prueba=1` in the browser (and reload): it must show the page. Filter, clear the filters and paginate: the address bar never shows `_wpq`.
 
-If step 3 shows JSON, that cache ignores `Cache-Control` as well. The current JS always sends `_wpq`, so it only matters while an older JS is still in a visitor's browser or in a cached page: purge the cache after deploying. Report it, because that hosting needs a cache exclusion for requests with the `X-WP-Query` header.
+If step 3 shows JSON, the engine installed is 1.2.2 or older (`install.mjs --check` and `status.mjs` warn about it) or the cache still holds a copy from before the update: update the engine, purge the cache and repeat with a new `prueba` value.

@@ -235,7 +235,9 @@ try {
         assert.ok(!/\bquery_posts\s*\(/.test(motor), 'el motor no usa query_posts');
         assert.match(motor, /'titulo'\s*=> html_entity_decode\(wp_get_document_title\(\), ENT_QUOTES,/, 'el título de la respuesta parcial va sin entidades HTML (la pestaña no las convierte)');
         // Respuesta parcial: URL propia (_wpq) y nada que una caché guarde.
-        assert.match(motor, /return isset\(\$_GET\[demo_query_param\(\)\]\) \|\| \(\$_SERVER\['HTTP_X_WP_QUERY'\] \?\? ''\) === '1';/, 'detecta el pedido parcial por _wpq y por el encabezado');
+        assert.match(motor, /return isset\(\$_GET\[demo_query_param\(\)\]\);/, 'detecta el pedido parcial solo por _wpq');
+        assert.ok(!motor.includes('HTTP_X_WP_QUERY'), 'el encabezado solo no dispara el pedido parcial');
+        assert.ok(!/add_action\('send_headers'/.test(motor), 'el HTML ya no cambia según el encabezado: sin Vary');
         const partial = motor.slice(motor.indexOf("add_action('template_redirect'"), motor.indexOf('// Ajustes del listado para el JS'));
         assert.match(partial, /nocache_headers\(\);/, 'la respuesta parcial llama a nocache_headers()');
         assert.match(partial, /header\('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private'\);/, 'la respuesta parcial no se guarda en ninguna caché');
@@ -288,6 +290,14 @@ try {
         assert.match(readFileSync(join(viejo, 'src/js/modules/query.js'), 'utf8'), /const PARAM = '_wpq';/);
         assert.match(readFileSync(join(viejo, 'CLAUDE.md'), 'utf8'), /_wpq=1/, 'el bloque de CLAUDE.md se actualiza con el motor');
         assert.equal(run('install.mjs', ['--target', viejo, '--check']).code, 0);
+        assert.ok(!run('install.mjs', ['--target', viejo, '--check']).json.hints.some((h) => h.startsWith('Urgente')), 'el motor al día no avisa');
+
+        // Un motor 1.2.2 (acepta el encabezado solo): install --check y status avisan que hay que actualizar.
+        writeFileSync(join(viejo, 'inc/query/motor.php'), readFileSync(join(viejo, 'inc/query/motor.php'), 'utf8').replace(`Versión del motor: ${engineVersion}`, 'Versión del motor: 1.2.2'));
+        assert.match(run('install.mjs', ['--target', viejo, '--check']).json.hints.join(' '), /Urgente: el motor 1\.2\.2[\s\S]*X-WP-Query[\s\S]*vaciar la caché/);
+        const estado = run('status.mjs', ['--target', viejo]);
+        assert.equal(estado.json.engine.headerOnlyPartial, true);
+        assert.match(estado.json.next.join(' '), /Urgente: actualizar el motor 1\.2\.2/);
     });
 
     await test('install: copia el JS y lo importa una sola vez en el JS principal de Vite', () => {
