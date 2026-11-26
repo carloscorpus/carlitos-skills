@@ -87,6 +87,14 @@ function resolveEntry() {
 
 const entry = resolveEntry();
 const version = skillVersion(skillDir);
+// Desde 1.6.0 el límite de envíos usa la IP real detrás de Cloudflare o de un proxy del hosting.
+const REAL_IP_SINCE = '1.6.0';
+const olderThan = (v, ref) => {
+    const a = v.split('.').map(Number);
+    const b = ref.split('.').map(Number);
+    for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] < b[i];
+    return false;
+};
 
 const REQUIRE_LINE = "require_once get_theme_file_path('/inc/forms.php');";
 const IMPORT_BLOCK = [
@@ -125,6 +133,9 @@ if (args.check) {
     if (!wiring.zod || !wiring.node_modules_zod) hints.push('pnpm view zod dist-tags && pnpm add zod@latest');
     if (wiring.engine && installed !== version) {
         hints.push(`Motor ${installed ?? 'sin versión'} instalado, la skill trae ${version}: corre install.mjs --dry-run y revisa los conflictos antes de --overwrite.`);
+    }
+    if (wiring.engine && installed && olderThan(installed, REAL_IP_SINCE)) {
+        hints.push(`Hay una actualización: con el motor ${installed}, detrás de Cloudflare o de un proxy del hosting todas las visitantes comparten un solo límite de envíos (10 por hora). Desde ${REAL_IP_SINCE} el motor usa la IP real: --overwrite inc/forms.php,${ENGINE_JS} (y inc/forms-entries.php si el tema guarda envíos); las definiciones de los forms no cambian. Si algún inc/forms/<id>.php tiene un filtro <prefijo>_form_client_ip que devuelve CF-Connecting-IP, quítalo.`);
     }
     console.log(JSON.stringify({
         ok: missing.length === 0,

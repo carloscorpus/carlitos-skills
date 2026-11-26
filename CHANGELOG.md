@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.42.0] - 2026-11-26
+
+### Cambiado
+- `wp-form` 1.6.0: el límite de envíos por hora usa la IP real de la visitante detrás de Cloudflare o de un proxy del hosting (rangos de Cloudflare y IP privadas como proxies de confianza, `CF-Connecting-IP` y `X-Forwarded-For` de derecha a izquierda), sin configurar el servidor; filtro nuevo `<prefix>_form_trusted_proxies`. Detalle en `skills/wp-form/CHANGELOG.md`.
+
 ## [1.41.2] - 2026-11-26
 
 ### Corregido

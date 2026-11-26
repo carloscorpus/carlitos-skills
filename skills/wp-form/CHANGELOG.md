@@ -2,6 +2,25 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.6.0] - 2026-11-26
+
+### Cambiado
+- **El límite de envíos por hora usa la IP real de la visitante detrás de Cloudflare o de un proxy del hosting.** La clave del límite (y la del doble envío) sale de `<prefix>_form_client_ip()`, que devolvía `REMOTE_ADDR` y dejaba el resto a un filtro que ningún proyecto registraba. Detrás de Cloudflare, o de un proxy inverso que no restaura `REMOTE_ADDR`, todas las visitantes tenían la IP del proxy y compartían un solo límite: con 10 envíos (spam o no) el formulario quedaba bloqueado una hora para todas. Lo marcó una auditoría de seguridad de un proyecto que usa la skill (sin confirmar: depende del despliegue). Muchos clientes solo tienen cPanel y no pueden configurar `mod_remoteip` ni `real_ip`, así que el motor lo resuelve solo:
+  - Parte de `REMOTE_ADDR` validada (`FILTER_VALIDATE_IP`); si no es válida queda vacía, como antes. Una IPv4 escrita como IPv6 (`::ffff:1.2.3.4`) se pasa a IPv4.
+  - **Proxies de confianza:** los rangos publicados de Cloudflare (IPv4 e IPv6, copiados el 2026-11-26 de cloudflare.com/ips-v4 y /ips-v6, escritos en el código) y las IP privadas, loopback y reservadas (las que rechaza `FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE`). El filtro nuevo `<prefix>_form_trusted_proxies` (lista de CIDR) agrega o quita rangos.
+  - Si `REMOTE_ADDR` no es de confianza, se usa tal cual y se ignora toda cabecera: nadie cambia su IP mandando cabeceras.
+  - Si es de Cloudflare y `CF-Connecting-IP` trae una IP válida, se usa esa.
+  - Si no, `X-Forwarded-For` se lee de derecha a izquierda saltando los proxies de confianza, y se queda con la primera válida que no lo es. Nunca toma sola la de la izquierda (la escribe el cliente). Un valor inválido corta la lectura (lo que está a su izquierda pudo escribirlo el cliente); si todas son de confianza o no hay ninguna válida, queda `REMOTE_ADDR`.
+  - Al final se aplica el filtro `<prefix>_form_client_ip` de siempre. La constante `<PREFIX>_FORM_TRUST_PROXIES` en `false` (en `wp-config.php`) apaga la detección y vuelve a solo `REMOTE_ADDR`.
+  - La comparación CIDR es una función propia (`inet_pton` y bits, IPv4 e IPv6), sin dependencias.
+- `install.mjs --check` avisa que hay una actualización si el motor instalado es anterior a 1.6.0.
+- Documentación: `SKILL.md` (pasos 2, 8 y 11), `references/integrations.md` ("Behind Cloudflare or a proxy": ya no se copia un filtro, solo se agregan rangos de un proxy propio con IP públicas), `references/engine-behavior.md`, `references/acceptance.md` y el bloque de `CLAUDE.md`.
+- Prueba nueva `tests/ip.php`: arma el motor desde la plantilla con un WordPress simulado (sin sitio ni base de datos) y prueba la IP sin proxy con cabeceras falsas, Cloudflare con `CF-Connecting-IP` válido e inválido, `X-Forwarded-For` de derecha a izquierda, saltando proxies, con basura o vacío, IPv6 dentro y fuera de Cloudflare, los dos filtros y la constante apagada (43 comprobaciones). Uso: `php <skill>/tests/ip.php`.
+
+El motor sube a 1.6.0 (`inc/forms.php`, `inc/forms-entries.php` y `form.js` llevan la versión; solo `inc/forms.php` cambia de comportamiento). Validación, tokens, honeypot, duplicados y correo no cambian.
+
+En cada proyecto: `install.mjs --overwrite inc/forms.php,src/js/modules/form.js` (más `inc/forms-entries.php` si el tema guarda envíos; los dos últimos solo cambian la versión), `pnpm build` y publicar. **No hay que tocar las definiciones de los formularios** (`inc/forms/<id>.php`). Si alguna tiene el filtro `<prefix>_form_client_ip` que devolvía `CF-Connecting-IP` (el de la versión anterior de `references/integrations.md`), quítalo: confía en la cabecera aunque el pedido no venga de Cloudflare.
+
 ## [1.5.0] - 2026-10-30
 
 ### Agregado
