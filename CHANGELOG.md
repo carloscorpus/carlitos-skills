@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.41.2] - 2026-11-26
+
+### Corregido
+- `wp-query` 1.2.3: el pedido parcial depende solo de `_wpq`; el encabezado `X-WP-Query` solo ya no devuelve el JSON en la URL normal del listado (que responde HTML siempre), e `install.mjs --check` y `status.mjs` avisan si el motor instalado es 1.2.2 o anterior. Detalle en `skills/wp-query/CHANGELOG.md`.
+
 ## [1.41.1] - 2026-11-25
 
 ### Corregido

@@ -74,6 +74,14 @@ function resolveEntry() {
 
 const entry = resolveEntry();
 const version = skillVersion(skillDir);
+// Motores hasta 1.2.2 responden el JSON a la URL normal del listado con solo el encabezado X-WP-Query: 1.
+const HEADER_ONLY_FIXED = '1.2.3';
+const olderThan = (v, ref) => {
+    const a = v.split('.').map(Number);
+    const b = ref.split('.').map(Number);
+    for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] < b[i];
+    return false;
+};
 const read = (rel) => (existsSync(join(target, rel)) ? readFileSync(join(target, rel), 'utf8') : '');
 const IMPORT_BLOCK = [
     "if (document.querySelector('[data-query=\"resultados\"]')) {",
@@ -96,6 +104,9 @@ if (args.check) {
     if (missing.length) hints.push(`Corre install.mjs sin --check: copia el motor y lo conecta en functions.php y ${entry}.`);
     if (wiring.engine && (installed !== version || installedJs !== version)) {
         hints.push(`Motor ${installed ?? 'sin versión'} (JS ${installedJs ?? 'sin versión'}) instalado, la skill trae ${version}: corre install.mjs --dry-run y luego --overwrite ${ENGINE},${ENGINE_JS}.`);
+    }
+    if (wiring.engine && installed && olderThan(installed, HEADER_ONLY_FIXED)) {
+        hints.push(`Urgente: el motor ${installed} responde el JSON a la URL normal del listado si el pedido trae solo el encabezado X-WP-Query (una caché podía servirlo a todas las visitas). Actualiza a ${HEADER_ONLY_FIXED} o posterior: --overwrite ${ENGINE},${ENGINE_JS}, pnpm build, publicar y vaciar la caché.`);
     }
     console.log(JSON.stringify({ ok: missing.length === 0, check: true, entry, engineVersion: { installed, js: installedJs, available: version }, wiring, missing, hints }, null, 2));
     process.exit(missing.length ? 4 : 0);

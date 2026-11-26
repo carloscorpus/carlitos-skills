@@ -2,7 +2,7 @@
 name: wp-query
 description: 'Make the lists of a WordPress theme work from the specs written by design-import: the real loop of posts and custom post types, combined filters (taxonomies, ACF option fields, numeric ranges, dates, search and sort), counts per option, pagination, related items and SEO-safe filtered pages, on the main query (pre_get_posts), updating without reload and still working without JavaScript. The design is kept: the engine gives the data and the theme''s HTML paints it. One generic engine, one generated definition per list, one subagent per list for the templates. Use when the user says "conecta los listados", "haz funcionar los filtros", "filtros combinados", "buscador", "paginación", "relacionados", "blog con filtros", "catálogo con filtros", or a spec says `skill: wp-query`. Runs after wp-acf. It also connects the shop of a WooCommerce store (`Origen: woo`): categories, tags, attributes, price, search and WooCommerce's own sorting, on the query WooCommerce already built; cart and checkout are wp-woocommerce.'
 metadata:
-  version: "1.2.2"
+  version: "1.2.3"
 ---
 
 # wp-query
@@ -39,7 +39,7 @@ The design rules the look. The engine never prints filter markup: it returns dat
 - The engine (`inc/query/motor.php`, `src/js/modules/query.js`) is never edited per project; it is updated with `install.mjs --overwrite inc/query/motor.php,src/js/modules/query.js` (both files: the PHP and the JS change together), then `pnpm build`, deploy and purge the page cache.
 - Filters always act on the main query. Never `query_posts`, never a `new WP_Query` that replaces the archive's loop. A secondary loop (related items) ends with `wp_reset_postdata()`.
 - The URL names are the table's: `categoria[]` (several values), `precio_min` / `precio_max`, `q`, `orden`. Never WordPress's own query vars (`s`, `p`, `cat`, `year`…).
-- `_wpq` is the engine's reserved parameter: the JS adds it only to its own partial request, so a page cache that keeps one copy per URL never mixes the JSON with the page. Never use it in a template, a link, a form or a URL of your own; the engine keeps it out of every URL it gives and answers that request with `no-store` and `noindex` ([references/vista.md](references/vista.md), "Page caches").
+- `_wpq` is the engine's reserved parameter: the JS adds it only to its own partial request, so a page cache that keeps one copy per URL never mixes the JSON with the page. Never use it in a template, a link, a form or a URL of your own; the engine keeps it out of every URL it gives and answers that request with `no-store` and `noindex`. Only `_wpq` triggers the JSON: the `X-WP-Query` header alone never does, so the list's normal URL always answers HTML ([references/vista.md](references/vista.md), "Page caches").
 - Escape all output (`esc_html`, `esc_attr`, `esc_url`), start files with `defined('ABSPATH') || exit;` and use the theme prefix.
 - The design decides counts, views and the mobile panel: follow the table, do not add filters the design does not show.
 
