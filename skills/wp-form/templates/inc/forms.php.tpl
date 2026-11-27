@@ -96,7 +96,7 @@ function {{PREFIX}}_normalize_field(array $field)
         'email'    => ['min' => 0, 'max' => 254, 'invalid' => 'Ingresa un correo electrónico válido.', 'autocomplete' => 'email'],
         'phone'    => ['min' => 0, 'max' => 20, 'min_digits' => 7, 'max_digits' => 15, 'autocomplete' => 'tel'],
         'digits'   => ['min' => 0, 'max' => 20, 'invalid' => 'Solo se permiten números.'],
-        'textarea' => ['min' => 0, 'max' => 1000, 'invalid' => 'No se permiten los caracteres < ni >.'],
+        'textarea' => ['min' => 0, 'max' => 1000, 'invalid' => 'Solo se permiten letras, números y los signos . , ; : ¿ ? ¡ ! ( ) - " \' @ / % + # * _ $'],
         'select'   => ['invalid' => 'Elige una opción válida.'],
         'radio'    => ['invalid' => 'Elige una opción válida.'],
         'checkbox' => [],
@@ -349,10 +349,6 @@ function {{PREFIX}}_validate_field(array $field, $raw)
         return ['', $m['max']];
     }
 
-    $forbidden = $type === 'textarea'
-        ? '/[<>\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u'
-        : '/[<>\x00-\x1F\x7F]/u';
-
     switch ($type) {
         case 'name':
             $valid = preg_match('/^[\p{L}\p{M} .\'\-]+$/u', $value) === 1;
@@ -370,8 +366,13 @@ function {{PREFIX}}_validate_field(array $field, $raw)
         case 'digits':
             $valid = preg_match('/^[0-9]+$/', $value) === 1;
             break;
-        default: // text, textarea
-            $valid = preg_match($forbidden, $value) === 0;
+        case 'textarea':
+            // Lista blanca, la misma que TEXTAREA_CHARS en form.js: letras, marcas (tildes), números,
+            // espacio, espacio duro, tabulador, salto de línea y . , ; : ¿ ? ¡ ! ( ) - " ' “ ” ‘ ’ – — … @ / % + # * _ $
+            $valid = preg_match('/^[\p{L}\p{M}\p{N} \x{00A0}\t\n.,;:¿?¡!()"\'“”‘’–—…@\/%+#*_$-]+$/u', $value) === 1;
+            break;
+        default: // text
+            $valid = preg_match('/[<>\x00-\x1F\x7F]/u', $value) === 0;
     }
     if (!$valid) {
         return ['', $m['invalid']];

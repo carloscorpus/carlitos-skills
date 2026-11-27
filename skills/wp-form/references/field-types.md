@@ -11,7 +11,7 @@ Used in step 5 of SKILL.md, when writing `inc/forms/<id>.php`.
 | `email` | Email | same rules as WordPress `is_email()`; `max` 254 | — |
 | `phone` | Phone | digits, spaces, `+ ( ) -`; `min_digits` 7, `max_digits` 15; stored as `+` and digits only | removes other chars |
 | `digits` | Only numbers (DNI, RUC, code) | digits only; set `min` = `max` for fixed length | removes non-digits |
-| `textarea` | Message | no `<` `>` or control chars, newlines allowed; `max` 1000 | — |
+| `textarea` | Message | only letters (any language, accents, ñ), digits, space, non-breaking space, tab, newline and `. , ; : ¿ ? ¡ ! ( ) - " '` (plus the curly `“ ” ‘ ’ – — …` that phone keyboards insert) and `@ / % + # * _ $`; anything else is rejected (`& = \| \ ^ ~` `` ` `` `{ } [ ] < >`, `€ £`, emojis, control and invisible chars); `max` 1000 | removes other chars |
 | `select` / `radio` | One option | value must be one of `options` (whitelist) | — |
 | `checkbox` | Yes/no (one box) | boolean | — |
 | `checkboxes` | Several options ("elige uno o más") | every value must be one of `options` (whitelist); `required` = at least one; `min` / `max` count checked options (`max` 0 = no limit); stored as a list in the order of `options` | — |

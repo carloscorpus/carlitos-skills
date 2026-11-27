@@ -28,13 +28,16 @@ const NAME_RE = /^[\p{L}\p{M} .'-]+$/u;
 const PHONE_RE = /^\+?[0-9 ()-]+$/;
 const DIGITS_RE = /^[0-9]+$/;
 const FORBIDDEN_SINGLE = /[<>\u0000-\u001F\u007F]/;
-const FORBIDDEN_MULTI = /[<>\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
+// Mensaje (textarea): lista blanca, la misma que en inc/forms.php. Lo que no está aquí se rechaza.
+const TEXTAREA_CHARS = String.raw`\p{L}\p{M}\p{N}  \t\n.,;:¿?¡!()"'“”‘’–—…@/%+#*_$-`;
+const TEXTAREA_RE = new RegExp(`^[${TEXTAREA_CHARS}]+$`, 'u');
 
 // Filtros mientras se escribe: quitan lo que el campo nunca aceptará.
 const TYPING_FILTERS = {
     name: /[^\p{L}\p{M} .'-]/gu,
     phone: /[^0-9 ()+-]/g,
     digits: /[^0-9]/g,
+    textarea: new RegExp(`[^${TEXTAREA_CHARS}]`, 'gu'),
 };
 
 // Copia exacta de is_email() de WordPress, para que front y back acepten los mismos correos.
@@ -141,7 +144,7 @@ export function fieldSchema(rule) {
             check((v) => DIGITS_RE.test(v), m.invalid);
             break;
         case 'textarea':
-            check((v) => !FORBIDDEN_MULTI.test(v), m.invalid);
+            check((v) => TEXTAREA_RE.test(v), m.invalid);
             break;
         default:
             check((v) => !FORBIDDEN_SINGLE.test(v), m.invalid);

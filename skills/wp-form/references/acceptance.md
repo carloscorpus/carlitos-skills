@@ -6,7 +6,7 @@ Copy these into the form's spec; the verifier checks each one. Used in step 11 o
 - [ ] `install.mjs --check` exits `0`. In the browser's Network tab the form module (`form.js`) loads when the page has the form; typing a digit in a name field is not allowed and an empty submit shows the custom messages.
 - [ ] Parity test (step 11) passes: every case equal in JS, PHP and expected.
 - [ ] Empty submit: every required field shows its message, focus moves to the first one, status says "Revisa los campos marcados."
-- [ ] Name rejects digits and symbols; phone made only of dashes or spaces is rejected; `<script>` in the message is rejected.
+- [ ] Name rejects digits and symbols; phone made only of dashes or spaces is rejected; `<script>` in the message is rejected; in the message, typing or pasting `&`, `{`, `|` or an emoji leaves them out, while `US$ 500`, `20%`, `a@b.pe` and `#304` stay.
 - [ ] Without JS rules (curl straight to `admin-ajax.php`), invalid data returns 422 with the same field messages; a missing or wrong nonce returns 403.
 - [ ] Valid submit: the email arrives in Mailpit with the right recipients, subject and Reply-To; the form resets and shows the success text (or redirects to the thank-you page).
 - [ ] If sending fails, the typed data stays in the form.
