@@ -2,7 +2,7 @@
 name: wp-form
 description: 'Build a secure, accessible form in a WordPress theme with Vite and pnpm (contact, quote, newsletter, lead): Zod in the front and the same rules in PHP, nonce, anti-spam, double-submit protection, wp_mail and optional saved submissions. Use when a spec says `skill: wp-form`, or the user asks for a form, "formulario", "form de contacto", "cotización", "arma el form", or gives a Figma frame of a form.'
 metadata:
-  version: "1.6.0"
+  version: "1.7.0"
 ---
 
 # wp-form

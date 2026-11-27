@@ -89,6 +89,8 @@ const entry = resolveEntry();
 const version = skillVersion(skillDir);
 // Desde 1.6.0 el límite de envíos usa la IP real detrás de Cloudflare o de un proxy del hosting.
 const REAL_IP_SINCE = '1.6.0';
+// Desde 1.7.0 el mensaje (textarea) solo acepta una lista de caracteres y filtra el resto al escribir.
+const TEXTAREA_CHARS_SINCE = '1.7.0';
 const olderThan = (v, ref) => {
     const a = v.split('.').map(Number);
     const b = ref.split('.').map(Number);
@@ -136,6 +138,9 @@ if (args.check) {
     }
     if (wiring.engine && installed && olderThan(installed, REAL_IP_SINCE)) {
         hints.push(`Hay una actualización: con el motor ${installed}, detrás de Cloudflare o de un proxy del hosting todas las visitantes comparten un solo límite de envíos (10 por hora). Desde ${REAL_IP_SINCE} el motor usa la IP real: --overwrite inc/forms.php,${ENGINE_JS} (y inc/forms-entries.php si el tema guarda envíos); las definiciones de los forms no cambian. Si algún inc/forms/<id>.php tiene un filtro <prefijo>_form_client_ip que devuelve CF-Connecting-IP, quítalo.`);
+    }
+    if (wiring.engine && installed && olderThan(installed, TEXTAREA_CHARS_SINCE)) {
+        hints.push(`Hay una actualización: con el motor ${installed}, el mensaje (textarea) acepta casi cualquier carácter ($&{}|=~, emojis...). Desde ${TEXTAREA_CHARS_SINCE} solo acepta letras, números, espacios, saltos de línea y . , ; : ¿ ? ¡ ! ( ) - " ' @ / % + # * _ $, y quita el resto al escribir: --overwrite inc/forms.php,${ENGINE_JS} y pnpm build; las definiciones de los forms no cambian.`);
     }
     console.log(JSON.stringify({
         ok: missing.length === 0,

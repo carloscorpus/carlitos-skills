@@ -2,6 +2,11 @@
 
 Cambios del plugin completo. El detalle de cada skill está en `skills/<skill>/CHANGELOG.md`.
 
+## [1.43.0] - 2026-11-26
+
+### Cambiado
+- `wp-form` 1.7.0: el mensaje (`textarea`) solo acepta letras, números, espacios, saltos de línea y `. , ; : ¿ ? ¡ ! ( ) - " '` (también curvas) más `@ / % + # * _ $`; rechaza `& = | \ ^ ~ { } [ ]`, `€ £`, emojis y otros símbolos en PHP y en el navegador, y los quita al escribir. Detalle en `skills/wp-form/CHANGELOG.md`.
+
 ## [1.42.0] - 2026-11-26
 
 ### Cambiado

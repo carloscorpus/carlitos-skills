@@ -2,6 +2,25 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico por skill; la versión vive en `metadata.version` de `SKILL.md`.
 
+## [1.7.0] - 2026-11-26
+
+### Cambiado
+- **El mensaje (`textarea`) solo acepta una lista de caracteres.** Hasta 1.6.0 rechazaba solo `<`, `>` y los caracteres de control, así que aceptaba texto como `$$&$$&-:):)(:&:@-@-‘xbbcvJs` (lo reclamó un cliente). No era un riesgo de inyección (el correo va en texto plano y el admin escapa todo), pero ahora el campo solo deja pasar:
+  - letras de cualquier idioma y sus marcas (tildes, ñ, ü, también una tilde descompuesta), números, espacio, espacio duro, tabulador y salto de línea;
+  - `. , ; : ¿ ? ¡ ! ( ) - " '` y sus versiones curvas `“ ” ‘ ’ – — …`, que pone solo el teclado del iPhone;
+  - `@ / % + # * _ $` (correo, `S/`, fechas, porcentajes, teléfono, dirección, montos en dólares).
+  - Todo lo demás se rechaza: `& = | \ ^ ~` `` ` `` `{ } [ ]`, `€ £`, emojis, `< >`, caracteres de control e invisibles (como el espacio de ancho cero).
+- La misma lista está en PHP (`<prefix>_validate_field`) y en `form.js` (`TEXTAREA_CHARS`), y además es un filtro al escribir: lo que no está permitido no aparece al teclearlo ni al pegarlo (igual que en `name`, `phone` y `digits`, con el cursor en su sitio y esperando al IME). Si se salta el JS, el servidor responde 422 con el mensaje.
+- Mensaje nuevo por defecto: `Solo se permiten letras, números y los signos . , ; : ¿ ? ¡ ! ( ) - " ' @ / % + # * _ $`.
+- El campo `text` y los demás tipos no cambian.
+- `install.mjs --check` avisa que hay una actualización si el motor instalado es anterior a 1.7.0.
+- Pruebas: `tests/cases.json` tiene 18 casos nuevos del mensaje (permitidos, curvos, tilde descompuesta, espacio duro, la captura del reclamo, emojis, `& = { } [ ] | ~ ^` `` ` `` `\ € £` y el espacio de ancho cero). Los casos con `\` y con emojis, que antes pasaban, ahora se rechazan.
+- Documentación: `references/field-types.md` y `references/acceptance.md`.
+
+El motor sube a 1.7.0 (`inc/forms.php` y `form.js` cambian de comportamiento; `inc/forms-entries.php` solo cambia la versión).
+
+En cada proyecto: `install.mjs --overwrite inc/forms.php,src/js/modules/form.js` (más `inc/forms-entries.php` si el tema guarda envíos), `pnpm build` y publicar. **No hay que tocar las definiciones de los formularios** (`inc/forms/<id>.php`). Si alguna le puso a un textarea su propio `messages.invalid`, revisa que el texto siga correspondiendo.
+
 ## [1.6.0] - 2026-11-26
 
 ### Cambiado
